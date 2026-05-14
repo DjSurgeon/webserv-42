@@ -1,3 +1,36 @@
+# 🗺️ Webserv Architecture & Data Flow Blueprint
+
+This document defines the official architecture, class interfaces, and data flow contracts for `webserv-42`. All team members must adhere to these structural specifications to prevent integration conflicts.
+
+---
+
+## 🧩 1. High-Level Macro Architecture
+
+The server is divided into three distinct decoupled layers, each managed by a specific team member:
+
+1. **The Network Layer (Member A):** Manages non-blocking I/O multiplexing (`poll`), raw socket connections, and system event triggers.
+2. **The Parsing Layer (Member B):** Converts raw character streams from client sockets into validated HTTP Request objects using a Finite State Machine (FSM).
+3. **The Configuration & Logic Layer (Member C):** Holds NGINX-style rules, matches incoming requests to virtual hosts/locations, and handles CGI process execution.
+
+---
+
+## 🔄 2. Complete Request-Response Lifecycle (The Data Flow)
+
+```
+[Browser Client]
+│ (Raw TCP Data)
+▼
+[ClientSocket] ──(append to _read_buffer)──► [RequestParser]
+│ (.feed(char))
+▼
+[ListeningLoop] ◄──(evaluates rules)── [ServerConfig / LocationConfig]
+│
+▼
+[ResponseBuilder] ──(string stream)──► [ClientSocket._write_buffer]
+│
+▼
+[Browser Client]
+```
 
 1. **Ingress:** `poll()` detects `POLLIN` on a `ClientSocket`. Member A reads the bytes and appends them to the client's internal string buffer (`_read_buffer`).
 2. **Processing:** Member B triggers the `RequestParser`, passing the buffer character by character into the FSM via `.feed(char)`.
