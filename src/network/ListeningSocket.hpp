@@ -17,6 +17,7 @@ public:
     ListeningSocket();
     ~ListeningSocket();
 
+    void init(int port);
     int get_fd() const;
 
 private:
