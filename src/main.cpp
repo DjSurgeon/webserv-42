@@ -46,13 +46,18 @@ int main(int argc, char** argv) {
         ListeningSocket server_socket;
         std::cout << "Socket created successfully with FD: " << server_socket.get_fd() << std::endl;
 
-        std::cout << "Binding to port 8080..." << std::endl;
+        std::cout << "Binding and Listening on port 8080..." << std::endl;
         server_socket.init(8080);
-        std::cout << "Successfully bound to port 8080." << std::endl;
+        std::cout << "Successfully bound and listening on port 8080." << std::endl;
 
         test_client_socket();
 
-        std::cout << "\nAll initialization tests passed." << std::endl;
+        std::cout << "\nAll initialization tests passed. Server is now in LISTEN state." << std::endl;
+        std::cout << "Check status with: lsof -i :8080" << std::endl;
+        
+        while (true) {
+            sleep(1);
+        }
     } catch (const std::exception& e) {
         std::cerr << "Fatal Error: " << e.what() << std::endl;
         return 1;

@@ -25,6 +25,10 @@ void ListeningSocket::init(int port) {
     if (bind(_fd, (struct sockaddr*)&address, sizeof(address)) == -1) {
         throw std::runtime_error("ListeningSocket: bind() failed");
     }
+
+    if (listen(_fd, 128) == -1) {
+        throw std::runtime_error("ListeningSocket: listen() failed");
+    }
 }
 
 ListeningSocket::~ListeningSocket() {
