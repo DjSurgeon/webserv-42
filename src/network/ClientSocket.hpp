@@ -2,29 +2,38 @@
 # define CLIENT_SOCKET_HPP
 
 # include <string>
+# include <cstddef>
 
 /**
- * @brief RAII class to manage a client socket file descriptor.
+ * @brief RAII class managing an active client connection (The Waiter).
  * 
- * This class encapsulates an accepted client file descriptor, ensures
- * proper resource cleanup (RAII), configures the socket to non-blocking
- * mode upon creation, and provides buffers for asynchronous operations.
+ * Implements architectural: ultra-efficient zero-copy data reading
+ * via constant references, combined with strictly controlled mutator methods
+ * to encapsulate buffer state and prevent external data corruption.
+ * Explicit constructor prevents dangerous implicit conversions from raw FDs.
  */
 class ClientSocket {
 public:
-    ClientSocket(int client_fd);
+    explicit ClientSocket(int client_fd);
     ~ClientSocket();
 
-    int get_fd() const;
-    std::string& get_read_buffer();
-    std::string& get_write_buffer();
+    // --- Getters (Zero-copy, read-only constant references) ---
+    int                get_fd() const;
+    const std::string& get_read_buffer() const;
+    const std::string& get_write_buffer() const;
+
+    // --- Mutators (Controlled state modification gates) ---
+    void append_to_read_buffer(const std::string& data);
+    void append_to_write_buffer(const std::string& data);
+    void consume_read_buffer(size_t bytes);
+    void clear_write_buffer();
 
 private:
-    int _fd;
+    int         _fd;
     std::string _read_buffer;
     std::string _write_buffer;
 
-    // Prevent copying (C++98 style)
+    // Prevent copying (Strict C++98 compliance rule against double-close bugs)
     ClientSocket(const ClientSocket& other);
     ClientSocket& operator=(const ClientSocket& other);
 };

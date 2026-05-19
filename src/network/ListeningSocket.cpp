@@ -1,18 +1,56 @@
 #include "network/ListeningSocket.hpp"
+#include <sys/socket.h>
+#include <unistd.h>
+#include <stdexcept>
 #include <iostream>
 #include <netinet/in.h>
 #include <cstring>
 
-ListeningSocket::ListeningSocket() {
+/**
+ * @brief Default constructor for ListeningSocket.
+ * 
+ * Sets the file descriptor to -1 to indicate that the socket
+ * is in a passive, uninitialized state.
+ */
+ListeningSocket::ListeningSocket() : _fd(-1) {}
+
+/**
+ * @brief Explicit constructor for ListeningSocket.
+ * 
+ * Immediately creates and configures the socket to listen on a specific port.
+ * 
+ * @param port Network port on which the server will listen for connections.
+ * @throw std::runtime_error If any error occurs during socket creation or configuration.
+ */
+ListeningSocket::ListeningSocket(int port) : _fd(-1) {
+    init(port);
+}
+
+/**
+ * @brief Initializes and activates the listening socket.
+ * 
+ * Creates the socket descriptor, applies the address reuse option,
+ * binds it to the specified port, and sets it to passive listening mode.
+ * If any system call fails, it closes the created socket and resets
+ * the descriptor to -1 to ensure exception safety.
+ * 
+ * @param port Network port on which the socket will listen.
+ * @throw std::runtime_error If the socket is already initialized or if any system call fails.
+ */
+void ListeningSocket::init(int port) {
+    if (_fd != -1) {
+        throw std::runtime_error("ListeningSocket: Already initialized");
+    }
+
     _fd = socket(AF_INET, SOCK_STREAM, 0);
     if (_fd == -1) {
         throw std::runtime_error("ListeningSocket: socket() failed");
     }
-}
 
-void ListeningSocket::init(int port) {
     int opt = 1;
     if (setsockopt(_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) == -1) {
+        close(_fd);
+        _fd = -1;
         throw std::runtime_error("ListeningSocket: setsockopt() failed");
     }
 
@@ -23,14 +61,24 @@ void ListeningSocket::init(int port) {
     address.sin_port = htons(port);
 
     if (bind(_fd, (struct sockaddr*)&address, sizeof(address)) == -1) {
+        close(_fd);
+        _fd = -1;
         throw std::runtime_error("ListeningSocket: bind() failed");
     }
 
     if (listen(_fd, 128) == -1) {
+        close(_fd);
+        _fd = -1;
         throw std::runtime_error("ListeningSocket: listen() failed");
     }
 }
 
+/**
+ * @brief Destructor for ListeningSocket.
+ * 
+ * Safely closes the socket descriptor if it is active,
+ * preventing file descriptor leaks in the operating system.
+ */
 ListeningSocket::~ListeningSocket() {
     if (_fd != -1) {
         if (close(_fd) == -1) {
@@ -39,6 +87,11 @@ ListeningSocket::~ListeningSocket() {
     }
 }
 
+/**
+ * @brief Gets the socket file descriptor.
+ * 
+ * @return int The socket file descriptor.
+ */
 int ListeningSocket::get_fd() const {
     return _fd;
 }

@@ -1,9 +1,6 @@
 #ifndef LISTENING_SOCKET_HPP
 # define LISTENING_SOCKET_HPP
 
-# include <sys/socket.h>
-# include <unistd.h>
-# include <stdexcept>
 
 /**
  * @brief RAII class to manage a listening socket file descriptor.
@@ -15,13 +12,14 @@
 class ListeningSocket {
 public:
     ListeningSocket();
+    explicit ListeningSocket(int port);
     ~ListeningSocket();
 
-    void init(int port);
-    int get_fd() const;
+    void    init(int port);
+    int     get_fd() const;
 
 private:
-    int _fd;
+    int     _fd;
 
     // Prevent copying (C++98 style)
     ListeningSocket(const ListeningSocket& other);

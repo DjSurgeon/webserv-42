@@ -62,8 +62,42 @@ Para garantizar la solidez de las clases de red antes de integrarlas en el Event
 
 ---
 
+## 📅 Día 2: Refactorización de Cabeceras, Inicialización Pasiva y Encapsulación de Buffers (Opción C)
+
+### 🎯 Objetivos del Día
+1. Minimizar las dependencias de cabeceras en los archivos `.hpp` trasladándolas a los `.cpp`.
+2. Habilitar la inicialización pasiva de `ListeningSocket` para flexibilizar la creación de servidores múltiples sin perder seguridad RAII.
+3. Asegurar la integridad de los buffers de red en `ClientSocket` mediante un modelo de protección asimétrica (Opción C) y constructor `explicit`.
+
+### 🏗️ Fase 1: Desacoplamiento de Cabeceras
+- Se eliminaron las inclusiones de `<sys/socket.h>`, `<unistd.h>` y `<stdexcept>` de `ListeningSocket.hpp`, ya que la firma de la clase solo maneja tipos primitivos.
+- Se movieron estas inclusiones a `ListeningSocket.cpp` reduciendo la sobrecarga de compilación (*compilation overhead*) del módulo de red.
+
+### 🔌 Fase 2: Robustecimiento de `ListeningSocket`
+- **Inicialización Dual:**
+  - **Constructor por Defecto:** Configura `_fd = -1`, permitiendo crear instancias en estado "pasivo" (por ejemplo, para arreglos o miembros de clase) antes de conocer el puerto definitivo.
+  - **Constructor Explícito (`explicit`):** Toma un puerto e inicializa inmediatamente todo el socket. Marcado como `explicit` para evitar conversiones de tipo implícitas.
+- **Robustez ante excepciones:** Se rediseñó `init(port)` para que, ante cualquier fallo en las llamadas del sistema (`setsockopt`, `bind`, `listen`), se invoque inmediatamente a `close(_fd)` y se restablezca `_fd = -1`, garantizando que el objeto nunca retenga FDs huérfanos ni fugas.
+- **Prevención de Doble Enlace:** `init(port)` ahora arroja una excepción explícita a nivel de aplicación si se detecta que el socket ya ha sido inicializado.
+
+### 📡 Fase 3: Encapsulación Asimétrica en `ClientSocket` (Opción C)
+- **Constructor Explícito:** Se añadió la directiva `explicit` a `ClientSocket(int client_fd)` para evitar conversiones implícitas desde enteros planos (que habrían permitido, por ejemplo, pasar un entero por error cerrando descriptores críticos del sistema como stdin/stdout).
+- **Liberación de FD ante fallo de fcntl:** Si la configuración no bloqueante (`fcntl`) falla en el constructor, se invoca a `close(_fd)` antes de lanzar la excepción para prevenir la fuga del FD aceptado.
+- **Frontera de Datos Segura (Opción C):**
+  - **Getters Constantes:** Los getters de buffers retornan ahora referencias constantes (`const std::string&`). Esto elimina la duplicación de memoria en el heap y permite la lectura directa por parte del Parser, pero evita la corrupción externa de los datos.
+  - **Mutadores Controlados:** Se crearon métodos proxy exclusivos para modificar los buffers (`append_to_read_buffer`, `append_to_write_buffer`, `consume_read_buffer`, `clear_write_buffer`).
+  - **Consumo Seguro:** `consume_read_buffer(bytes)` cuenta con lógica defensiva que previene desbordamientos de buffer o borrados inválidos si se le solicita consumir más bytes de los presentes.
+
+### 🧪 Fase 4: Nuevas Pruebas en la Suite (`tests/test_sockets.cpp`)
+- Se agregaron dos nuevas pruebas para validar la refactorización:
+  1. **test_explicit_constructor:** Valida que la inicialización directa a través del constructor explícito funcione de forma correcta y bloquee re-inicializaciones posteriores.
+  2. **test_client_socket_buffers:** Valida el flujo completo de inyección (`append`), lectura const, consumo ordenado y limpieza (`clear`) en los buffers de `ClientSocket`.
+- Las pruebas volvieron a ser sometidas a **Valgrind**, reportando **0 leaks** y **0 FDs residuales abiertos**.
+
+---
+
 ### ⏭️ Siguientes Pasos (Próxima Fase)
-Habiendo cimentado la red al más bajo nivel de forma segura, el objetivo del próximo ciclo será la implementación del **Event Loop**.
+Habiendo cimentado la red al más bajo nivel de forma segura y encapsulada, el objetivo del próximo ciclo será la implementación del **Event Loop**.
 - Integrar la llamada de multiplexación (`poll()`).
 - Manejar conexiones entrantes masivas sin bloqueo.
-- Enrutar los eventos `POLLIN` (para leer de clientes) y delegarlos de vuelta a los buffers del `ClientSocket`.
+- Enrutar los eventos `POLLIN` (para leer de clientes) e inyectar los bytes directamente a los buffers del `ClientSocket`.
