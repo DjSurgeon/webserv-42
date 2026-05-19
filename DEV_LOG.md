@@ -101,3 +101,153 @@ Habiendo cimentado la red al más bajo nivel de forma segura y encapsulada, el o
 - Integrar la llamada de multiplexación (`poll()`).
 - Manejar conexiones entrantes masivas sin bloqueo.
 - Enrutar los eventos `POLLIN` (para leer de clientes) e inyectar los bytes directamente a los buffers del `ClientSocket`.
+
+---
+
+## 📅 Día 3: Estructura de Datos Pasiva para Peticiones HTTP (HttpRequest)
+
+### 🎯 Objetivos del Día
+1. Implementar una estructura de datos pasiva (`HttpRequest`) robusta para almacenar de manera estructurada los elementos de una petición HTTP parseada (método, URI, versión, cabeceras y cuerpo).
+2. Facilitar la consulta de los elementos mediante getters constantes y seguros que eviten copias innecesarias de memoria.
+3. Habilitar la reutilización de objetos mediante un método de limpieza `clear()`.
+
+### 🏗️ Fase 1: Creación de la clase `HttpRequest`
+- **Declaración (`src/http/HttpRequest.hpp`):**
+  - Se declararon atributos privados para el método, la URI, la versión de protocolo HTTP, el cuerpo y un mapa `std::map<std::string, std::string>` para las cabeceras.
+  - Se definieron getters públicos constantes que devuelven referencias constantes a los atributos privados.
+  - Se definieron mutadores (`set_method`, `set_uri`, etc.) e interfaces proxy para la adición de cabeceras (`add_header`), aislando la clase del parser mientras se permite su construcción.
+  - Se declaró un método `clear()` para restablecer el estado interno.
+- **Implementación (`src/http/HttpRequest.cpp`):**
+  - Métodos simples de obtención y asignación.
+  - `clear()` libera la memoria de los strings y del mapa de cabeceras usando `.clear()`.
+
+### 🧪 Fase 2: Suite de Pruebas Unitarias (`tests/test_http_request.cpp`)
+- Se creó una batería de pruebas independiente para verificar:
+  1. Estado inicial vacío tras la instanciación.
+  2. Almacenamiento y recuperación correcta de valores comunes (mismatch checks).
+  3. Comportamiento correcto de la limpieza y restablecimiento del estado con `clear()`.
+- La suite compila limpiamente bajo las banderas `-Wall -Wextra -Werror -std=c++98`.
+
+---
+
+### ⏭️ Siguientes Pasos (Próxima Fase)
+Habiendo estructurado la clase RequestParser y su enumeración de estados (FSM), pasaremos a programar la lógica del método `feed(char c)` para transicionar dinámicamente y procesar la Request Line (método, URI, versión HTTP), las cabeceras y el cuerpo.
+
+---
+
+## 📅 Día 3 (Parte 2): Esqueleto y Estados de la FSM de RequestParser
+
+### 🎯 Objetivos de la Sesión
+1. Definir la infraestructura base del procesador de peticiones `RequestParser`.
+2. Establecer la enumeración `e_parser_state` con todos los estados necesarios para parsear peticiones HTTP de manera secuencial (Start, Method, URI, Version, Header Key, Header Value, Body, Complete, Error).
+3. Diseñar una estructura base para `feed(char c)` usando un switch completo para evitar advertencias de compilación por falta de casos de enumeración.
+
+### 🏗️ Fase 1: Creación de `RequestParser`
+- **Declaración (`src/http/RequestParser.hpp`):**
+  - Se definió el enum `e_parser_state` que servirá de motor para la FSM.
+  - Se incluyeron los atributos privados `_state` y `_request` (instancia de `HttpRequest`).
+  - Se definieron los métodos públicos `feed(char c)`, `get_state()`, `get_request()`, y `reset()`.
+  - Se deshabilitó la copia en cumplimiento con las guías de diseño de C++98.
+- **Implementación (`src/http/RequestParser.cpp`):**
+  - El constructor inicializa el estado en `STATE_START`.
+  - El switch-case de `feed` incluye todos los estados del enum para garantizar un flujo limpio y silencioso de warnings de compilación.
+  - Se incluyó `(void)c` para silenciar el unused parameter.
+
+### 🧪 Fase 2: Suite de Pruebas Unitarias (`tests/test_parser_skeleton.cpp`)
+- Se diseñó un test rápido para asegurar que:
+  1. El estado inicial empiece en `STATE_START`.
+  2. Alimentar caracteres (`feed`) no provoque desbordamientos ni fallos de segmentación.
+  3. `reset()` restaure el parser correctamente.
+- La compilación es completamente limpia bajo `-Wall -Wextra -Werror -std=c++98`.
+
+---
+
+### ⏭️ Siguientes Pasos (Próxima Fase)
+Una vez implementado y testeado el parseo de métodos, nos enfocaremos en la siguiente fase de la Request Line: parsear la URI de la petición (`STATE_URI`) acumulando caracteres válidos hasta el siguiente espacio separador.
+
+---
+
+## 📅 Día 3 (Parte 3): Captura del Método HTTP en la FSM
+
+### 🎯 Objetivos de la Sesión
+1. Implementar las transiciones del estado inicial `STATE_START` para ignorar espacios y líneas en blanco al principio de una petición, previniendo errores por conexiones inactivas o paquetes fragmentados.
+2. Programar el procesamiento dinámico carácter por carácter del método en `STATE_METHOD`.
+3. Validar que la transición al siguiente estado (`STATE_URI`) se active tras encontrar un espacio en blanco y que cualquier carácter inválido aborte la máquina al estado `STATE_ERROR`.
+
+### 🏗️ Fase 1: Programación de Transiciones en `RequestParser`
+- **Cambios en `src/http/RequestParser.cpp`:**
+  - Se introdujo un helper privado `is_alpha` para asegurar conformidad estricta US-ASCII de los caracteres alfabéticos.
+  - En `STATE_START`, se programó el descarte de `' '`, `'\r'`, y `'\n'`. Cualquier carácter alfabético inicializa el método en la petición y cambia el estado a `STATE_METHOD`. Otros caracteres provocan la entrada a `STATE_ERROR`.
+  - En `STATE_METHOD`, se acumulan los caracteres alfabéticos. El carácter de espacio `' '` redirige el parser a `STATE_URI`. Cualquier carácter que rompa el estándar HTTP (por ejemplo, números o signos) fuerza una transición defensiva inmediata a `STATE_ERROR`.
+
+### 🧪 Fase 2: Batería de Pruebas (`tests/test_parser_method.cpp`)
+- Se creó una suite de pruebas para evaluar:
+  1. Parseo correcto del método GET clásico con espacio final (`"GET "`).
+  2. Omisión exitosa de espacios o saltos de línea al principio (`"  \r\n  POST "`).
+  3. Rechazo de caracteres no permitidos en el método (por ejemplo, dígitos `"GE1 "`).
+  4. Bloqueo de entrada en `STATE_ERROR` una vez que ocurre un fallo.
+- Verificada la compilación en C++98 libre de warnings y leaks.
+
+---
+
+### ⏭️ Siguientes Pasos (Próxima Fase)
+Una vez implementado y testeado el parseo de la URI, el siguiente paso de la Request Line es parsear la versión de protocolo HTTP (`STATE_VERSION`) acumulando caracteres (típicamente `HTTP/x.y`) hasta encontrar la secuencia de terminación `\r\n`.
+
+---
+
+## 📅 Día 3 (Parte 4): Captura de la URI HTTP en la FSM
+
+### 🎯 Objetivos de la Sesión
+1. Implementar el procesamiento carácter por carácter de la URI en `STATE_URI`.
+2. Validar que la transición al siguiente estado (`STATE_VERSION`) ocurra únicamente al encontrar un espacio en blanco delimitador y que la URI no esté vacía.
+3. Prevenir violaciones del protocolo detectando caracteres de control (ASCII < 32) o caracteres eliminados (ASCII 127), abortando la FSM a `STATE_ERROR`.
+
+### 🏗️ Fase 1: Programación de Transiciones en `RequestParser`
+- **Cambios en `src/http/RequestParser.cpp`:**
+  - Se introdujo el helper estático `is_uri_char` para validar caracteres ASCII visibles en el rango de `33` a `126` (inclusive).
+  - En `STATE_URI`, la presencia de un espacio `' '` comprueba si el campo de URI está vacío. Si lo está (como en el caso de dos espacios seguidos `"GET  "`), cambia a `STATE_ERROR`; de lo contrario, cambia a `STATE_VERSION`.
+  - Los caracteres válidos se concatenan al string de URI en `_request`. Cualquier carácter fuera del rango ASCII visible (caracteres de control, `DEL`, o no-ASCII) provoca una transición a `STATE_ERROR`.
+
+### 🧪 Fase 2: Suite de Pruebas (`tests/test_parser_uri.cpp`)
+- Se creó una suite de pruebas para evaluar:
+  1. Captura correcta de la URI (`"/index.html"`) y salto a `STATE_VERSION`.
+  2. Detección de errores ante URIs vacías (`"GET  "`).
+  3. Rechazo de caracteres de control como `BEL` (ASCII 7).
+  4. Rechazo del carácter `DEL` (ASCII 127).
+- Verificada la compilación exitosa en C++98 libre de fallos y advertencias.
+
+---
+
+### ⏭️ Siguientes Pasos (Próxima Fase)
+Habiendo terminado la extracción de la Request Line (método, URI, y versión HTTP), el parser pasará a procesar las cabeceras en `STATE_HEADER_KEY` y `STATE_HEADER_VALUE` secuencialmente hasta encontrar el final del bloque de cabeceras (`\r\n\r\n`).
+
+---
+
+## 📅 Día 3 (Parte 5): Validación de Versión HTTP y Fin de Request-Line
+
+### 🎯 Objetivos de la Sesión
+1. Implementar la validación carácter por carácter de la versión HTTP en `STATE_VERSION` asegurando que coincida estrictamente con `"HTTP/1.1"`.
+2. Manejar la secuencia de escape de fin de línea (`\r\n`) de manera segura y no bloqueante.
+3. Transicionar al estado `STATE_HEADER_KEY` una vez cerrada la línea de petición, y derivar a `STATE_ERROR` ante cualquier carácter malformado o salto de línea prematuro.
+
+### 🏗️ Fase 1: Modificaciones en `RequestParser`
+- **Cambios en `src/http/RequestParser.hpp`:**
+  - Se agregó la bandera booleana `_expect_newline` al bloque de variables privadas de la clase.
+- **Cambios en `src/http/RequestParser.cpp`:**
+  - Inicialización y reseteo de `_expect_newline` a `false`.
+  - En `STATE_VERSION`, si `_expect_newline` es `false`: se valida la entrada contra la constante `"HTTP/1.1"` basándose en el índice actual de longitud del string acumulado. Si se recibe `\r` y el string tiene longitud 8, se activa `_expect_newline = true`.
+  - Si `_expect_newline` es `true`: se exige recibir `\n` para desactivar la bandera y cambiar al estado `STATE_HEADER_KEY`. Cualquier otro carácter rompe el estado moviendo la FSM a `STATE_ERROR`.
+
+### 🧪 Fase 2: Batería de Pruebas (`tests/test_parser_version.cpp`)
+- Se creó una suite de pruebas que valida:
+  1. Extracción exitosa de toda la línea de petición (`"GET /index.html HTTP/1.1\r\n"`) y llegada correcta a `STATE_HEADER_KEY`.
+  2. Rechazo de versiones HTTP antiguas (`"HTTP/1.0"`).
+  3. Rechazo de sintaxis incorrectas (`"HTTP/1.1a"` o overflows).
+  4. Rechazo ante la ausencia del retorno de carro (`\r`).
+  5. Rechazo ante caracteres inválidos tras el retorno de carro (espacio en lugar de `\n`).
+- Validado bajo flags C++98 estrictos.
+
+---
+
+### ⏭️ Siguientes Pasos (Próxima Fase)
+Comenzar con la captura secuencial de cabeceras de tipo `Key: Value\r\n`, almacenándolas en el mapa de cabeceras de la petición hasta llegar a la línea vacía final que separa cabeceras del cuerpo (`\r\n`).
