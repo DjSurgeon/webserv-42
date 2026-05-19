@@ -455,3 +455,22 @@ El FSM RequestParser está completamente implementado y verificado para la lectu
   - Implementación de casos de prueba robustos para trim de OWS, insensibilidad a mayúsculas, fragmentación extrema byte a byte de red, rechazo de espacios en claves, control de Content-Lengths tóxicos o negativos, y desbordamiento de versión.
 - **Cambios en `tests/run_all_tests.sh` [MODIFY]:**
   - Registro de `test_parser_stress` en las compilaciones automáticas de WSL.
+
+---
+
+## 📅 Día 3 (Parte 14): Límites de Resiliencia del FSM y Pruebas Full-Duplex
+
+### 🎯 Objetivos de la Sesión
+1. Limitar el consumo máximo de memoria de tokens HTTP (método, URI, claves, valores y conteo de cabeceras) en la FSM para evitar overflows de memoria.
+2. Simular cargas de lectura/escritura simultáneas (Full-Duplex) en los búferes de los sockets sin interferencia mutua.
+3. Testear desbordamientos maliciosos de URI, claves de cabeceras y conteo de cabeceras.
+
+### 🏗️ Desarrollo e Integración
+- **Cambios en `src/http/RequestParser.cpp` [MODIFY]:**
+  - Enmascaramiento de límites: Método (máx 16 chars), URI (máx 8192 chars), clave de cabecera (máx 1024 chars), valor de cabecera (máx 8192 chars), total de cabeceras (máx 100).
+  - Al exceder cualquiera de estos límites, el parser transiciona instantáneamente a `STATE_ERROR`.
+- **Cambios en `tests/test_parser_stress.cpp` [MODIFY]:**
+  - Incorporación de `test_simultaneous_read_write()` (verificación Full-Duplex asíncrona).
+  - Incorporación de `test_massive_header_key_overflow()` (máx 1024 chars).
+  - Incorporación de `test_too_many_headers_overflow()` (máx 100 cabeceras).
+  - Incorporación de `test_massive_uri_overflow()` (máx 8192 chars).

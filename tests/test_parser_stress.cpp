@@ -2,6 +2,7 @@
 #include "http/RequestParser.hpp"
 #include <iostream>
 #include <string>
+#include <sstream>
 #include <cassert>
 #include <fcntl.h>
 #include <unistd.h>
@@ -164,6 +165,78 @@ void test_version_overflow_attack() {
     assert_test("Security: Early detection of protocol version buffer overflow", state == STATE_ERROR);
 }
 
+void test_simultaneous_read_write() {
+    ClientSocket client(get_mock_fd());
+    RequestParser parser;
+    
+    // Inyectamos petición asíncrona fragmentada en buffer de lectura
+    client.append_to_read_buffer("GET /index.html HT");
+    // Al mismo tiempo, cargamos datos en el buffer de escritura (Full-Duplex)
+    client.append_to_write_buffer("HTTP/1.1 200 OK\r\n\r\n");
+
+    // Procesamos fragmento del buffer de lectura
+    const std::string& read_buf = client.get_read_buffer();
+    size_t processed = 0;
+    for (size_t i = 0; i < read_buf.length(); ++i) {
+        parser.feed(read_buf[i]);
+        processed++;
+    }
+    client.consume_read_buffer(processed);
+
+    // Verificamos que ambos buffers avanzaron y operaron independientemente
+    bool read_empty = client.get_read_buffer().empty();
+    bool write_intact = (client.get_write_buffer() == "HTTP/1.1 200 OK\r\n\r\n");
+
+    assert_test("Full-Duplex: Reading and writing progress independently", read_empty && write_intact);
+}
+
+void test_massive_header_key_overflow() {
+    ClientSocket client(get_mock_fd());
+    RequestParser parser;
+    
+    // Send request line
+    feed_pipeline(client, parser, "GET / HTTP/1.1\r\n");
+    
+    // Send massive header key (1200 characters of 'A')
+    std::string massive_key(1200, 'A');
+    e_parser_state state = feed_pipeline(client, parser, massive_key);
+
+    assert_test("Security: Rejection of massive header key (overflow protection)", state == STATE_ERROR);
+}
+
+void test_too_many_headers_overflow() {
+    ClientSocket client(get_mock_fd());
+    RequestParser parser;
+
+    feed_pipeline(client, parser, "GET / HTTP/1.1\r\n");
+
+    // Send 105 headers
+    e_parser_state state = parser.get_state();
+    for (int i = 0; i < 105; ++i) {
+        std::stringstream ss;
+        ss << "X-Header-" << i << ": value\r\n";
+        state = feed_pipeline(client, parser, ss.str());
+        if (state == STATE_ERROR) {
+            break;
+        }
+    }
+
+    assert_test("Security: Rejection of header count overflow (> 100 headers)", state == STATE_ERROR);
+}
+
+void test_massive_uri_overflow() {
+    ClientSocket client(get_mock_fd());
+    RequestParser parser;
+
+    feed_pipeline(client, parser, "GET ");
+    
+    // Send massive URI (9000 characters of 'B')
+    std::string massive_uri(9000, 'B');
+    e_parser_state state = feed_pipeline(client, parser, massive_uri);
+
+    assert_test("Security: Rejection of massive URI (overflow protection)", state == STATE_ERROR);
+}
+
 // =============================================================================
 // 🧠 PANEL CENTRAL DE EJECUCIÓN
 // =============================================================================
@@ -179,12 +252,16 @@ int main() {
 
     std::cout << "\n[➔] Block 2: Asynchronous Network Simulation\n";
     test_torture_fragmentation();
+    test_simultaneous_read_write();
 
     std::cout << "\n[➔] Block 3: Security & Attack Vector Mitigation\n";
     test_invalid_header_key_spaces();
     test_malformed_content_length();
     test_negative_content_length();
     test_version_overflow_attack();
+    test_massive_header_key_overflow();
+    test_too_many_headers_overflow();
+    test_massive_uri_overflow();
 
     std::cout << "===============================================================\n";
     std::cout << "📊 SUMMARY: " << g_pass_count << " / " << g_test_count 

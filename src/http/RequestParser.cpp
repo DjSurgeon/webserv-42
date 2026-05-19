@@ -132,6 +132,10 @@ void RequestParser::_handle_state_start(char c) {
  */
 void RequestParser::_handle_state_method(char c) {
     if (is_alpha(c)) {
+        if (_storage_buffer.size() >= 16) {
+            _state = STATE_ERROR;
+            return;
+        }
         _storage_buffer += c;
     } else if (c == ' ') {
         _request.set_method(_storage_buffer);
@@ -157,6 +161,10 @@ void RequestParser::_handle_state_uri(char c) {
             _state = STATE_VERSION;
         }
     } else if (is_uri_char(c)) {
+        if (_storage_buffer.size() >= 8192) {
+            _state = STATE_ERROR;
+            return;
+        }
         _storage_buffer += c;
     } else {
         _state = STATE_ERROR;
@@ -210,6 +218,10 @@ void RequestParser::_handle_state_header_key(char c) {
             _state = STATE_ERROR;
         }
     } else if (is_header_key_char(c)) {
+        if (_storage_buffer.size() >= 1024) {
+            _state = STATE_ERROR;
+            return;
+        }
         _storage_buffer += c;
     } else {
         _state = STATE_ERROR;
@@ -223,12 +235,20 @@ void RequestParser::_handle_state_header_key(char c) {
  */
 void RequestParser::_handle_state_header_value(char c) {
     if (c == '\r') {
+        if (_request.get_headers().size() >= 100) {
+            _state = STATE_ERROR;
+            return;
+        }
         std::string trimmed = trim_spaces(_storage_buffer);
         _request.add_header(_current_header_key, trimmed);
         _storage_buffer.clear();
         _current_header_key.clear();
         _expect_newline = true;
     } else if (c == ' ' || c == '\t' || (c >= 33 && c <= 126) || (unsigned char)c >= 128) {
+        if (_storage_buffer.size() >= 8192) {
+            _state = STATE_ERROR;
+            return;
+        }
         _storage_buffer += c;
     } else {
         _state = STATE_ERROR;
