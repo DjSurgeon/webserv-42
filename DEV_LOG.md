@@ -130,11 +130,6 @@ Habiendo cimentado la red al más bajo nivel de forma segura y encapsulada, el o
 
 ---
 
-### ⏭️ Siguientes Pasos (Próxima Fase)
-Habiendo estructurado la clase RequestParser y su enumeración de estados (FSM), pasaremos a programar la lógica del método `feed(char c)` para transicionar dinámicamente y procesar la Request Line (método, URI, versión HTTP), las cabeceras y el cuerpo.
-
----
-
 ## 📅 Día 3 (Parte 2): Esqueleto y Estados de la FSM de RequestParser
 
 ### 🎯 Objetivos de la Sesión
@@ -162,11 +157,6 @@ Habiendo estructurado la clase RequestParser y su enumeración de estados (FSM),
 
 ---
 
-### ⏭️ Siguientes Pasos (Próxima Fase)
-Una vez implementado y testeado el parseo de métodos, nos enfocaremos en la siguiente fase de la Request Line: parsear la URI de la petición (`STATE_URI`) acumulando caracteres válidos hasta el siguiente espacio separador.
-
----
-
 ## 📅 Día 3 (Parte 3): Captura del Método HTTP en la FSM
 
 ### 🎯 Objetivos de la Sesión
@@ -190,11 +180,6 @@ Una vez implementado y testeado el parseo de métodos, nos enfocaremos en la sig
 
 ---
 
-### ⏭️ Siguientes Pasos (Próxima Fase)
-Una vez implementado y testeado el parseo de la URI, el siguiente paso de la Request Line es parsear la versión de protocolo HTTP (`STATE_VERSION`) acumulando caracteres (típicamente `HTTP/x.y`) hasta encontrar la secuencia de terminación `\r\n`.
-
----
-
 ## 📅 Día 3 (Parte 4): Captura de la URI HTTP en la FSM
 
 ### 🎯 Objetivos de la Sesión
@@ -215,11 +200,6 @@ Una vez implementado y testeado el parseo de la URI, el siguiente paso de la Req
   3. Rechazo de caracteres de control como `BEL` (ASCII 7).
   4. Rechazo del carácter `DEL` (ASCII 127).
 - Verificada la compilación exitosa en C++98 libre de fallos y advertencias.
-
----
-
-### ⏭️ Siguientes Pasos (Próxima Fase)
-Habiendo terminado la extracción de la Request Line (método, URI, y versión HTTP), el parser pasará a procesar las cabeceras en `STATE_HEADER_KEY` y `STATE_HEADER_VALUE` secuencialmente hasta encontrar el final del bloque de cabeceras (`\r\n\r\n`).
 
 ---
 
@@ -250,4 +230,157 @@ Habiendo terminado la extracción de la Request Line (método, URI, y versión H
 ---
 
 ### ⏭️ Siguientes Pasos (Próxima Fase)
-Comenzar con la captura secuencial de cabeceras de tipo `Key: Value\r\n`, almacenándolas en el mapa de cabeceras de la petición hasta llegar a la línea vacía final que separa cabeceras del cuerpo (`\r\n`).
+Retomar la FSM en `RequestParser` para capturar secuencialmente las cabeceras de tipo `Key: Value\r\n` y almacenarlas en el mapa de cabeceras de la petición (que ahora las normaliza automáticamente a minúsculas) hasta llegar al final del bloque de cabeceras (`\r\n`).
+
+---
+
+## 📅 Día 3 (Parte 6): Normalización de Cabeceras HTTP (Case-Insensitivity)
+
+### 🎯 Objetivos de la Sesión
+1. Implementar la normalización a minúsculas de las claves de las cabeceras HTTP de forma automatizada al guardarlas en `HttpRequest` para cumplir el estándar de insensibilidad a mayúsculas/minúsculas de HTTP/1.1.
+2. Evitar la saturación de líneas en `add_header` abstrayendo la lógica en una función auxiliar limpia.
+
+### 🏗️ Fase 1: Modificaciones en `HttpRequest`
+- **Cambios en `src/http/HttpRequest.cpp`:**
+  - Se incluyó la cabecera `<cctype>`.
+  - Se programó la función auxiliar estática de archivo `to_lower` que procesa un string y retorna su equivalente completamente en minúsculas.
+  - Se actualizó `HttpRequest::add_header` para aplicar `to_lower(key)` de manera transparente antes de insertar en el mapa `_headers`.
+
+### 🧪 Fase 2: Actualización de Pruebas Unitarias (`tests/test_http_request.cpp`)
+- Se actualizaron las aserciones de cabeceras en `test_setters_and_getters` para realizar las búsquedas (`find`) utilizando claves en minúscula (`"host"`, `"content-type"`, `"content-length"`), verificando que la normalización funciona de extremo a extremo.
+- Verificado el correcto funcionamiento del conjunto completo de pruebas con `./tests/run_all_tests.sh`.
+
+---
+
+### ⏭️ Siguientes Pasos (Próxima Fase)
+Una vez optimizado el parser con el búfer acumulador, pasaremos a programar los estados de cabeceras `STATE_HEADER_KEY` y `STATE_HEADER_VALUE` utilizando `_storage_buffer` para delimitar y rellenar las cabeceras en la petición, detectando el cierre del bloque de cabeceras al encontrar la línea vacía (`\r\n\r\n`).
+
+---
+
+## 📅 Día 3 (Parte 7): Integración del Búfer Acumulador en RequestParser
+
+### 🎯 Objetivos de la Sesión
+1. Optimizar el rendimiento y el uso de memoria de `RequestParser` mediante un string acumulador intermedio (`_storage_buffer`) para evitar reasignaciones en cada byte leído.
+2. Preparar el parser para la extracción de cabeceras asimétricas (donde el almacenamiento en `HttpRequest` requiere poseer la clave y el valor completos de forma simultánea).
+
+### 🏗️ Fase 1: Refactorización Estructural en `RequestParser`
+- **Cambios en `src/http/RequestParser.hpp`:**
+  - Se agregaron las variables privadas `_storage_buffer` y `_current_header_key`.
+- **Cambios en `src/http/RequestParser.cpp`:**
+  - `feed(char c)`: Se rediseñó la lógica de acumulación de los estados `STATE_START`, `STATE_METHOD`, `STATE_URI` y `STATE_VERSION` para empujar caracteres a `_storage_buffer` de manera directa.
+  - En los caracteres delimitadores (espacio o retorno de carro `\r`), se valida el contenido acumulado, se asigna en `_request` mediante los setters correspondientes de una sola vez, y se limpia `_storage_buffer`.
+  - `reset()`: Se incluyó el reinicio de las variables miembro `_storage_buffer` y `_current_header_key`.
+
+### 🧪 Fase 2: Verificación y Pruebas Unitarias
+- Se corrió el script automatizado `./tests/run_all_tests.sh` para verificar el correcto funcionamiento de todas las suites unitarias tras la refactorización.
+- La compilación continúa libre de warnings y fallos de lógica bajo C++98 estándar.
+
+---
+
+### ⏭️ Siguientes Pasos (Próxima Fase)
+Una vez validada la integración temprana de la Request-Line y los búferes de red, comenzaremos con la captura del bloque de cabeceras HTTP de tipo clave-valor (`STATE_HEADER_KEY` y `STATE_HEADER_VALUE`) utilizando el búfer acumulador hasta detectar la línea vacía de cierre del bloque (`\r\n\r\n`).
+
+---
+
+## 📅 Día 3 (Parte 8): Prueba de Humo de Integración Temprana (ClientSocket + RequestParser)
+
+### 🎯 Objetivos de la Sesión
+1. Validar la interoperabilidad y flujo de datos entre el búfer de red asíncrono (`ClientSocket`) y la FSM del parser (`RequestParser`).
+2. Demostrar la consistencia del borrado de bytes procesados mediante `consume_read_buffer` evitando desalineaciones de memoria o fugas.
+3. Asegurar que las ráfagas fragmentadas y ataques de entrada (como versiones incorrectas u espacios dobles) se manejen defensivamente en el pipeline conjunto.
+
+### 🏗️ Fase 1: Creación de Suite de Integración
+- **Cambios en `tests/test_integration.cpp` [NEW]:**
+  - Implementación del pipeline `run_integration_pipeline` simulando la ráfaga de red del EventLoop real.
+  - Creación de 5 tests específicos: petición estándar, fragmentación en red de 3 ráfagas, tolerancia a líneas vacías iniciales (RFC 7230), rechazo de múltiples espacios de separación y rechazo de versiones HTTP no admitidas.
+- **Cambios en `tests/run_all_tests.sh` [MODIFY]:**
+  - Incorporación automática de `test_integration` compilandola con `ClientSocket.cpp`, `HttpRequest.cpp` y `RequestParser.cpp`.
+
+### 🧪 Fase 2: Ejecución de Pruebas
+- Se corrió el suite completo mediante `./tests/run_all_tests.sh`. Todos los tests (incluido el de integración) pasaron con éxito y se validaron bajo las restricciones rigurosas de C++98.
+
+---
+
+### ⏭️ Siguientes Pasos (Próxima Fase)
+Una vez resuelto el problema de descriptores cerrados y con todos los tests unitarios e integrados pasando al 100%, comenzaremos con la captura del bloque de cabeceras HTTP de tipo clave-valor (`STATE_HEADER_KEY` y `STATE_HEADER_VALUE`) utilizando el búfer acumulador hasta detectar la línea vacía de cierre del bloque (`\r\n\r\n`).
+
+---
+
+## 📅 Día 3 (Parte 8): Prueba de Humo de Integración Temprana (ClientSocket + RequestParser)
+
+### 🎯 Objetivos de la Sesión
+1. Validar la interoperabilidad y flujo de datos entre el búfer de red asíncrono (`ClientSocket`) y la FSM del parser (`RequestParser`).
+2. Demostrar la consistencia del borrado de bytes procesados mediante `consume_read_buffer` evitando desalineaciones de memoria o fugas.
+3. Asegurar que las ráfagas fragmentadas y ataques de entrada se manejen defensivamente en el pipeline conjunto.
+4. Resolver el conflicto de descriptores cerrados debido a que la destrucción del primer `ClientSocket` cierra el descriptor de entrada (`stdin` / FD 0), provocando fallos en `fcntl` en los siguientes tests.
+
+### 🏗️ Fase 1: Creación y Fix de la Suite de Integración
+- **Cambios en `tests/test_integration.cpp` [NEW]:**
+  - Implementación del pipeline `run_integration_pipeline` simulando la ráfaga de red del EventLoop real.
+  - Creación de 5 tests específicos: petición estándar, fragmentación en red de 3 ráfagas, tolerancia a líneas vacías iniciales (RFC 7230), rechazo de múltiples espacios de separación y rechazo de versiones HTTP no admitidas.
+  - **Corrección de conflicto de FD:** Se introdujo la función auxiliar `get_mock_fd()` que abre un descriptor único apuntando a `/dev/null` para cada prueba. Así, la destrucción del objeto en cada test cierra un descriptor independiente, eliminando los fallos de `fcntl(..., O_NONBLOCK)`.
+- **Cambios en `tests/run_all_tests.sh` [MODIFY]:**
+  - Incorporación automática de `test_integration` compilandola con `ClientSocket.cpp`, `HttpRequest.cpp` y `RequestParser.cpp`.
+
+### 🧪 Fase 2: Ejecución de Pruebas
+- Se corrió el suite completo mediante `./tests/run_all_tests.sh`. Todos los tests (incluido el de integración) pasaron con éxito y se validaron bajo las restricciones rigurosas de C++98.
+
+---
+
+### ⏭️ Siguientes Pasos (Próxima Fase)
+Una vez refactorizada la FSM para delegar la lógica en funciones miembro privadas, la base del parser es sumamente modular. La siguiente tarea consistirá en implementar los manejadores de estado para las cabeceras HTTP (`STATE_HEADER_KEY` y `STATE_HEADER_VALUE`) utilizando esta nueva arquitectura limpia.
+
+---
+
+## 📅 Día 3 (Parte 9): Refactorización Modular de RequestParser a Funciones Miembro Privadas
+
+### 🎯 Objetivos de la Sesión
+1. Prevenir el crecimiento desmedido y la complejidad ciclomática del método `feed(char c)` delegando la lógica de transición a funciones miembro privadas dedicadas.
+2. Mantener la complejidad temporal idéntica ($O(1)$) y la seguridad del análisis carácter a carácter para mitigar desbordamientos.
+
+### 🏗️ Fase 1: Modularización Estructural
+- **Cambios en `src/http/RequestParser.hpp` [MODIFY]:**
+  - Se declararon las funciones miembro de ayuda `_handle_state_start`, `_handle_state_method`, `_handle_state_uri`, `_handle_state_version` y `_handle_global_newline`.
+- **Cambios en `src/http/RequestParser.cpp` [MODIFY]:**
+  - Se redefinió `feed(char c)` para interceptar de forma centralizada los saltos de línea esperados (`_expect_newline`) y despachar las transiciones de estado a través de la tabla `switch-case` en una sola línea por caso.
+  - Se implementó cada manejador de estado preservando las validaciones estrictas y la acumulación en `_storage_buffer`.
+  - Se conservaron las funciones auxiliares de archivo estáticas `is_alpha` y `is_uri_char` para mejorar la legibilidad y evitar repeticiones.
+  - **Traducción y Documentación Doxygen:** Se eliminaron todos los comentarios inline dentro de las funciones para limpiar el código, traduciendo toda la documentación al inglés e implementando bloques formales de Doxygen (`/** ... */`) encima de cada función.
+
+### 🧪 Fase 2: Ejecución de la Suite de Pruebas
+- Se ejecutó `./tests/run_all_tests.sh`. Todos los tests compilaron sin warnings y pasaron de forma limpia en WSL, confirmando que la modularización no introdujo ninguna regresión.
+
+---
+
+### ⏭️ Siguientes Pasos (Próxima Fase)
+Proceder con la implementación de `STATE_HEADER_VALUE` delegando a su respectivo manejador privado `_handle_state_header_value` en `RequestParser`.
+
+---
+
+## 📅 Día 3 (Parte 10): Implementación del Parseo de Claves de Cabecera y Detección de Doble CRLF
+
+### 🎯 Objetivos de la Sesión
+1. Aislar las claves de cabeceras HTTP carácter a carácter de forma asíncrona en `STATE_HEADER_KEY`.
+2. Validar sintácticamente los caracteres permitidos (alfanuméricos y guiones) de forma estricta.
+3. Detectar secuencias de doble CRLF (`\r\n\r\n`) para transicionar al cuerpo del mensaje (`STATE_BODY`).
+
+### 🏗️ Fase 1: Desarrollo del Parser de Cabeceras
+- **Cambios en `src/http/RequestParser.hpp` [MODIFY]:**
+  - Declaración del manejador privado `_handle_state_header_key(char c)`.
+- **Cambios en `src/http/RequestParser.cpp` [MODIFY]:**
+  - Implementación de la función auxiliar estática `is_header_key_char(char c)` para validar caracteres válidos según la RFC.
+  - Implementación de `_handle_state_header_key(char c)` acumulando en `_storage_buffer`, aislando la clave en `_current_header_key` al leer `:`, y detectando `\r` al inicio de línea para configurar `_expect_newline`.
+  - Actualización de `_handle_global_newline(char c)` para saltar de `STATE_HEADER_KEY` a `STATE_BODY` tras detectar el doble CRLF.
+  - Actualización de la tabla switch en `feed(char c)`.
+
+### 🧪 Fase 2: Automatización y Pruebas Unitarias
+- **Cambios en `tests/test_parser_header_key.cpp` [NEW]:**
+  - Creación de pruebas unitarias que cubren: flujo feliz de lectura de clave, detección correcta de doble CRLF, error por clave vacía, y error por caracteres inválidos (como espacios intermedios).
+- **Cambios en `tests/run_all_tests.sh` [MODIFY]:**
+  - Incorporación de `test_parser_header_key` a la lista de compilación y ejecución automática.
+- Se corrió `./tests/run_all_tests.sh` en WSL y todas las pruebas pasaron satisfactoriamente.
+
+---
+
+### ⏭️ Siguientes Pasos (Próxima Fase)
+Implementar el parseo de valores de cabeceras (`STATE_HEADER_VALUE`) acumulando la cadena, gestionando los espacios en blanco iniciales opcionales (OWS) y registrando el par cabecera en el objeto `HttpRequest` al llegar el final de línea CRLF.

@@ -1,4 +1,5 @@
 #include "http/HttpRequest.hpp"
+#include <cctype>
 
 HttpRequest::HttpRequest() {}
 
@@ -40,8 +41,16 @@ void HttpRequest::set_body(const std::string& body) {
     _body = body;
 }
 
+static std::string to_lower(const std::string& str) {
+    std::string lower = str;
+    for (size_t i = 0; i < lower.length(); ++i) {
+        lower[i] = std::tolower(static_cast<unsigned char>(lower[i]));
+    }
+    return lower;
+}
+
 void HttpRequest::add_header(const std::string& key, const std::string& value) {
-    _headers[key] = value;
+    _headers[to_lower(key)] = value;
 }
 
 void HttpRequest::clear() {

@@ -37,6 +37,16 @@ private:
     e_parser_state      _state;
     HttpRequest         _request;
     bool                _expect_newline;
+    std::string         _storage_buffer;
+    std::string         _current_header_key;
+
+    // --- Private State Handlers (The Refactored Switch Delegation) ---
+    void                _handle_state_start(char c);
+    void                _handle_state_method(char c);
+    void                _handle_state_uri(char c);
+    void                _handle_state_version(char c);
+    void                _handle_state_header_key(char c);
+    void                _handle_global_newline(char c);
 
     // Prevent copying (C++98 style)
     RequestParser(const RequestParser& other);

@@ -60,17 +60,17 @@ void test_setters_and_getters() {
         std::cerr << "Mismatch headers size: " << headers.size() << std::endl;
         pass = false;
     } else {
-        std::map<std::string, std::string>::const_iterator it = headers.find("Host");
+        std::map<std::string, std::string>::const_iterator it = headers.find("host");
         if (it == headers.end() || it->second != "localhost:8080") {
             std::cerr << "Mismatch Host header" << std::endl;
             pass = false;
         }
-        it = headers.find("Content-Type");
+        it = headers.find("content-type");
         if (it == headers.end() || it->second != "application/x-www-form-urlencoded") {
             std::cerr << "Mismatch Content-Type header" << std::endl;
             pass = false;
         }
-        it = headers.find("Content-Length");
+        it = headers.find("content-length");
         if (it == headers.end() || it->second != "27") {
             std::cerr << "Mismatch Content-Length header" << std::endl;
             pass = false;

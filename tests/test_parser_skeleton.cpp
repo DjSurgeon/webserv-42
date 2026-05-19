@@ -23,9 +23,12 @@ void test_parser_feed() {
     std::cout << "[Test] Verifying feed method compilation and baseline execution..." << std::endl;
     RequestParser parser;
 
-    // Feed a character, it should return the current state (which remains STATE_START for now)
-    e_parser_state state = parser.feed('G');
-    bool pass = (state == STATE_START);
+    // Feed a space (ignored leading character), it should remain in STATE_START
+    e_parser_state state1 = parser.feed(' ');
+    // Feed 'G' (alphabetic), it should transition to STATE_METHOD
+    e_parser_state state2 = parser.feed('G');
+    
+    bool pass = (state1 == STATE_START && state2 == STATE_METHOD);
     print_result("test_parser_feed", pass);
 }
 
