@@ -34,6 +34,9 @@ run_test "test_parser_method" "src/http/HttpRequest.cpp src/http/RequestParser.c
 run_test "test_parser_uri" "src/http/HttpRequest.cpp src/http/RequestParser.cpp" "tests/test_parser_uri.cpp"
 run_test "test_parser_version" "src/http/HttpRequest.cpp src/http/RequestParser.cpp" "tests/test_parser_version.cpp"
 run_test "test_parser_header_key" "src/http/HttpRequest.cpp src/http/RequestParser.cpp" "tests/test_parser_header_key.cpp"
+run_test "test_parser_header_value" "src/http/HttpRequest.cpp src/http/RequestParser.cpp" "tests/test_parser_header_value.cpp"
+run_test "test_parser_body" "src/http/HttpRequest.cpp src/http/RequestParser.cpp" "tests/test_parser_body.cpp"
+run_test "test_parser_stress" "src/network/ClientSocket.cpp src/http/HttpRequest.cpp src/http/RequestParser.cpp" "tests/test_parser_stress.cpp"
 run_test "test_integration" "src/network/ClientSocket.cpp src/http/HttpRequest.cpp src/http/RequestParser.cpp" "tests/test_integration.cpp"
 
 echo -e "${GREEN}All test suites compiled and executed successfully!${RESET}"

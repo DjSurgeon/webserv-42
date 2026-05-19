@@ -45,8 +45,9 @@ void test_double_crlf_transition() {
     std::cout << "[Test] Detecting double CRLF transition to body..." << std::endl;
     RequestParser parser;
 
-    // Transition through Request-Line
-    feed_string(parser, "GET /index.html HTTP/1.1\r\n");
+    // Transition through Request-Line and supply Content-Length header
+    feed_string(parser, "POST /submit HTTP/1.1\r\n");
+    feed_string(parser, "Content-Length: 5\r\n");
     assert(parser.get_state() == STATE_HEADER_KEY);
 
     // Encounter immediate \r\n (double CRLF since line started)

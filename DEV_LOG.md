@@ -383,4 +383,75 @@ Proceder con la implementación de `STATE_HEADER_VALUE` delegando a su respectiv
 ---
 
 ### ⏭️ Siguientes Pasos (Próxima Fase)
-Implementar el parseo de valores de cabeceras (`STATE_HEADER_VALUE`) acumulando la cadena, gestionando los espacios en blanco iniciales opcionales (OWS) y registrando el par cabecera en el objeto `HttpRequest` al llegar el final de línea CRLF.
+Proceder con la implementación de `STATE_BODY` y la finalización del ciclo completo del parser (`STATE_COMPLETE`), analizando la longitud del contenido (Content-Length) o la codificación por bloques (Transfer-Encoding) para decidir la cantidad de bytes que deben leerse.
+
+---
+
+## 📅 Día 3 (Parte 11): Implementación del Parseo y Trimming de Valores de Cabecera
+
+### 🎯 Objetivos de la Sesión
+1. Digerir el flujo carácter a carácter de los valores de cabecera en `STATE_HEADER_VALUE`.
+2. Implementar un mecanismo manual de eliminación de espacios (OWS: espacios y tabulaciones) en los extremos del valor.
+3. Registrar la cabecera clave-valor normalizada dentro del contenedor `HttpRequest`.
+
+### 🏗️ Fase 1: Desarrollo del Trim y Registro de Cabeceras
+- **Cambios en `src/http/RequestParser.hpp` [MODIFY]:**
+  - Declaración del manejador privado `_handle_state_header_value(char c)`.
+- **Cambios en `src/http/RequestParser.cpp` [MODIFY]:**
+  - Implementación de la función estática auxiliar `trim_spaces(const std::string& str)` encargada de recortar espacios y tabuladores en los bordes.
+  - Implementación de `_handle_state_header_value(char c)` que acumula caracteres de valor válidos, y en `\r`, recorta el valor, lo registra mediante `_request.add_header` y se prepara para el final de línea.
+  - Actualización de la tabla switch en `feed(char c)`.
+
+### 🧪 Fase 2: Automatización y Pruebas Unitarias
+- **Cambios en `tests/test_parser_header_value.cpp` [NEW]:**
+  - Creación de pruebas unitarias que cubren: flujo normal con trimming, ciclados de múltiples cabeceras hasta transicionar al cuerpo, valores vacíos, y rechazo de caracteres de control en el valor.
+- **Cambios en `tests/run_all_tests.sh` [MODIFY]:**
+  - Registro de `test_parser_header_value` para su compilación y ejecución.
+- Se corrió `./tests/run_all_tests.sh` en WSL y todas las pruebas pasaron satisfactoriamente.
+
+---
+
+### ⏭️ Siguientes Pasos (Próxima Fase)
+El FSM RequestParser está completamente implementado y verificado para la lectura de la línea de petición, cabeceras (con trim) y cuerpo (basado en Content-Length). La siguiente fase del proyecto consiste en conectar el parser con la clase `ClientSocket` en el bucle principal de E/S no bloqueante para procesar peticiones reales carácter a carácter.
+
+---
+
+## 📅 Día 3 (Parte 12): Implementación del Parseo del Cuerpo basado en Content-Length
+
+### 🎯 Objetivos de la Sesión
+1. Analizar el bloque de cabeceras completadas en el doble CRLF para extraer `Content-Length`.
+2. Consumir de manera asíncrona y exacta los bytes indicados en el cuerpo (`STATE_BODY`).
+3. Transicionar de forma segura a `STATE_COMPLETE` para indicar al servidor que la petición ha sido digerida por completo.
+
+### 🏗️ Fase 1: Desarrollo de la Transición y Lectura de Cuerpo
+- **Cambios en `src/http/RequestParser.hpp` [MODIFY]:**
+  - Declaración del miembro privado `size_t _content_length` para almacenar el límite del cuerpo.
+  - Declaración de las funciones auxiliares `_handle_state_body(char c)` y `_determine_body_transition()`.
+- **Cambios en `src/http/RequestParser.cpp` [MODIFY]:**
+  - Inclusión de `<sstream>` y reseteo de `_content_length(0)` en constructor/`reset()`.
+  - Implementación de `_determine_body_transition()` ejecutada en el doble CRLF. Valida la presencia de `Content-Length`, que su valor sea puramente numérico, y si es `0` o está ausente, pasa directo a `STATE_COMPLETE` (caso feliz de peticiones GET). De lo contrario, cambia a `STATE_BODY`.
+  - Implementación de `_handle_state_body(char c)` para ir acumulando los caracteres y transicionar a `STATE_COMPLETE` en el byte exacto.
+  - Actualización de la tabla switch de despacho de estados.
+
+### 🧪 Fase 2: Automatización y Pruebas Unitarias
+- **Cambios en `tests/test_parser_body.cpp` [NEW]:**
+  - Pruebas unitarias cubriendo: petición GET sin cuerpo, POST con Content-Length 0, POST con cuerpo exacto ("hello"), y rechazo de cabecera Content-Length no numérica (ej. `12abc`).
+- **Cambios en `tests/run_all_tests.sh` [MODIFY]:**
+  - Registro de `test_parser_body` en el script automatizado.
+
+---
+
+## 📅 Día 3 (Parte 13): Integración de Suite de Pruebas de Estrés y Robustez
+
+### 🎯 Objetivos de la Sesión
+1. Crear una batería de pruebas de integración masiva para verificar la FSM bajo fragmentación extrema de red, cabeceras maliciosas y violaciones de seguridad.
+2. Asegurar compatibilidad estricta con C++98 (reemplazando `.at()` en mapas por búsquedas seguras con `.find()`).
+3. Prevenir conflictos de descriptores de archivos protegiendo la entrada estándar (FD 0) de liberaciones indebidas por destructores de sockets.
+
+### 🏗️ Desarrollo e Integración
+- **Cambios en `tests/test_parser_stress.cpp` [NEW]:**
+  - Adición de un helper `get_mock_fd()` que mapea cada socket a `/dev/null` de forma segura.
+  - Creación del helper `get_header_val()` para acceso a mapas compatible con C++98.
+  - Implementación de casos de prueba robustos para trim de OWS, insensibilidad a mayúsculas, fragmentación extrema byte a byte de red, rechazo de espacios en claves, control de Content-Lengths tóxicos o negativos, y desbordamiento de versión.
+- **Cambios en `tests/run_all_tests.sh` [MODIFY]:**
+  - Registro de `test_parser_stress` en las compilaciones automáticas de WSL.

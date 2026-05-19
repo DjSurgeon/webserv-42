@@ -39,6 +39,7 @@ private:
     bool                _expect_newline;
     std::string         _storage_buffer;
     std::string         _current_header_key;
+    size_t              _content_length;
 
     // --- Private State Handlers (The Refactored Switch Delegation) ---
     void                _handle_state_start(char c);
@@ -46,6 +47,9 @@ private:
     void                _handle_state_uri(char c);
     void                _handle_state_version(char c);
     void                _handle_state_header_key(char c);
+    void                _handle_state_header_value(char c);
+    void                _handle_state_body(char c);
+    void                _determine_body_transition();
     void                _handle_global_newline(char c);
 
     // Prevent copying (C++98 style)
