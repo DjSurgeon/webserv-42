@@ -3,6 +3,8 @@
 #define SRC_HTTP_REQUESTPARSER_HPP_
 
 # include "http/HttpRequest.hpp"
+# include <cstddef>
+# include <string>
 
 /**
  * @brief State-machine enum for HTTP request parsing.

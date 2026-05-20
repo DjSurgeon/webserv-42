@@ -3,6 +3,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <stdexcept>
+#include <string>
 
 /**
  * @brief Construct a new Client Socket object.

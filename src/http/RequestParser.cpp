@@ -1,6 +1,8 @@
 // Copyright 2026 serjimen vja-nie dlesieur
 #include "http/RequestParser.hpp"
+#include <map>
 #include <sstream>
+#include <string>
 
 /**
  * @brief Construct a new RequestParser object, initializing FSM state and flag.
