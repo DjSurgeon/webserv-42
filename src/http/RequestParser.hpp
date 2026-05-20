@@ -2,9 +2,10 @@
 #ifndef SRC_HTTP_REQUESTPARSER_HPP_
 #define SRC_HTTP_REQUESTPARSER_HPP_
 
-# include "http/HttpRequest.hpp"
-# include <cstddef>
-# include <string>
+#include <cstddef>
+#include <string>
+
+#include "http/HttpRequest.hpp"
 
 /**
  * @brief State-machine enum for HTTP request parsing.

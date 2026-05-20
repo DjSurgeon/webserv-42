@@ -1,7 +1,9 @@
 // Copyright 2026 serjimen vja-nie dlesieur
 #include "network/ClientSocket.hpp"
+
 #include <fcntl.h>
 #include <unistd.h>
+
 #include <stdexcept>
 #include <string>
 
@@ -22,7 +24,8 @@ ClientSocket::ClientSocket(int client_fd) : _fd(client_fd) {
     // Set to non-blocking mode immediately
     if (fcntl(_fd, F_SETFL, O_NONBLOCK) == -1) {
         close(_fd);
-        throw std::runtime_error("ClientSocket: fcntl() failed to set O_NONBLOCK");
+        throw std::runtime_error(
+            "ClientSocket: fcntl() failed to set O_NONBLOCK");
     }
 }
 
@@ -83,7 +86,8 @@ void ClientSocket::append_to_write_buffer(const std::string& data) {
 }
 
 /**
- * @brief Consumes a specified number of bytes from the beginning of the read buffer.
+ * @brief Consumes a specified number of bytes
+ * from the beginning of the read buffer.
  * 
  * Removes processed bytes from the buffer. If bytes to consume is larger than
  * the buffer size, the buffer is cleared to avoid undefined behavior.

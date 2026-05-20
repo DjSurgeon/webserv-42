@@ -1,11 +1,13 @@
 // Copyright 2026 serjimen vja-nie dlesieur
 #include "network/ListeningSocket.hpp"
+
+#include <netinet/in.h>
 #include <sys/socket.h>
 #include <unistd.h>
-#include <stdexcept>
-#include <iostream>
-#include <netinet/in.h>
+
 #include <cstring>
+#include <iostream>
+#include <stdexcept>
 
 /**
  * @brief Default constructor for ListeningSocket.
@@ -21,7 +23,8 @@ ListeningSocket::ListeningSocket() : _fd(-1) {}
  * Immediately creates and configures the socket to listen on a specific port.
  * 
  * @param port Network port on which the server will listen for connections.
- * @throw std::runtime_error If any error occurs during socket creation or configuration.
+ * @throw std::runtime_error If any error occurs during
+ * socket creation or configuration.
  */
 ListeningSocket::ListeningSocket(int port) : _fd(-1) {
     init(port);
@@ -36,7 +39,8 @@ ListeningSocket::ListeningSocket(int port) : _fd(-1) {
  * the descriptor to -1 to ensure exception safety.
  * 
  * @param port Network port on which the socket will listen.
- * @throw std::runtime_error If the socket is already initialized or if any system call fails.
+ * @throw std::runtime_error If the socket is already
+ * initialized or if any system call fails.
  */
 void ListeningSocket::init(int port) {
     if (_fd != -1) {
@@ -83,7 +87,8 @@ void ListeningSocket::init(int port) {
 ListeningSocket::~ListeningSocket() {
     if (_fd != -1) {
         if (close(_fd) == -1) {
-            std::cerr << "Error: Closing socket FD " << _fd << " failed" << std::endl;
+            std::cerr << "Error: Closing socket FD "
+                      << _fd << " failed" << std::endl;
         }
     }
 }

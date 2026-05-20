@@ -1,13 +1,18 @@
 // Copyright 2026 serjimen vja-nie dlesieur
 #include "http/RequestParser.hpp"
+
 #include <map>
 #include <sstream>
 #include <string>
 
 /**
- * @brief Construct a new RequestParser object, initializing FSM state and flag.
+ * @brief Construct a new RequestParser object,
+ * initializing FSM state and flag.
  */
-RequestParser::RequestParser() : _state(STATE_START), _expect_newline(false), _content_length(0) {}
+RequestParser::RequestParser()
+    : _state(STATE_START),
+      _expect_newline(false),
+      _content_length(0) {}
 
 /**
  * @brief Destroy the RequestParser object.
@@ -25,27 +30,34 @@ static bool is_alpha(char c) {
 }
 
 /**
- * @brief Helper utility to check if a character is a valid non-space URI character.
+ * @brief Helper utility to check if a character
+ * is a valid non-space URI character.
  *
  * @param c The character to check.
- * @return True if character is printable visible ASCII and non-space, false otherwise.
+ * @return True if character is printable visible
+ * ASCII and non-space, false otherwise.
  */
 static bool is_uri_char(char c) {
     return c > 32 && c < 127;
 }
 
 /**
- * @brief Helper utility to check if a character is a valid header key token character.
+ * @brief Helper utility to check if a character
+ * is a valid header key token character.
  *
  * @param c The character to check.
- * @return True if character is alphanumeric or a hyphen, false otherwise.
+ * @return True if alphanumeric or hyphen.
  */
 static bool is_header_key_char(char c) {
-    return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '-';
+    return (c >= 'A' && c <= 'Z')
+        || (c >= 'a' && c <= 'z')
+        || (c >= '0' && c <= '9')
+        || c == '-';
 }
 
 /**
- * @brief Helper utility to trim spaces and tabs from the beginning and end of a string.
+ * @brief Trims spaces and tabs from both ends
+ * of a string.
  *
  * @param str The string to trim.
  * @return The trimmed string.
@@ -93,7 +105,8 @@ e_parser_state RequestParser::feed(char c) {
 }
 
 /**
- * @brief Handles transitions for carriage return and newline sequence validation.
+ * @brief Handles transitions for CR and LF
+ * sequence validation.
  *
  * @param c The active character being evaluated.
  */
@@ -111,7 +124,8 @@ void RequestParser::_handle_global_newline(char c) {
 }
 
 /**
- * @brief Evaluates start state characters, discarding leading spaces and line feeds.
+ * @brief Evaluates start state characters,
+ * discarding leading spaces and line feeds.
  *
  * @param c The active character being evaluated.
  */
@@ -199,7 +213,8 @@ void RequestParser::_handle_state_version(char c) {
 }
 
 /**
- * @brief Parses individual characters of a header name, transitioning to value on colon.
+ * @brief Parses individual characters of a header
+ * name, transitioning to value on colon.
  *
  * Also detects double CRLF sequences marking the end of the headers block.
  *
@@ -232,7 +247,8 @@ void RequestParser::_handle_state_header_key(char c) {
 }
 
 /**
- * @brief Parses individual characters of a header value, trimming surrounding space and tabs.
+ * @brief Parses individual characters of a header
+ * value, trimming surrounding space and tabs.
  *
  * @param c The active character being evaluated.
  */
@@ -247,7 +263,9 @@ void RequestParser::_handle_state_header_value(char c) {
         _storage_buffer.clear();
         _current_header_key.clear();
         _expect_newline = true;
-    } else if (c == ' ' || c == '\t' || (c >= 33 && c <= 126) || (unsigned char)c >= 128) {
+    } else if (c == ' ' || c == '\t'
+               || (c >= 33 && c <= 126)
+               || (unsigned char)c >= 128) {
         if (_storage_buffer.size() >= 8192) {
             _state = STATE_ERROR;
             return;
@@ -259,11 +277,14 @@ void RequestParser::_handle_state_header_value(char c) {
 }
 
 /**
- * @brief Decides transition to STATE_BODY or STATE_COMPLETE based on Content-Length.
+ * @brief Decides transition to STATE_BODY or
+ * STATE_COMPLETE based on Content-Length.
  */
 void RequestParser::_determine_body_transition() {
-    const std::map<std::string, std::string>& headers = _request.get_headers();
-    std::map<std::string, std::string>::const_iterator it = headers.find("content-length");
+    const std::map<std::string, std::string>& headers =
+        _request.get_headers();
+    std::map<std::string, std::string>::const_iterator
+        it = headers.find("content-length");
     if (it == headers.end()) {
         _state = STATE_COMPLETE;
         return;
@@ -331,7 +352,8 @@ const HttpRequest& RequestParser::get_request() const {
 }
 
 /**
- * @brief Resets the parser state machine and clears all associated storage buffers.
+ * @brief Resets the parser state machine and
+ * clears all associated storage buffers.
  */
 void RequestParser::reset() {
     _state = STATE_START;

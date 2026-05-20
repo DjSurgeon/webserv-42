@@ -1,5 +1,6 @@
 // Copyright 2026 serjimen vja-nie dlesieur
 #include <iostream>
+
 #include "network/ListeningSocket.hpp"
 
 int main(int argc, char** argv) {

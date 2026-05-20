@@ -2,8 +2,8 @@
 #ifndef SRC_NETWORK_CLIENTSOCKET_HPP_
 #define SRC_NETWORK_CLIENTSOCKET_HPP_
 
-# include <string>
-# include <cstddef>
+#include <cstddef>
+#include <string>
 
 /**
  * @brief RAII class managing an active client connection (The Waiter).
