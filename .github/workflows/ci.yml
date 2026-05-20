@@ -1,34 +1,81 @@
 name: 🤖 Webserv-42 Continuous Integration
 
-# Triggers: Cuándo se ejecuta el robot
 on:
   push:
     branches: [ main, develop ]
   pull_request:
     branches: [ main, develop ]
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
+
   compile_check:
     name: 🛠️ C++98 Compilation Gatekeeper
     runs-on: ubuntu-latest
 
     steps:
-    # Paso 1: Clonar el código del repositorio en la máquina virtual
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    # Paso 2: Asegurar que el compilador estándar esté instalado
-    - name: Install compiler (g++)
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y build-essential g++
+      - name: Install compiler
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y build-essential
 
-    # Paso 3: Ejecutar vuestro Makefile estricto
-    - name: Verify strict C++98 compilation
-      run: |
-        make
+      - name: Build (C++98 strict)
+        run: make
 
-    # Paso 4: Verificar que la limpieza de binarios funcione
-    - name: Verify project cleanup (fclean)
-      run: |
-        make fclean
+      - name: Cleanup
+        run: make fclean
+
+  lint:
+    name: 🔍 Linter Google (cpplint)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install cpplint
+        run: sudo pip install cpplint
+
+      - name: Run cpplint
+        run: cpplint --recursive src/
+
+  format_check:
+    name: 🎨 clang-format Style Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install clang-format
+        run: sudo apt-get install -y clang-format
+
+      - name: Check formatting
+        run: |
+          FILES=$(find src -name "*.cpp" -o -name "*.hpp")
+          clang-format --dry-run --Werror $FILES
+
+  valgrind:
+    name: 🧠 Memory & FD Leak Check (Valgrind)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install valgrind
+        run: sudo apt-get install -y valgrind
+
+      - name: Build
+        run: make
+
+      - name: Run Valgrind (Leaks + FD)
+        run: |
+          valgrind \
+            --leak-check=full \
+            --show-leak-kinds=all \
+            --track-fds=yes \
+            --error-exitcode=1 \
+            ./webserv
