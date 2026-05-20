@@ -7,7 +7,7 @@
 
 /**
  * @brief A passive data structure to store parsed HTTP elements.
- * 
+ *
  * This class stores the HTTP request method, URI, HTTP
  * version, body, and headers.
  * It provides public getters to access the parsed values
@@ -31,17 +31,16 @@ class HttpRequest {
   void set_uri(const std::string& uri);
   void set_version(const std::string& version);
   void set_body(const std::string& body);
-  void add_header(const std::string& key,
-                  const std::string& value);
+  void add_header(const std::string& key, const std::string& value);
 
   // Reset method
   void clear();
 
  private:
-  std::string                        _method;
-  std::string                        _uri;
-  std::string                        _version;
-  std::string                        _body;
+  std::string _method;
+  std::string _uri;
+  std::string _version;
+  std::string _body;
   std::map<std::string, std::string> _headers;
 };
 

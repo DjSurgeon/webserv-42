@@ -7,7 +7,7 @@
 
 /**
  * @brief RAII class managing an active client connection (The Waiter).
- * 
+ *
  * Implements architectural: ultra-efficient zero-copy data reading
  * via constant references, combined with strictly controlled mutator methods
  * to encapsulate buffer state and prevent external data corruption.
@@ -19,7 +19,7 @@ class ClientSocket {
   ~ClientSocket();
 
   // --- Getters (Zero-copy, read-only constant references) ---
-  int                get_fd() const;
+  int get_fd() const;
   const std::string& get_read_buffer() const;
   const std::string& get_write_buffer() const;
 
@@ -30,7 +30,7 @@ class ClientSocket {
   void clear_write_buffer();
 
  private:
-  int         _fd;
+  int _fd;
   std::string _read_buffer;
   std::string _write_buffer;
 
