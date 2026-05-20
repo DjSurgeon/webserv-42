@@ -14,29 +14,29 @@
  * Explicit constructor prevents dangerous implicit conversions from raw FDs.
  */
 class ClientSocket {
-public:
-    explicit ClientSocket(int client_fd);
-    ~ClientSocket();
+ public:
+  explicit ClientSocket(int client_fd);
+  ~ClientSocket();
 
-    // --- Getters (Zero-copy, read-only constant references) ---
-    int                get_fd() const;
-    const std::string& get_read_buffer() const;
-    const std::string& get_write_buffer() const;
+  // --- Getters (Zero-copy, read-only constant references) ---
+  int                get_fd() const;
+  const std::string& get_read_buffer() const;
+  const std::string& get_write_buffer() const;
 
-    // --- Mutators (Controlled state modification gates) ---
-    void append_to_read_buffer(const std::string& data);
-    void append_to_write_buffer(const std::string& data);
-    void consume_read_buffer(size_t bytes);
-    void clear_write_buffer();
+  // --- Mutators (Controlled state modification gates) ---
+  void append_to_read_buffer(const std::string& data);
+  void append_to_write_buffer(const std::string& data);
+  void consume_read_buffer(size_t bytes);
+  void clear_write_buffer();
 
-private:
-    int         _fd;
-    std::string _read_buffer;
-    std::string _write_buffer;
+ private:
+  int         _fd;
+  std::string _read_buffer;
+  std::string _write_buffer;
 
-    // Prevent copying (Strict C++98 compliance rule against double-close bugs)
-    ClientSocket(const ClientSocket& other);
-    ClientSocket& operator=(const ClientSocket& other);
+  // Prevent copying (Strict C++98 compliance rule against double-close bugs)
+  ClientSocket(const ClientSocket& other);
+  ClientSocket& operator=(const ClientSocket& other);
 };
 
 #endif  // SRC_NETWORK_CLIENTSOCKET_HPP_

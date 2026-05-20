@@ -11,20 +11,20 @@
  * Copying is disabled to prevent double-close errors.
  */
 class ListeningSocket {
-public:
-    ListeningSocket();
-    explicit ListeningSocket(int port);
-    ~ListeningSocket();
+ public:
+  ListeningSocket();
+  explicit ListeningSocket(int port);
+  ~ListeningSocket();
 
-    void    init(int port);
-    int     get_fd() const;
+  void    init(int port);
+  int     get_fd() const;
 
-private:
-    int     _fd;
+ private:
+  int     _fd;
 
-    // Prevent copying (C++98 style)
-    ListeningSocket(const ListeningSocket& other);
-    ListeningSocket& operator=(const ListeningSocket& other);
+  // Prevent copying (C++98 style)
+  ListeningSocket(const ListeningSocket& other);
+  ListeningSocket& operator=(const ListeningSocket& other);
 };
 
 #endif  // SRC_NETWORK_LISTENINGSOCKET_HPP_
