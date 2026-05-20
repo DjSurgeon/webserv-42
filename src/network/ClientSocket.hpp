@@ -1,3 +1,4 @@
+// Copyright 2026 serjimen vja-nie dlesieur
 #ifndef CLIENT_SOCKET_HPP
 # define CLIENT_SOCKET_HPP
 

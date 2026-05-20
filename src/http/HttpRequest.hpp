@@ -1,3 +1,4 @@
+// Copyright 2026 serjimen vja-nie dlesieur
 #ifndef HTTP_REQUEST_HPP
 # define HTTP_REQUEST_HPP
 

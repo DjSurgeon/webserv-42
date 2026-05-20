@@ -1,3 +1,4 @@
+// Copyright 2026 serjimen vja-nie dlesieur
 #ifndef REQUEST_PARSER_HPP
 # define REQUEST_PARSER_HPP
 

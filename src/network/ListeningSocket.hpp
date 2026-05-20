@@ -1,3 +1,4 @@
+// Copyright 2026 serjimen vja-nie dlesieur
 #ifndef LISTENING_SOCKET_HPP
 # define LISTENING_SOCKET_HPP
 

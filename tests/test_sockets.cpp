@@ -1,3 +1,4 @@
+// Copyright 2026 serjimen vja-nie dlesieur
 #include "network/ListeningSocket.hpp"
 #include "network/ClientSocket.hpp"
 #include <iostream>

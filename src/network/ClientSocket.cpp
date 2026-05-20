@@ -1,3 +1,4 @@
+// Copyright 2026 serjimen vja-nie dlesieur
 #include "network/ClientSocket.hpp"
 #include <fcntl.h>
 #include <unistd.h>

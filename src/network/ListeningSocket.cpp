@@ -1,3 +1,4 @@
+// Copyright 2026 serjimen vja-nie dlesieur
 #include "network/ListeningSocket.hpp"
 #include <sys/socket.h>
 #include <unistd.h>
