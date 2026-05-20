@@ -1,6 +1,6 @@
 // Copyright 2026 serjimen vja-nie dlesieur
-#ifndef LISTENING_SOCKET_HPP
-# define LISTENING_SOCKET_HPP
+#ifndef SRC_NETWORK_LISTENINGSOCKET_HPP_
+#define SRC_NETWORK_LISTENINGSOCKET_HPP_
 
 
 /**
@@ -27,4 +27,4 @@ private:
     ListeningSocket& operator=(const ListeningSocket& other);
 };
 
-#endif
+#endif  // SRC_NETWORK_LISTENINGSOCKET_HPP_

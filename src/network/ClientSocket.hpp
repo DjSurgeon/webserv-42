@@ -1,6 +1,6 @@
 // Copyright 2026 serjimen vja-nie dlesieur
-#ifndef CLIENT_SOCKET_HPP
-# define CLIENT_SOCKET_HPP
+#ifndef SRC_NETWORK_CLIENTSOCKET_HPP_
+#define SRC_NETWORK_CLIENTSOCKET_HPP_
 
 # include <string>
 # include <cstddef>
@@ -39,4 +39,4 @@ private:
     ClientSocket& operator=(const ClientSocket& other);
 };
 
-#endif
+#endif  // SRC_NETWORK_CLIENTSOCKET_HPP_

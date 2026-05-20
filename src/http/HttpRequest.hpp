@@ -1,6 +1,6 @@
 // Copyright 2026 serjimen vja-nie dlesieur
-#ifndef HTTP_REQUEST_HPP
-# define HTTP_REQUEST_HPP
+#ifndef SRC_HTTP_HTTPREQUEST_HPP_
+#define SRC_HTTP_HTTPREQUEST_HPP_
 
 # include <string>
 # include <map>
@@ -42,4 +42,4 @@ private:
     std::map<std::string, std::string>  _headers;
 };
 
-#endif
+#endif  // SRC_HTTP_HTTPREQUEST_HPP_

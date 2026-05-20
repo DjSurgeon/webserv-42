@@ -1,6 +1,6 @@
 // Copyright 2026 serjimen vja-nie dlesieur
-#ifndef REQUEST_PARSER_HPP
-# define REQUEST_PARSER_HPP
+#ifndef SRC_HTTP_REQUESTPARSER_HPP_
+#define SRC_HTTP_REQUESTPARSER_HPP_
 
 # include "http/HttpRequest.hpp"
 
@@ -58,4 +58,4 @@ private:
     RequestParser& operator=(const RequestParser& other);
 };
 
-#endif
+#endif  // SRC_HTTP_REQUESTPARSER_HPP_
