@@ -1,2 +1,68 @@
-# webserv-42
-A high-performance, asynchronous HTTP/1.1 web server built in C++98 using non-blocking I/O multiplexing (poll) and custom CGI process execution. Inspired by NGINX.
+*This project has been created as part of the 42 curriculum by <login1>[, <login2>].*
+
+## 📝 Description
+This project is a fully functional, asynchronous, and non-blocking HTTP/1.1 Web Server implemented from scratch in strict C++98. The server is capable of monitoring multiple client connections simultaneously using a single I/O multiplexing kernel call (`poll` or equivalent). It is designed to be resilient, highly performant under stress, and fully compliant with the core constraints of standard web browsers.
+
+### Current Architectural Status
+The project has successfully completed its core infrastructure foundation across the following layers:
+1. **Network Infrastructure (Sockets Layer):**
+   - `ListeningSocket`: A pure RAII engine that safely manages server setup lifecycle (`socket`, `setsockopt`, `bind`, `listen`) preventing kernel descriptor leaks.
+   - `ClientSocket`: Manages incoming active connections, automatically enforcing `O_NONBLOCK` settings at birth. It utilizes a zero-copy performance layout where reading modules consume data directly via constant string references (`const std::string&`), mitigating unnecessary heap allocations.
+
+2. **HTTP Core Layer (Parsing & Response Engine):**
+   - `HttpRequest`: A passive data structure container (DTO) featuring fully automated case-insensitive header normalization to safeguard the system against capitalization protocol conflicts.
+   - `RequestParser`: A rigorous Finite State Machine (FSM) stream parser that ingests incoming TCP data character-by-character. To minimize cyclomatic complexity, the processing switch-case is heavily modularized, delegating each FSM state into isolated private member handlers with extreme protection against buffer overflow and protocol violation attacks.
+   - `HttpResponse`: Fully compliant HTTP/1.1 response builder. Incorporates a smart internal contingency system that automatically generates robust fallback HTML error pages (400, 403, 404, 405, 500) and injects strictly required headers (Content-Length, Content-Type) without duplicating logic, adhering to the DRY principle via an internal static reason phrase dictionary.
+
+3. **Configuration Architecture (NGINX Style):**
+   - A highly modular and strict C++98 hierarchical inheritance tree (`Context` -> `ServerConfig` & `LocationConfig`) established to store layout rules efficiently.
+   - It guarantees memory-safe deep cloning between configuration contexts leveraging the Orthodox Canonical Form, effectively preparing the runtime to absorb custom `.conf` directives safely.
+
+---
+
+## 💻 Instructions
+
+### Compilation
+The project compiles under strict standard verification using `c++` and mandatory school flags.
+
+To compile the primary server architecture:
+```bash
+make
+```
+
+To compile the integration and robustness stress test suite:
+```bash
+c++ -Wall -Wextra -Werror -std=c++98 -Isrc \
+    src/network/ClientSocket.cpp \
+    src/http/HttpRequest.cpp \
+    src/http/RequestParser.cpp \
+    tests/test_parser_stress.cpp -o stress_runner
+```
+
+### Execution
+
+The Primary server expects a layout configuration file as its sole runtime argument:
+
+```bash
+./webserv [path_to_config.conf]
+```
+
+To launch the isolated engine stress test battery:
+```bash
+./stress_runner
+```
+
+---
+
+## 📚 Resources
+
+* **RFC 7230:** Hypertext Transfer Protocol (HTTP/1.1): Message Syntax and Routing.
+* **Unix Network Programming:** Comprehensive guide to socket lifecycles and non-blocking multiplexing architectures.
+
+### AI Usage Disclosure
+
+In accordance with the 42 curriculum framework, an AI assistant was utilized as a peer-collaborator to optimize productivity and enforce architectural code resilience. AI technologies were strategically deployed for the following tasks:
+
+* **Architectural Peer Reviewing:** Validating potential file descriptor and memory leaks within the early RAII socket handlers.
+* **FSM Cyclomatic Optimization:** Refactoring the massive flat switch-case statement inside `RequestParser::feed` into modular private state handlers to enforce Clean Code standards.
+* **Defensive Test Engineering:** Designing specific security attack vectors (such as malformed alphanumeric `Content-Length` layouts and version overruns) to test the robustness of the stream parser before linking against live kernel network boundaries.
