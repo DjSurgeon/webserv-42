@@ -267,7 +267,7 @@ void EventLoop::_handle_client_write(int fd) {
  * traffic to the corresponding private handlers based on the revents bitmasks.
  */
 void EventLoop::run() {
-  while (true) {
+  while (g_running) {
     if (_pollfds.empty()) {
       continue;
     }

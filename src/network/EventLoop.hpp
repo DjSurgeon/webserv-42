@@ -3,6 +3,9 @@
 #define SRC_NETWORK_EVENTLOOP_HPP_
 
 #include <sys/poll.h>
+#include <csignal>
+
+extern volatile sig_atomic_t g_running;
 
 #include <map>
 #include <vector>

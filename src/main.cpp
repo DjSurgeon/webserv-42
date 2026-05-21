@@ -1,12 +1,23 @@
 // Copyright 2026 serjimen vja-nie dlesieur
+#include <csignal>
 #include <iostream>
 
 #include "network/EventLoop.hpp"
 #include "network/ListeningSocket.hpp"
 
+volatile sig_atomic_t g_running = 1;
+
+void sig_handler(int signum) {
+  (void)signum;
+  g_running = 0;
+}
+
 int main(int argc, char** argv) {
   (void)argc;
   (void)argv;
+
+  signal(SIGINT, sig_handler);
+  signal(SIGTERM, sig_handler);
 
   try {
     std::cout << "--- Webserv Basic Initialization ---" << std::endl;
