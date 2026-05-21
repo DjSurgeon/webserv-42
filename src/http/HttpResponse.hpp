@@ -21,11 +21,18 @@ class HttpResponse {
   // Serialization
   std::string to_string() const;
 
+  // Error Generation
+  void generate_error_response(int code);
+
  private:
   int _status_code;
   std::string _reason_phrase;
   std::map<std::string, std::string> _headers;
   std::string _body;
+
+  // Helpers
+  std::string _get_default_error_html(int code,
+                                      const std::string& phrase) const;
 };
 
 #endif  // SRC_HTTP_HTTPRESPONSE_HPP_

@@ -5,6 +5,23 @@
 #include <sstream>
 #include <string>
 
+static std::string get_reason_phrase(int code) {
+  switch (code) {
+    case 400:
+      return "Bad Request";
+    case 403:
+      return "Forbidden";
+    case 404:
+      return "Not Found";
+    case 405:
+      return "Method Not Allowed";
+    case 500:
+      return "Internal Server Error";
+    default:
+      return "Internal Server Error";
+  }
+}
+
 HttpResponse::HttpResponse() : _status_code(200), _reason_phrase("OK") {}
 
 HttpResponse::HttpResponse(const HttpResponse& other)
@@ -53,4 +70,30 @@ std::string HttpResponse::to_string() const {
   ss << _body;
 
   return ss.str();
+}
+
+std::string HttpResponse::_get_default_error_html(
+    int code, const std::string& phrase) const {
+  std::stringstream ss;
+  ss << "<html><body><h1>" << code << " " << phrase << "</h1></body></html>";
+  return ss.str();
+}
+
+void HttpResponse::generate_error_response(int code) {
+  std::string phrase = get_reason_phrase(code);
+
+  if (phrase == "Internal Server Error" && code != 500) {
+    code = 500;
+  }
+
+  set_status(code, phrase);
+
+  std::string body = _get_default_error_html(code, phrase);
+  set_body(body);
+
+  std::stringstream ss;
+  ss << body.length();
+
+  add_header("Content-Type", "text/html");
+  add_header("Content-Length", ss.str());
 }

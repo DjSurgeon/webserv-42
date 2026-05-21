@@ -29,6 +29,7 @@ OBJ_DIR		= obj
 
 SRCS		= $(SRC_DIR)/main.cpp \
 			  $(SRC_DIR)/http/HttpRequest.cpp \
+			  $(SRC_DIR)/http/HttpResponse.cpp \
 			  $(SRC_DIR)/http/RequestParser.cpp \
 			  $(SRC_DIR)/network/ListeningSocket.cpp \
 			  $(SRC_DIR)/network/ClientSocket.cpp \
@@ -37,6 +38,7 @@ SRCS		= $(SRC_DIR)/main.cpp \
 OBJS		= $(SRCS:$(SRC_DIR)/%.cpp=$(OBJ_DIR)/%.o)
 
 HDRS		= $(SRC_DIR)/http/HttpRequest.hpp \
+			  $(SRC_DIR)/http/HttpResponse.hpp \
 			  $(SRC_DIR)/http/RequestParser.hpp \
 			  $(SRC_DIR)/network/ListeningSocket.hpp \
 			  $(SRC_DIR)/network/ClientSocket.hpp \
@@ -51,6 +53,7 @@ BIN_DIR		= bin
 
 # Library sources (everything except main.cpp)
 LIB_SRCS	= $(SRC_DIR)/http/HttpRequest.cpp \
+			  $(SRC_DIR)/http/HttpResponse.cpp \
 			  $(SRC_DIR)/http/RequestParser.cpp \
 			  $(SRC_DIR)/network/ListeningSocket.cpp \
 			  $(SRC_DIR)/network/ClientSocket.cpp \
