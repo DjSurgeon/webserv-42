@@ -7,6 +7,7 @@
 #include <iostream>
 #include <stdexcept>
 #include <string>
+#include <map>
 
 /**
  * @brief Default constructor for EventLoop.
