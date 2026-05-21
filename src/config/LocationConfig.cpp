@@ -5,10 +5,7 @@
 #include <vector>
 
 LocationConfig::LocationConfig()
-    : Context(),
-      _path(""),
-      _cgi_path(""),
-      _redirect("") {}
+    : Context(), _path(""), _cgi_path(""), _redirect("") {}
 
 LocationConfig::LocationConfig(const LocationConfig& other)
     : Context(other),
