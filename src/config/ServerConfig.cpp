@@ -66,3 +66,38 @@ void ServerConfig::set_locations(const std::vector<LocationConfig>& locations) {
 void ServerConfig::add_location(const LocationConfig& loc) {
   _locations.push_back(loc);
 }
+
+const LocationConfig* ServerConfig::find_location(
+    const std::string& uri) const {
+  const LocationConfig* best_match = NULL;
+  size_t max_match_length = 0;
+
+  for (std::vector<LocationConfig>::const_iterator it = _locations.begin();
+       it != _locations.end(); ++it) {
+    const std::string& path = it->get_path();
+
+    if (uri.find(path) == 0) {
+      bool is_clean_match = false;
+
+      // Strict boundary check:
+      // 1. Root '/' always matches.
+      // 2. Exact match (e.g. URI "/images" and path "/images").
+      // 3. URI continues with a slash (e.g. URI "/images/logo.png" and path "/images").
+      // 4. Path itself ends in a slash (e.g. path "/images/" matches URI "/images/logo.png").
+      if (path == "/" || path.length() == uri.length()) {
+        is_clean_match = true;
+      } else if (uri[path.length()] == '/') {
+        is_clean_match = true;
+      } else if (path.length() > 0 && path[path.length() - 1] == '/') {
+        is_clean_match = true;
+      }
+
+      if (is_clean_match && path.length() > max_match_length) {
+        max_match_length = path.length();
+        best_match = &(*it);
+      }
+    }
+  }
+
+  return best_match;
+}

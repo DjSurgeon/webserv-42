@@ -138,6 +138,58 @@ void test_stress() {
     print_result("test_stress", true);
 }
 
+void test_longest_prefix_match() {
+    std::cout << "[Test] Verifying Longest Prefix Match routing algorithm..." << std::endl;
+    ServerConfig srv;
+
+    // Setup locations
+    LocationConfig loc_root;
+    loc_root.set_path("/");
+    srv.add_location(loc_root);
+
+    LocationConfig loc_api;
+    loc_api.set_path("/api");
+    srv.add_location(loc_api);
+
+    LocationConfig loc_users;
+    loc_users.set_path("/api/users");
+    srv.add_location(loc_users);
+
+    LocationConfig loc_images;
+    loc_images.set_path("/images/");
+    srv.add_location(loc_images);
+
+    bool pass = true;
+
+    // 1. Exact Match
+    const LocationConfig* res = srv.find_location("/api");
+    if (!res || res->get_path() != "/api") pass = false;
+
+    // 2. Prefix Match
+    res = srv.find_location("/api/docs");
+    if (!res || res->get_path() != "/api") pass = false;
+
+    // 3. Longest Prefix Wins
+    res = srv.find_location("/api/users/profile");
+    if (!res || res->get_path() != "/api/users") pass = false;
+
+    // 4. Strict Boundary Check (Failure Case)
+    // "/api_v2" starts with "/api" but is not a subpath. 
+    // Should match root "/" or NULL.
+    res = srv.find_location("/api_v2");
+    if (!res || res->get_path() != "/") pass = false;
+
+    // 5. Trailing Slash Handling
+    res = srv.find_location("/images/logo.png");
+    if (!res || res->get_path() != "/images/") pass = false;
+
+    // 6. Root Fallback
+    res = srv.find_location("/something_else");
+    if (!res || res->get_path() != "/") pass = false;
+
+    print_result("test_longest_prefix_match", pass);
+}
+
 int main() {
     std::cout << "=== STARTING SERVER CONFIG TESTS ===\n" << std::endl;
 
@@ -146,6 +198,8 @@ int main() {
     test_setters_and_getters();
     std::cout << std::endl;
     test_canonical_form();
+    std::cout << std::endl;
+    test_longest_prefix_match();
     std::cout << std::endl;
     test_edge_cases();
     std::cout << std::endl;
