@@ -107,3 +107,18 @@ void ClientSocket::consume_read_buffer(size_t bytes) {
 void ClientSocket::clear_write_buffer() {
   _write_buffer.clear();
 }
+
+/**
+ * @brief Consumes a specified number of bytes from the write buffer.
+ *
+ * Removes processed bytes from the buffer after they have been sent.
+ *
+ * @param bytes Number of bytes to consume.
+ */
+void ClientSocket::consume_write_buffer(size_t bytes) {
+  if (bytes >= _write_buffer.size()) {
+    _write_buffer.clear();
+  } else {
+    _write_buffer.erase(0, bytes);
+  }
+}

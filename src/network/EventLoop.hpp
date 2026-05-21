@@ -4,7 +4,10 @@
 
 #include <sys/poll.h>
 
+#include <map>
 #include <vector>
+
+#include "network/ClientSocket.hpp"
 
 class EventLoop {
  public:
@@ -21,6 +24,7 @@ class EventLoop {
  private:
   std::vector<pollfd> _pollfds;
   std::vector<int> _server_fds;
+  std::map<int, ClientSocket*> _clients;
 
   static const int POLL_TIMEOUT = 1000;
 

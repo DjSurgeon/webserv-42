@@ -27,6 +27,7 @@ class ClientSocket {
   void append_to_read_buffer(const std::string& data);
   void append_to_write_buffer(const std::string& data);
   void consume_read_buffer(size_t bytes);
+  void consume_write_buffer(size_t bytes);
   void clear_write_buffer();
 
  private:

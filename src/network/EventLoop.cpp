@@ -1,6 +1,7 @@
 // Copyright 2026 serjimen vja-nie dlesieur
 #include "network/EventLoop.hpp"
 
+#include <sys/socket.h>
 #include <unistd.h>
 
 #include <iostream>
@@ -17,7 +18,10 @@ EventLoop::EventLoop() {}
  * @param other The EventLoop object to copy from.
  */
 EventLoop::EventLoop(const EventLoop& other)
-    : _pollfds(other._pollfds), _server_fds(other._server_fds) {}
+    : _pollfds(other._pollfds), _server_fds(other._server_fds) {
+  // Clients are NOT deep copied because they manage unique file descriptors
+  // and copying them violates the RAII strict ownership rules (double-free).
+}
 
 /**
  * @brief Copy assignment operator for EventLoop.
@@ -29,14 +33,23 @@ EventLoop& EventLoop::operator=(const EventLoop& other) {
   if (this != &other) {
     _pollfds = other._pollfds;
     _server_fds = other._server_fds;
+    // Clients are NOT deep copied for the same RAII reasons.
   }
   return *this;
 }
 
 /**
  * @brief Destructor for EventLoop.
+ *
+ * Cleans up all client sockets allocated in memory to prevent leaks.
  */
-EventLoop::~EventLoop() {}
+EventLoop::~EventLoop() {
+  for (std::map<int, ClientSocket*>::iterator it = _clients.begin();
+       it != _clients.end(); ++it) {
+    delete it->second;
+  }
+  _clients.clear();
+}
 
 /**
  * @brief Adds a server socket to the monitoring vector.
@@ -78,7 +91,8 @@ void EventLoop::addClientSocket(int fd) {
  *
  * Finds the descriptor within the _pollfds vector, executes close(fd) to
  * prevent resource leaks, and erases the element using std::vector::erase.
- * Also removes it from the server descriptors list if it was a server.
+ * Also removes it from the server descriptors list if it was a server,
+ * or deletes the associated ClientSocket object if it was a client.
  *
  * @param fd The file descriptor to remove.
  * @throw std::runtime_error If the file descriptor is not found in the loop.
@@ -97,9 +111,17 @@ void EventLoop::removeSocket(int fd) {
            sit != _server_fds.end(); ++sit) {
         if (*sit == fd) {
           _server_fds.erase(sit);
-          break;
+          return;
         }
       }
+
+      // If not a server, it's a client. Remove from clients map and delete
+      std::map<int, ClientSocket*>::iterator cit = _clients.find(fd);
+      if (cit != _clients.end()) {
+        delete cit->second;
+        _clients.erase(cit);
+      }
+
       return;
     }
   }
@@ -127,37 +149,73 @@ bool EventLoop::_isServerSocket(int fd) const {
 /**
  * @brief Handles an incoming connection on a server socket.
  *
- * Stub for accepting a new client connection.
+ * Calls accept() to receive the connection, instantiates a new ClientSocket
+ * (which handles O_NONBLOCK automatically), stores it in the clients map,
+ * and registers it for monitoring.
  *
  * @param server_fd The file descriptor of the server socket.
  */
 void EventLoop::_handle_new_connection(int server_fd) {
-  std::cout << "EventLoop: [STUB] New connection on server FD " << server_fd
-            << std::endl;
+  int client_fd = accept(server_fd, NULL, NULL);
+  if (client_fd >= 0) {
+    try {
+      ClientSocket* new_client = new ClientSocket(client_fd);
+      _clients[client_fd] = new_client;
+      addClientSocket(client_fd);
+    } catch (const std::exception& e) {
+      std::cerr << "EventLoop: Failed to accept client: " << e.what() << "\n";
+      close(client_fd);
+    }
+  }
 }
 
 /**
  * @brief Handles incoming data from a client socket.
  *
- * Stub for reading data from a client.
+ * Executes recv() safely. If bytes are received, appends them to the client's
+ * read buffer. If recv returns exactly 0 (EOF), disconnects the client.
+ * Negative returns are ignored without consulting errno.
  *
  * @param fd The file descriptor of the client socket.
  */
 void EventLoop::_handle_client_data(int fd) {
-  std::cout << "EventLoop: [STUB] Data available on client FD " << fd
-            << std::endl;
+  std::map<int, ClientSocket*>::iterator it = _clients.find(fd);
+  if (it == _clients.end()) {
+    return;
+  }
+
+  char buffer[8192];
+  int bytes = recv(fd, buffer, sizeof(buffer), 0);
+
+  if (bytes > 0) {
+    it->second->append_to_read_buffer(std::string(buffer, bytes));
+  } else if (bytes == 0) {
+    removeSocket(fd);
+  }
 }
 
 /**
  * @brief Handles readiness to write data to a client socket.
  *
- * Stub for writing data to a client.
+ * Flushes available data from the client's write buffer via send().
+ * Successfully sent bytes are consumed from the buffer.
+ * Negative returns are ignored without consulting errno.
  *
  * @param fd The file descriptor of the client socket.
  */
 void EventLoop::_handle_client_write(int fd) {
-  std::cout << "EventLoop: [STUB] Ready to write on client FD " << fd
-            << std::endl;
+  std::map<int, ClientSocket*>::iterator it = _clients.find(fd);
+  if (it == _clients.end()) {
+    return;
+  }
+
+  const std::string& data = it->second->get_write_buffer();
+  if (!data.empty()) {
+    int sent = send(fd, data.c_str(), data.length(), 0);
+    if (sent > 0) {
+      it->second->consume_write_buffer(sent);
+    }
+  }
 }
 
 /**
@@ -169,7 +227,6 @@ void EventLoop::_handle_client_write(int fd) {
 void EventLoop::run() {
   while (true) {
     if (_pollfds.empty()) {
-      // Optional: Handle empty state if no servers or clients are registered
       continue;
     }
 
@@ -177,12 +234,10 @@ void EventLoop::run() {
 
     if (ret < 0) {
       std::cerr << "EventLoop: poll() failed" << std::endl;
-      // Depending on robust implementation, could check for EINTR here.
       continue;
     }
 
     if (ret == 0) {
-      // Timeout occurred, loop again
       continue;
     }
 
@@ -197,8 +252,6 @@ void EventLoop::run() {
 
       // Check for errors or disconnection
       if (revents & (POLLERR | POLLHUP | POLLNVAL)) {
-        std::cerr << "EventLoop: Error or hangup on FD " << current_fd
-                  << std::endl;
         removeSocket(current_fd);
         continue;
       }
@@ -212,9 +265,13 @@ void EventLoop::run() {
         }
       }
 
-      // Check for readiness to write (only applies to clients)
-      // Enclosed in try-catch or safe checks if the fd was removed in POLLIN,
-      // but in this stub we just execute the handler.
+      // Prevent processing POLLOUT if the socket was closed during POLLIN
+      if (!_isServerSocket(current_fd) &&
+          _clients.find(current_fd) == _clients.end()) {
+        continue;
+      }
+
+      // Check for readiness to write
       if (revents & POLLOUT) {
         if (!_isServerSocket(current_fd)) {
           _handle_client_write(current_fd);
