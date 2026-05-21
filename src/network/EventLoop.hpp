@@ -20,6 +20,14 @@ class EventLoop {
 
  private:
   std::vector<pollfd> _pollfds;
+  std::vector<int> _server_fds;
+
+  static const int POLL_TIMEOUT = 1000;
+
+  bool _isServerSocket(int fd) const;
+  void _handle_new_connection(int server_fd);
+  void _handle_client_data(int fd);
+  void _handle_client_write(int fd);
 };
 
 #endif  // SRC_NETWORK_EVENTLOOP_HPP_
