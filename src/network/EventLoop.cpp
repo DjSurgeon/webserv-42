@@ -5,9 +5,9 @@
 #include <unistd.h>
 
 #include <iostream>
+#include <map>
 #include <stdexcept>
 #include <string>
-#include <map>
 
 /**
  * @brief Default constructor for EventLoop.
