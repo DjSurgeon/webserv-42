@@ -29,6 +29,7 @@ run_test() {
 
 # Run each test suite
 run_test "test_http_request" "src/http/HttpRequest.cpp" "tests/test_http_request.cpp"
+run_test "test_http_response" "src/http/HttpResponse.cpp" "tests/test_http_response.cpp"
 run_test "test_parser_skeleton" "src/http/HttpRequest.cpp src/http/RequestParser.cpp" "tests/test_parser_skeleton.cpp"
 run_test "test_parser_method" "src/http/HttpRequest.cpp src/http/RequestParser.cpp" "tests/test_parser_method.cpp"
 run_test "test_parser_uri" "src/http/HttpRequest.cpp src/http/RequestParser.cpp" "tests/test_parser_uri.cpp"
