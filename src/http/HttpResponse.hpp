@@ -18,6 +18,9 @@ class HttpResponse {
   void add_header(const std::string& key, const std::string& value);
   void set_body(const std::string& body);
 
+  // Serialization
+  std::string to_string() const;
+
  private:
   int _status_code;
   std::string _reason_phrase;
