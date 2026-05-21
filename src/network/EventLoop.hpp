@@ -8,6 +8,11 @@
 
 class EventLoop {
  public:
+  EventLoop();
+  EventLoop(const EventLoop& other);
+  EventLoop& operator=(const EventLoop& other);
+  ~EventLoop();
+
   void addServerSocket(int fd);
   void addClientSocket(int fd);
   void removeSocket(int fd);
