@@ -96,11 +96,39 @@ Para garantizar la solidez de las clases de red antes de integrarlas en el Event
 
 ---
 
-### ⏭️ Siguientes Pasos (Próxima Fase)
-Habiendo cimentado la red al más bajo nivel de forma segura y encapsulada, el objetivo del próximo ciclo será la implementación del **Event Loop**.
-- Integrar la llamada de multiplexación (`poll()`).
-- Manejar conexiones entrantes masivas sin bloqueo.
-- Enrutar los eventos `POLLIN` (para leer de clientes) e inyectar los bytes directamente a los buffers del `ClientSocket`.
+## 📅 Día 4: Multiplexación de E/S, Event Loop e Integración de Concurrencia
+
+### 🎯 Objetivos del Día
+1. Implementar el motor de multiplexación central (`EventLoop`) utilizando `poll()` para gestionar múltiples conexiones simultáneas.
+2. Integrar el `RequestParser` en el flujo de datos del `EventLoop` para procesar peticiones HTTP en tiempo real.
+3. Validar la concurrencia a nivel de sistema mediante pruebas de carga con múltiples clientes asíncronos.
+
+### 🏗️ Fase 1: Implementación del `EventLoop`
+- **Motor de Multiplexación:** Se desarrolló la clase `EventLoop` que encapsula un vector de estructuras `pollfd`.
+- **Gestión de Sockets:**
+  - `addServerSocket`: Registra sockets de escucha para eventos `POLLIN`.
+  - `addClientSocket`: Registra sockets de cliente para eventos `POLLIN` y `POLLOUT`.
+  - `removeSocket`: Cierra descriptores y limpia las instancias de `ClientSocket` y `RequestParser` asociadas para evitar fugas.
+- **Ciclo de Eventos (`run`):** Implementa un bucle infinito que consulta al kernel sobre actividad en los descriptores. Utiliza iteración inversa para permitir la eliminación segura de sockets durante el procesamiento.
+
+### 🔌 Fase 2: Integración de Parser y Respuestas Asíncronas
+- **Procesamiento por Cliente:** El `EventLoop` ahora mantiene un mapa de `RequestParser` (uno por cada `fd` de cliente).
+- **Flujo de Datos (`_handle_client_data`):**
+  - Los bytes recibidos vía `recv()` se inyectan en el búfer del cliente.
+  - Se alimentan a la FSM del `RequestParser` byte a byte.
+  - **Generación de Respuesta:** Al detectar `STATE_COMPLETE`, se inyecta una respuesta HTTP básica ("200 OK") en el búfer de escritura del cliente. Ante un error (`STATE_ERROR`), se envía un "400 Bad Request".
+- **Escritura No Bloqueante (`_handle_client_write`):** Envía los datos acumulados en el búfer de escritura del cliente cuando el socket está listo para transmitir (`POLLOUT`).
+
+### 🧪 Fase 3: Pruebas de Concurrencia a Nivel de Sistema
+- **Integración en `main.cpp`:** Se actualizó el punto de entrada para instanciar el `EventLoop` y registrar el socket del servidor.
+- **Script de Concurrencia (`tests/test_concurrency.sh`):**
+  - Automatiza el lanzamiento de 20 clientes simultáneos.
+  - Cada cliente envía peticiones HTTP fragmentadas con retrasos artificiales para forzar la asincronía del servidor.
+  - Verifica que todos los clientes reciban la respuesta completa "Hello, World!".
+- **Resultados:**
+  - El servidor manejó exitosamente las conexiones concurrentes sin bloqueos.
+  - La suite de pruebas unitarias (`make test`) mantiene una tasa de éxito del 100%.
+  - No se detectaron fugas de descriptores de archivo ni de memoria.
 
 ---
 

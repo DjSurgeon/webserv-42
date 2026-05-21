@@ -7,6 +7,7 @@
 #include <map>
 #include <vector>
 
+#include "http/RequestParser.hpp"
 #include "network/ClientSocket.hpp"
 
 class EventLoop {
@@ -25,6 +26,7 @@ class EventLoop {
   std::vector<pollfd> _pollfds;
   std::vector<int> _server_fds;
   std::map<int, ClientSocket*> _clients;
+  std::map<int, RequestParser*> _parsers;
 
   static const int POLL_TIMEOUT = 1000;
 

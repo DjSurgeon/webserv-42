@@ -49,6 +49,11 @@ EventLoop::~EventLoop() {
     delete it->second;
   }
   _clients.clear();
+  for (std::map<int, RequestParser*>::iterator it = _parsers.begin();
+       it != _parsers.end(); ++it) {
+    delete it->second;
+  }
+  _parsers.clear();
 }
 
 /**
@@ -121,6 +126,11 @@ void EventLoop::removeSocket(int fd) {
         delete cit->second;
         _clients.erase(cit);
       }
+      std::map<int, RequestParser*>::iterator pit = _parsers.find(fd);
+      if (pit != _parsers.end()) {
+        delete pit->second;
+        _parsers.erase(pit);
+      }
 
       return;
     }
@@ -161,6 +171,7 @@ void EventLoop::_handle_new_connection(int server_fd) {
     try {
       ClientSocket* new_client = new ClientSocket(client_fd);
       _clients[client_fd] = new_client;
+      _parsers[client_fd] = new RequestParser();
       addClientSocket(client_fd);
     } catch (const std::exception& e) {
       std::cerr << "EventLoop: Failed to accept client: " << e.what() << "\n";
@@ -176,11 +187,15 @@ void EventLoop::_handle_new_connection(int server_fd) {
  * read buffer. If recv returns exactly 0 (EOF), disconnects the client.
  * Negative returns are ignored without consulting errno.
  *
+ * Feed the parser byte by byte from the read buffer and generate a response
+ * if the request is complete.
+ *
  * @param fd The file descriptor of the client socket.
  */
 void EventLoop::_handle_client_data(int fd) {
-  std::map<int, ClientSocket*>::iterator it = _clients.find(fd);
-  if (it == _clients.end()) {
+  std::map<int, ClientSocket*>::iterator client_it = _clients.find(fd);
+  std::map<int, RequestParser*>::iterator parser_it = _parsers.find(fd);
+  if (client_it == _clients.end() || parser_it == _parsers.end()) {
     return;
   }
 
@@ -188,7 +203,26 @@ void EventLoop::_handle_client_data(int fd) {
   int bytes = recv(fd, buffer, sizeof(buffer), 0);
 
   if (bytes > 0) {
-    it->second->append_to_read_buffer(std::string(buffer, bytes));
+    client_it->second->append_to_read_buffer(std::string(buffer, bytes));
+    
+    // Process the buffer with the parser
+    const std::string& read_buf = client_it->second->get_read_buffer();
+    size_t i = 0;
+    while (i < read_buf.length()) {
+      e_parser_state state = parser_it->second->feed(read_buf[i]);
+      i++;
+      
+      if (state == STATE_COMPLETE) {
+        std::cout << "EventLoop: Request completed from client " << fd << "\n";
+        client_it->second->append_to_write_buffer("HTTP/1.1 200 OK\r\nContent-Length: 13\r\nConnection: close\r\n\r\nHello, World!");
+        break;
+      } else if (state == STATE_ERROR) {
+        std::cerr << "EventLoop: Parser error from client " << fd << "\n";
+        client_it->second->append_to_write_buffer("HTTP/1.1 400 Bad Request\r\nConnection: close\r\n\r\n");
+        break;
+      }
+    }
+    client_it->second->consume_read_buffer(i);
   } else if (bytes == 0) {
     removeSocket(fd);
   }

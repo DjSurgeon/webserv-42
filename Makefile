@@ -31,14 +31,16 @@ SRCS		= $(SRC_DIR)/main.cpp \
 			  $(SRC_DIR)/http/HttpRequest.cpp \
 			  $(SRC_DIR)/http/RequestParser.cpp \
 			  $(SRC_DIR)/network/ListeningSocket.cpp \
-			  $(SRC_DIR)/network/ClientSocket.cpp
+			  $(SRC_DIR)/network/ClientSocket.cpp \
+			  $(SRC_DIR)/network/EventLoop.cpp
 
 OBJS		= $(SRCS:$(SRC_DIR)/%.cpp=$(OBJ_DIR)/%.o)
 
 HDRS		= $(SRC_DIR)/http/HttpRequest.hpp \
 			  $(SRC_DIR)/http/RequestParser.hpp \
 			  $(SRC_DIR)/network/ListeningSocket.hpp \
-			  $(SRC_DIR)/network/ClientSocket.hpp
+			  $(SRC_DIR)/network/ClientSocket.hpp \
+			  $(SRC_DIR)/network/EventLoop.hpp
 
 # ──────────────────────────────────────────────────────────────────────────── #
 #                                  TESTS                                       #
@@ -51,7 +53,8 @@ BIN_DIR		= bin
 LIB_SRCS	= $(SRC_DIR)/http/HttpRequest.cpp \
 			  $(SRC_DIR)/http/RequestParser.cpp \
 			  $(SRC_DIR)/network/ListeningSocket.cpp \
-			  $(SRC_DIR)/network/ClientSocket.cpp
+			  $(SRC_DIR)/network/ClientSocket.cpp \
+			  $(SRC_DIR)/network/EventLoop.cpp
 
 TEST_SRCS	= $(wildcard $(TEST_DIR)/*.cpp)
 TEST_NAMES	= $(notdir $(TEST_SRCS:.cpp=))
@@ -110,6 +113,13 @@ re: fclean all
 # ──────────────────────────────────────────────────────────────────────────── #
 #                               TEST RULES                                     #
 # ──────────────────────────────────────────────────────────────────────────── #
+
+stress: $(BIN_DIR)/stress_client
+
+$(BIN_DIR)/stress_client: $(TEST_DIR)/stress_client.cpp
+	@mkdir -p $(BIN_DIR)
+	@echo "  $(CYAN)$(BOLD)⚙$(RESET)  $(DIM)Compiling stress client$(RESET) $<"
+	@$(CXX) $(CXXFLAGS) $(INCLUDES) $< -o $@
 
 test: $(TEST_BINS)
 	@echo ""
