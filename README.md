@@ -9,9 +9,14 @@ The project has successfully completed its core infrastructure foundation across
    - `ListeningSocket`: A pure RAII engine that safely manages server setup lifecycle (`socket`, `setsockopt`, `bind`, `listen`) preventing kernel descriptor leaks.
    - `ClientSocket`: Manages incoming active connections, automatically enforcing `O_NONBLOCK` settings at birth. It utilizes a zero-copy performance layout where reading modules consume data directly via constant string references (`const std::string&`), mitigating unnecessary heap allocations.
 
-2. **HTTP Core Layer (Parsing Engine):**
+2. **HTTP Core Layer (Parsing & Response Engine):**
    - `HttpRequest`: A passive data structure container (DTO) featuring fully automated case-insensitive header normalization to safeguard the system against capitalization protocol conflicts.
    - `RequestParser`: A rigorous Finite State Machine (FSM) stream parser that ingests incoming TCP data character-by-character. To minimize cyclomatic complexity, the processing switch-case is heavily modularized, delegating each FSM state into isolated private member handlers with extreme protection against buffer overflow and protocol violation attacks.
+   - `HttpResponse`: Fully compliant HTTP/1.1 response builder. Incorporates a smart internal contingency system that automatically generates robust fallback HTML error pages (400, 403, 404, 405, 500) and injects strictly required headers (Content-Length, Content-Type) without duplicating logic, adhering to the DRY principle via an internal static reason phrase dictionary.
+
+3. **Configuration Architecture (NGINX Style):**
+   - A highly modular and strict C++98 hierarchical inheritance tree (`Context` -> `ServerConfig` & `LocationConfig`) established to store layout rules efficiently.
+   - It guarantees memory-safe deep cloning between configuration contexts leveraging the Orthodox Canonical Form, effectively preparing the runtime to absorb custom `.conf` directives safely.
 
 ---
 

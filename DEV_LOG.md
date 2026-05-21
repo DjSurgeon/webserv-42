@@ -506,3 +506,44 @@ El FSM RequestParser está completamente implementado y verificado para la lectu
 ### 🧪 Fase 4: Batería de Pruebas
 - Pruebas locales de compilación y pasaje de linters (Google Style). Todo validado según `CODING_STANDARDS.md`.
 - Verificación con herramientas de análisis de memoria confirmando la solidez de la arquitectura: 0 memory leaks y 0 FD leaks al cerrar el servidor.
+
+---
+
+## 📅 Día 5: Respuesta HTTP (HttpResponse) y Core de Configuración
+
+### 🎯 Objetivos del Día
+1. Implementar la clase `HttpResponse` encargada de generar y serializar el flujo de respuesta hacia el cliente, de acuerdo estricto al estándar HTTP/1.1.
+2. Desarrollar el sistema interno de contingencia y generación de errores HTTP genéricos (400, 403, 404, 405, 500).
+3. Establecer la base jerárquica de clases orientadas a la configuración (estilo NGINX), habilitando la herencia entre los bloques de configuración.
+
+### 🏗️ Fase 1: Creación y Serialización de `HttpResponse`
+- **Declaración e Implementación:** Se construyó la clase `HttpResponse` para encapsular `_status_code`, `_reason_phrase`, `_headers` (mapa) y `_body`.
+- **Serialización (`to_string`):** Uso de `std::stringstream` para compilar la cadena final:
+  1. *Status-Line*: `HTTP/1.1 {code} {phrase}\r\n`
+  2. *Headers*: Iterador sobre mapa inyectando `{Key}: {Value}\r\n`
+  3. *Línea vacía obligatoria*: `\r\n`
+  4. *Cuerpo*: `_body`
+- **Contingencia (Errores):** Implementación del generador automático de páginas de error, que formatea un HTML robusto, inyecta los `Content-Length` y `Content-Type` dinámicamente y configura el estado HTTP con una sola llamada a `generate_error_response()`.
+- **Refactorización Limpia:** Se implementó un helper estático `get_reason_phrase(int code)` para centralizar el diccionario de estados, eliminando bloques `switch` duplicados y mejorando el patrón de diseño DRY.
+
+### ⚙️ Fase 2: Jerarquía del Core de Configuración
+Para soportar la estructura y herencia de bloques estilo NGINX (donde una ruta `location` hereda del bloque `server`), se implementaron tres robustas clases de estado:
+
+1. **`Context` (Clase Base):**
+   - Contiene reglas globales como: `_root`, `_index_files`, `_error_pages`, `_client_max_body_size`, `_autoindex`.
+   - Inicializa valores seguros (ej. 1MB máximo, autoindex false).
+   - Posee un **destructor virtual** para asegurar la destrucción correcta de objetos polimórficos.
+
+2. **`LocationConfig` (Reglas de Ruta):**
+   - Hereda públicamente de `Context`.
+   - Añade reglas estrictas de URI: `_path`, `_allowed_methods`, `_cgi_path`, `_redirect`.
+   - Implementa Forma Canónica llamando explícitamente a `Context(other)` para copiar fielmente las configuraciones heredadas.
+
+3. **`ServerConfig` (Virtual Host):**
+   - Hereda públicamente de `Context`.
+   - Configura el Binding: `_port` (por defecto 8080), `_host` (por defecto 127.0.0.1) y `_server_names`.
+   - Contiene un `std::vector<LocationConfig> _locations` para despachar el routing.
+
+### 🧪 Fase 3: Pruebas y Validación
+- El código superó exitosamente el analizador `cpplint` cumpliendo al pie de la letra las `CODING_STANDARDS.md` (C++98 y Google Style).
+- Pruebas locales confirmaron 0 memory leaks y la correcta copia profunda de atributos de clase a través del árbol de herencia, dejándolo todo a punto para comenzar el analizador sintáctico del archivo de configuración.
