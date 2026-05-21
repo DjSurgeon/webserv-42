@@ -6,6 +6,7 @@
 
 #include <iostream>
 #include <stdexcept>
+#include <string>
 
 /**
  * @brief Default constructor for EventLoop.
@@ -204,21 +205,27 @@ void EventLoop::_handle_client_data(int fd) {
 
   if (bytes > 0) {
     client_it->second->append_to_read_buffer(std::string(buffer, bytes));
-    
     // Process the buffer with the parser
     const std::string& read_buf = client_it->second->get_read_buffer();
     size_t i = 0;
     while (i < read_buf.length()) {
       e_parser_state state = parser_it->second->feed(read_buf[i]);
       i++;
-      
       if (state == STATE_COMPLETE) {
         std::cout << "EventLoop: Request completed from client " << fd << "\n";
-        client_it->second->append_to_write_buffer("HTTP/1.1 200 OK\r\nContent-Length: 13\r\nConnection: close\r\n\r\nHello, World!");
+        client_it->second->append_to_write_buffer(
+            "HTTP/1.1 200 OK\r\n"
+            "Content-Length: 13\r\n"
+            "Connection: close\r\n"
+            "\r\n"
+            "Hello, World!");
         break;
       } else if (state == STATE_ERROR) {
         std::cerr << "EventLoop: Parser error from client " << fd << "\n";
-        client_it->second->append_to_write_buffer("HTTP/1.1 400 Bad Request\r\nConnection: close\r\n\r\n");
+        client_it->second->append_to_write_buffer(
+            "HTTP/1.1 400 Bad Request\r\n"
+            "Connection: close\r\n"
+            "\r\n");
         break;
       }
     }
@@ -278,7 +285,7 @@ void EventLoop::run() {
     // Iterate backwards to allow safe removal of sockets during iteration
     for (int i = static_cast<int>(_pollfds.size()) - 1; i >= 0; --i) {
       int current_fd = _pollfds[i].fd;
-      short revents = _pollfds[i].revents;
+      int16_t revents = _pollfds[i].revents;
 
       if (revents == 0) {
         continue;
