@@ -66,9 +66,10 @@ LIB_SRCS	= $(SRC_DIR)/config/Context.cpp \
 			  $(SRC_DIR)/http/RequestParser.cpp \
 			  $(SRC_DIR)/network/ListeningSocket.cpp \
 			  $(SRC_DIR)/network/ClientSocket.cpp \
-			  $(SRC_DIR)/network/EventLoop.cpp
+			  $(SRC_DIR)/network/EventLoop.cpp \
+			  $(TEST_DIR)/test_globals.cpp
 
-TEST_SRCS	= $(wildcard $(TEST_DIR)/*.cpp)
+TEST_SRCS	= $(filter-out $(TEST_DIR)/test_globals.cpp, $(wildcard $(TEST_DIR)/*.cpp))
 TEST_NAMES	= $(notdir $(TEST_SRCS:.cpp=))
 TEST_BINS	= $(addprefix $(BIN_DIR)/, $(TEST_NAMES))
 
