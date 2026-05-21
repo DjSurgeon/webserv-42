@@ -74,22 +74,30 @@ jobs:
       - name: Run Valgrind (Leaks + FD)
         run: |
           valgrind \
-            --timeout=60 \
             --leak-check=full \
             --show-leak-kinds=all \
             --track-fds=yes \
             --error-exitcode=1 \
-            ./webserv config/default.conf
+            ./webserv config/default.conf &
+          SERVER_PID=$!
+          sleep 5
+          kill -SIGTERM $SERVER_PID
+          wait $SERVER_PID || {
+            CODE=$?
+            if [ $CODE -eq 143 ] || [ $CODE -eq 0 ]; then exit 0; else exit $CODE; fi
+          }
 
       - name: Run Valgrind with HTTP request
         run: |
           valgrind \
-            --timeout=60 \
             --leak-check=full \
             --error-exitcode=1 \
-            ./webserv config/default.conf \
-          & 
+            ./webserv config/default.conf &
           SERVER_PID=$!
-          sleep 1
+          sleep 2
           curl -I http://localhost:8080/
-    kill $SERVER_PID
+          kill -SIGTERM $SERVER_PID
+          wait $SERVER_PID || {
+            CODE=$?
+            if [ $CODE -eq 143 ] || [ $CODE -eq 0 ]; then exit 0; else exit $CODE; fi
+          }
