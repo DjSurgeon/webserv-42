@@ -31,6 +31,7 @@ SRCS		= $(SRC_DIR)/main.cpp \
 			  $(SRC_DIR)/config/Context.cpp \
 			  $(SRC_DIR)/config/LocationConfig.cpp \
 			  $(SRC_DIR)/config/ServerConfig.cpp \
+			  $(SRC_DIR)/handlers/StaticRouter.cpp \
 			  $(SRC_DIR)/http/HttpRequest.cpp \
 			  $(SRC_DIR)/http/HttpResponse.cpp \
 			  $(SRC_DIR)/http/RequestParser.cpp \
@@ -43,6 +44,7 @@ OBJS		= $(SRCS:$(SRC_DIR)/%.cpp=$(OBJ_DIR)/%.o)
 HDRS		= $(SRC_DIR)/config/Context.hpp \
 			  $(SRC_DIR)/config/LocationConfig.hpp \
 			  $(SRC_DIR)/config/ServerConfig.hpp \
+			  $(SRC_DIR)/handlers/StaticRouter.hpp \
 			  $(SRC_DIR)/http/HttpRequest.hpp \
 			  $(SRC_DIR)/http/HttpResponse.hpp \
 			  $(SRC_DIR)/http/RequestParser.hpp \
@@ -61,6 +63,7 @@ BIN_DIR		= bin
 LIB_SRCS	= $(SRC_DIR)/config/Context.cpp \
 			  $(SRC_DIR)/config/LocationConfig.cpp \
 			  $(SRC_DIR)/config/ServerConfig.cpp \
+			  $(SRC_DIR)/handlers/StaticRouter.cpp \
 			  $(SRC_DIR)/http/HttpRequest.cpp \
 			  $(SRC_DIR)/http/HttpResponse.cpp \
 			  $(SRC_DIR)/http/RequestParser.cpp \
