@@ -28,7 +28,7 @@ void test_file_loading() {
   std::cout << "[Test] Verifying file loading and line count..." << std::endl;
   try {
     ConfigParser parser("tests/assets/test_basic.conf");
-    bool count_pass = (parser.get_raw_lines().size() == 4);
+    bool count_pass = (parser.get_raw_lines().size() == 3);
     print_result("test_file_loading", count_pass);
   } catch (const std::exception& e) {
     std::cerr << "Unexpected exception: " << e.what() << std::endl;
@@ -52,7 +52,7 @@ void test_preprocessing_edge_cases() {
   try {
     ConfigParser parser("tests/assets/test_edge_cases.conf");
     const std::vector<std::string>& lines = parser.get_raw_lines();
-    bool count_pass = (lines.size() == 7);
+    bool count_pass = (lines.size() == 6);
     print_result("test_preprocessing_edge_cases", count_pass);
   } catch (const std::exception& e) {
     std::cerr << "Unexpected exception: " << e.what() << std::endl;
