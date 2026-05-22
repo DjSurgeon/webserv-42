@@ -18,8 +18,8 @@ StaticRouter& StaticRouter::operator=(const StaticRouter& other) {
 StaticRouter::~StaticRouter() {}
 
 bool StaticRouter::process_route(const HttpRequest& req,
-                                 const LocationConfig* loc, HttpResponse& res,
-                                 std::string& out_physical_path) const {
+                                 const LocationConfig* loc, HttpResponse* res,
+                                 std::string* out_physical_path) const {
   if (!_check_null_location(loc, res)) {
     return false;
   }
@@ -34,9 +34,11 @@ bool StaticRouter::process_route(const HttpRequest& req,
 }
 
 bool StaticRouter::_check_null_location(const LocationConfig* loc,
-                                        HttpResponse& res) const {
+                                        HttpResponse* res) const {
   if (loc == NULL) {
-    res.generate_error_response(404);
+    if (res) {
+      res->generate_error_response(404);
+    }
     return false;
   }
   return true;
@@ -44,7 +46,7 @@ bool StaticRouter::_check_null_location(const LocationConfig* loc,
 
 bool StaticRouter::_validate_method(const HttpRequest& req,
                                     const LocationConfig* loc,
-                                    HttpResponse& res) const {
+                                    HttpResponse* res) const {
   const std::string& method = req.get_method();
   const std::vector<std::string>& allowed_methods = loc->get_allowed_methods();
   bool method_allowed = false;
@@ -63,7 +65,9 @@ bool StaticRouter::_validate_method(const HttpRequest& req,
   }
 
   if (!method_allowed) {
-    res.generate_error_response(405);
+    if (res) {
+      res->generate_error_response(405);
+    }
     return false;
   }
 
@@ -72,7 +76,10 @@ bool StaticRouter::_validate_method(const HttpRequest& req,
 
 void StaticRouter::_translate_path(const HttpRequest& req,
                                    const LocationConfig* loc,
-                                   std::string& out_physical_path) const {
+                                   std::string* out_physical_path) const {
+  if (!out_physical_path) {
+    return;
+  }
   const std::string& root = loc->get_root();
   const std::string& uri = req.get_uri();
 
@@ -87,5 +94,5 @@ void StaticRouter::_translate_path(const HttpRequest& req,
     clean_uri = "/" + clean_uri;
   }
 
-  out_physical_path = clean_root + clean_uri;
+  *out_physical_path = clean_root + clean_uri;
 }
