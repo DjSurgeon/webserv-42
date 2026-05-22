@@ -31,6 +31,7 @@ run_test() {
 run_test "test_context" "src/config/Context.cpp" "tests/test_context.cpp"
 run_test "test_location_config" "src/config/Context.cpp src/config/LocationConfig.cpp" "tests/test_location_config.cpp"
 run_test "test_server_config" "src/config/Context.cpp src/config/LocationConfig.cpp src/config/ServerConfig.cpp" "tests/test_server_config.cpp"
+run_test "test_config_parser" "src/config/ConfigParser.cpp" "tests/test_config_parser.cpp"
 run_test "test_static_router" "src/config/Context.cpp src/config/LocationConfig.cpp src/handlers/StaticRouter.cpp src/http/HttpRequest.cpp src/http/HttpResponse.cpp" "tests/test_static_router.cpp"
 run_test "test_http_request" "src/http/HttpRequest.cpp" "tests/test_http_request.cpp"
 run_test "test_http_response" "src/http/HttpResponse.cpp" "tests/test_http_response.cpp"
