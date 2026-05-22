@@ -99,22 +99,8 @@ void ConfigParser::_parse_server_block(const std::vector<std::string>& tokens,
       _parse_location_block(tokens, i, &loc);
       server->add_location(loc);
     } else {
-      // Unknown directive: skip until ';'
-      // If we find '{' or '}' before ';', it's a syntax error.
-      size_t start_i = *i;
-      while (*i < tokens.size() && tokens[*i] != ";" && tokens[*i] != "{" &&
-             tokens[*i] != "}") {
-        (*i)++;
-      }
-      if (*i < tokens.size() && tokens[*i] == ";") {
-        (*i)++;  // Skip the semicolon
-      } else if (*i == start_i) {
-        // If we hit a brace without advancing, it's an unexpected symbol
-        throw std::runtime_error("Syntax error: unexpected '" + tokens[*i] +
-                                 "' in block");
-      }
-      // If we advanced but hit a brace, the next outer loop iteration
-      // will handle it (and likely throw or exit if it's '}')
+      throw std::runtime_error("Syntax error: unknown directive '" + tokens[*i] +
+                               "' in server block");
     }
   }
 
@@ -143,18 +129,8 @@ void ConfigParser::_parse_location_block(const std::vector<std::string>& tokens,
   (*i)++;  // Skip "{"
 
   while (*i < tokens.size() && tokens[*i] != "}") {
-    // Unknown directive: skip until ';'
-    size_t start_i = *i;
-    while (*i < tokens.size() && tokens[*i] != ";" && tokens[*i] != "{" &&
-           tokens[*i] != "}") {
-      (*i)++;
-    }
-    if (*i < tokens.size() && tokens[*i] == ";") {
-      (*i)++;  // Skip the semicolon
-    } else if (*i == start_i) {
-      throw std::runtime_error("Syntax error: unexpected '" + tokens[*i] +
-                               "' in location block");
-    }
+    throw std::runtime_error("Syntax error: unknown directive '" + tokens[*i] +
+                             "' in location block");
   }
 
   if (*i >= tokens.size() || tokens[*i] != "}") {
