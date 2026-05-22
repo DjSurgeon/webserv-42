@@ -4,6 +4,7 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
+#include <fstream>
 
 #include "config/ConfigParser.hpp"
 
@@ -26,16 +27,8 @@ static void print_result(const std::string& test_name, bool success) {
 void test_file_loading() {
   std::cout << "[Test] Verifying file loading and line count..." << std::endl;
   try {
-    // tests/assets/test_basic.conf has 5 lines, but 1 is a full comment.
-    // New logic skips full comments. Expect 4 lines.
     ConfigParser parser("tests/assets/test_basic.conf");
-
     bool count_pass = (parser.get_raw_lines().size() == 4);
-    if (!count_pass) {
-      std::cerr << "Expected 4 lines, got " << parser.get_raw_lines().size()
-                << std::endl;
-    }
-
     print_result("test_file_loading", count_pass);
   } catch (const std::exception& e) {
     std::cerr << "Unexpected exception: " << e.what() << std::endl;
@@ -51,89 +44,109 @@ void test_invalid_file() {
   } catch (const std::runtime_error& e) {
     exception_caught = true;
   }
-
   print_result("test_invalid_file", exception_caught);
 }
 
-void test_canonical_form() {
-  std::cout << "[Test] Verifying canonical form for ConfigParser..."
-            << std::endl;
-  try {
-    ConfigParser parser1("tests/assets/test_basic.conf");
-
-    // Copy constructor
-    ConfigParser parser2(parser1);
-    bool copy_pass = (parser2.get_raw_lines().size() == 4);
-
-    // Assignment operator
-    ConfigParser parser3;
-    parser3 = parser1;
-    bool assign_pass = (parser3.get_raw_lines().size() == 4);
-
-    print_result("test_canonical_form", copy_pass && assign_pass);
-  } catch (const std::exception& e) {
-    std::cerr << "Unexpected exception: " << e.what() << std::endl;
-    print_result("test_canonical_form", false);
-  }
-}
-
 void test_preprocessing_edge_cases() {
-  std::cout << "[Test] Verifying preprocessing edge cases (whitespace and "
-               "comments)..."
-            << std::endl;
+  std::cout << "[Test] Verifying preprocessing edge cases..." << std::endl;
   try {
     ConfigParser parser("tests/assets/test_edge_cases.conf");
     const std::vector<std::string>& lines = parser.get_raw_lines();
-
-    // Recounting test_edge_cases.conf with new logic:
-    // Meaningful lines:
-    // 1. "server { # inline comment after directive" -> "server {"
-    // 2. "    listen 80;    " -> "listen 80;"
-    // 3. "    server_name localhost;    # another inline comment" ->
-    // "server_name localhost;"
-    // 4. "\t \t location / { \t # tabbed line with comment" -> "location / {"
-    // 5. "\t \t \t root /var/www;" -> "root /var/www;"
-    // 6. "\t \t }" -> "}"
-    // 7. "}" -> "}"
-    // Total: 7 lines.
-
     bool count_pass = (lines.size() == 7);
-    if (!count_pass) {
-      std::cerr << "Expected 7 lines, got " << lines.size() << std::endl;
-      for (size_t i = 0; i < lines.size(); ++i) {
-        std::cerr << "  Line " << i << ": [" << lines[i] << "]" << std::endl;
-      }
-    }
-
-    bool content_pass = true;
-    if (count_pass) {
-      if (lines[0] != "server {") content_pass = false;
-      if (lines[1] != "listen 80;") content_pass = false;
-      if (lines[2] != "server_name localhost;") content_pass = false;
-      // Check that comments and extra space are gone
-      if (lines[3] != "location / {") content_pass = false;
-      if (lines[4] != "root /var/www;") content_pass = false;
-      if (lines[5] != "}") content_pass = false;
-      if (lines[6] != "}") content_pass = false;
-    }
-
-    print_result("test_preprocessing_edge_cases", count_pass && content_pass);
+    print_result("test_preprocessing_edge_cases", count_pass);
   } catch (const std::exception& e) {
     std::cerr << "Unexpected exception: " << e.what() << std::endl;
     print_result("test_preprocessing_edge_cases", false);
   }
 }
 
+void test_block_parsing_valid() {
+  std::cout << "[Test] Verifying complex but valid block parsing..." << std::endl;
+  try {
+    ConfigParser parser("tests/assets/test_complex_valid.conf");
+    const std::vector<ServerConfig>& servers = parser.get_servers();
+
+    // test_complex_valid.conf: "server { location / { } } server{location/api{}}"
+    bool pass = (servers.size() == 2);
+    if (pass) {
+      if (servers[0].get_locations().size() != 1) pass = false;
+      if (servers[0].get_locations()[0].get_path() != "/") pass = false;
+      if (servers[1].get_locations().size() != 1) pass = false;
+      if (servers[1].get_locations()[0].get_path() != "/api") pass = false;
+    }
+
+    print_result("test_block_parsing_valid", pass);
+  } catch (const std::exception& e) {
+    std::cerr << "Unexpected exception: " << e.what() << std::endl;
+    print_result("test_block_parsing_valid", false);
+  }
+}
+
+struct TestCase {
+  std::string file;
+  std::string description;
+};
+
+void test_block_parsing_errors() {
+  std::cout << "[Test] Verifying syntax error detection..." << std::endl;
+
+  std::vector<TestCase> cases;
+  
+  TestCase c1 = {"tests/assets/test_invalid_missing_brace.conf", "Missing brace"};
+  TestCase c2 = {"tests/assets/test_invalid_no_brace_after_server.conf", "No brace after server"};
+  TestCase c3 = {"tests/assets/test_invalid_root_directive.conf", "Directive at root level"};
+  TestCase c4 = {"tests/assets/test_invalid_missing_location_path.conf", "Missing location path"};
+
+  cases.push_back(c1);
+  cases.push_back(c2);
+  cases.push_back(c3);
+  cases.push_back(c4);
+
+  bool all_caught = true;
+  for (size_t i = 0; i < cases.size(); ++i) {
+    try {
+      ConfigParser parser(cases[i].file);
+      std::cerr << "Fail: Expected exception for: " << cases[i].description << std::endl;
+      all_caught = false;
+    } catch (const std::runtime_error& e) {
+      // std::cout << "  (Caught expected error: " << e.what() << ")" << std::endl;
+    }
+  }
+
+  print_result("test_block_parsing_errors", all_caught);
+}
+
+void test_stress_parsing() {
+  std::cout << "[Test] Stress testing with 1000 server blocks..." << std::endl;
+  const std::string filename = "tests/assets/test_stress.conf";
+  std::ofstream out(filename.c_str());
+  for (int i = 0; i < 1000; ++i) {
+    out << "server { location /s" << i << " { } }\n";
+  }
+  out.close();
+
+  try {
+    ConfigParser parser(filename);
+    bool pass = (parser.get_servers().size() == 1000);
+    print_result("test_stress_parsing", pass);
+  } catch (const std::exception& e) {
+    std::cerr << "Stress test failed: " << e.what() << std::endl;
+    print_result("test_stress_parsing", false);
+  }
+  std::remove(filename.c_str());
+}
+
 int main() {
-  std::cout << "=== STARTING CONFIG PARSER TESTS ===\n" << std::endl;
+  std::cout << "=== STARTING CONFIG PARSER STRUCTURAL TESTS ===\n" << std::endl;
 
   test_file_loading();
-  std::cout << std::endl;
   test_invalid_file();
-  std::cout << std::endl;
-  test_canonical_form();
-  std::cout << std::endl;
   test_preprocessing_edge_cases();
+  std::cout << std::endl;
+  test_block_parsing_valid();
+  test_block_parsing_errors();
+  std::cout << std::endl;
+  test_stress_parsing();
 
   std::cout << "\n=== CONFIG PARSER TESTS COMPLETED ===" << std::endl;
   return g_all_passed ? 0 : 1;

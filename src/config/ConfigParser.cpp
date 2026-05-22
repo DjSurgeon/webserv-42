@@ -1,6 +1,8 @@
 // Copyright 2026 serjimen vja-nie dlesieur
 #include "config/ConfigParser.hpp"
 
+#include "config/LocationConfig.hpp"
+#include <cctype>
 #include <fstream>
 #include <stdexcept>
 #include <string>
@@ -22,14 +24,17 @@ ConfigParser::ConfigParser(const std::string& filename) {
       _raw_lines.push_back(line);
     }
   }
+
+  parse_tokens();
 }
 
 ConfigParser::ConfigParser(const ConfigParser& other)
-    : _raw_lines(other._raw_lines) {}
+    : _raw_lines(other._raw_lines), _servers(other._servers) {}
 
 ConfigParser& ConfigParser::operator=(const ConfigParser& other) {
   if (this != &other) {
     _raw_lines = other._raw_lines;
+    _servers = other._servers;
   }
   return *this;
 }
@@ -38,6 +43,106 @@ ConfigParser::~ConfigParser() {}
 
 const std::vector<std::string>& ConfigParser::get_raw_lines() const {
   return _raw_lines;
+}
+
+const std::vector<ServerConfig>& ConfigParser::get_servers() const {
+  return _servers;
+}
+
+std::vector<std::string> ConfigParser::_flatten_tokens() const {
+  std::vector<std::string> all_tokens;
+  for (size_t i = 0; i < _raw_lines.size(); ++i) {
+    std::vector<std::string> line_tokens = tokenize(_raw_lines[i]);
+    all_tokens.insert(all_tokens.end(), line_tokens.begin(), line_tokens.end());
+  }
+  return all_tokens;
+}
+
+void ConfigParser::parse_tokens() {
+  std::vector<std::string> all_tokens = _flatten_tokens();
+  size_t i = 0;
+
+  while (i < all_tokens.size()) {
+    if (all_tokens[i] == "server") {
+      ServerConfig server;
+      _parse_server_block(all_tokens, i, server);
+      _servers.push_back(server);
+    } else {
+      throw std::runtime_error("Syntax error: expected 'server' block at root level");
+    }
+  }
+}
+
+void ConfigParser::_parse_server_block(const std::vector<std::string>& tokens,
+                                       size_t& i, ServerConfig& server) {
+  i++;  // Skip "server"
+  if (i >= tokens.size() || tokens[i] != "{") {
+    throw std::runtime_error("Syntax error: expected '{' after server");
+  }
+  i++;  // Skip "{"
+
+  while (i < tokens.size() && tokens[i] != "}") {
+    if (tokens[i] == "location") {
+      LocationConfig loc;
+      // Inherit context defaults
+      loc.set_root(server.get_root());
+      loc.set_index_files(server.get_index_files());
+      loc.set_error_pages(server.get_error_pages());
+      loc.set_client_max_body_size(server.get_client_max_body_size());
+      loc.set_autoindex(server.get_autoindex());
+
+      _parse_location_block(tokens, i, loc);
+      server.add_location(loc);
+    } else {
+      // Temporarily skip unknown directives like 'listen', 'server_name'
+      // until they are officially implemented.
+      while (i < tokens.size() && tokens[i] != ";" && tokens[i] != "}" &&
+             tokens[i] != "{") {
+        i++;
+      }
+      if (i < tokens.size() && tokens[i] == ";") {
+        i++;
+      }
+    }
+  }
+
+  if (i >= tokens.size() || tokens[i] != "}") {
+    throw std::runtime_error("Syntax error: missing '}' to close server block");
+  }
+  i++;  // Skip "}"
+}
+
+void ConfigParser::_parse_location_block(const std::vector<std::string>& tokens,
+                                         size_t& i, LocationConfig& location) {
+  i++;  // Skip "location"
+  if (i >= tokens.size()) {
+    throw std::runtime_error("Syntax error: missing path for location");
+  }
+
+  location.set_path(tokens[i]);
+  i++;  // Skip path
+
+  if (i >= tokens.size() || tokens[i] != "{") {
+    throw std::runtime_error("Syntax error: expected '{' after location path");
+  }
+  i++;  // Skip "{"
+
+  while (i < tokens.size() && tokens[i] != "}") {
+    // Temporarily skip unknown directives inside location
+    while (i < tokens.size() && tokens[i] != ";" && tokens[i] != "}" &&
+           tokens[i] != "{") {
+      i++;
+    }
+    if (i < tokens.size() && tokens[i] == ";") {
+      i++;
+    }
+  }
+
+  if (i >= tokens.size() || tokens[i] != "}") {
+    throw std::runtime_error(
+        "Syntax error: missing '}' to close location block");
+  }
+  i++;  // Skip "}"
 }
 
 void ConfigParser::trim_whitespace(std::string* line) {
@@ -64,4 +169,34 @@ void ConfigParser::remove_comments(std::string* line) {
   if (pos != std::string::npos) {
     line->erase(pos);
   }
+}
+
+std::vector<std::string> ConfigParser::tokenize(const std::string& line) {
+  std::vector<std::string> tokens;
+  std::string current_token;
+
+  for (size_t i = 0; i < line.length(); ++i) {
+    char c = line[i];
+
+    if (std::isspace(static_cast<unsigned char>(c))) {
+      if (!current_token.empty()) {
+        tokens.push_back(current_token);
+        current_token.clear();
+      }
+    } else if (c == ';' || c == '{' || c == '}') {
+      if (!current_token.empty()) {
+        tokens.push_back(current_token);
+        current_token.clear();
+      }
+      tokens.push_back(std::string(1, c));
+    } else {
+      current_token += c;
+    }
+  }
+
+  if (!current_token.empty()) {
+    tokens.push_back(current_token);
+  }
+
+  return tokens;
 }
