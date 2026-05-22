@@ -82,8 +82,10 @@ const LocationConfig* ServerConfig::find_location(
       // Strict boundary check:
       // 1. Root '/' always matches.
       // 2. Exact match (e.g. URI "/images" and path "/images").
-      // 3. URI continues with a slash (e.g. URI "/images/logo.png" and path "/images").
-      // 4. Path itself ends in a slash (e.g. path "/images/" matches URI "/images/logo.png").
+      // 3. URI continues with a slash (e.g. URI "/images/logo.png" and path
+      // "/images").
+      // 4. Path itself ends in a slash (e.g. path "/images/" matches URI
+      // "/images/logo.png").
       if (path == "/" || path.length() == uri.length()) {
         is_clean_match = true;
       } else if (uri[path.length()] == '/') {

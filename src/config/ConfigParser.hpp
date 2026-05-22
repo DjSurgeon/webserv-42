@@ -19,8 +19,8 @@ class ConfigParser {
  private:
   std::vector<std::string> _raw_lines;
 
-  static void trim_whitespace(std::string& line);
-  static void remove_comments(std::string& line);
+  static void trim_whitespace(std::string* line);
+  static void remove_comments(std::string* line);
 };
 
 #endif  // SRC_CONFIG_CONFIGPARSER_HPP_
