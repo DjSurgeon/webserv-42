@@ -25,10 +25,10 @@ class ConfigParser {
 
   void parse_tokens();
   std::vector<std::string> _flatten_tokens() const;
-  void _parse_server_block(const std::vector<std::string>& tokens, size_t& i,
-                           ServerConfig& server);
-  void _parse_location_block(const std::vector<std::string>& tokens, size_t& i,
-                             LocationConfig& location);
+  void _parse_server_block(const std::vector<std::string>& tokens, size_t* i,
+                           ServerConfig* server);
+  void _parse_location_block(const std::vector<std::string>& tokens, size_t* i,
+                             LocationConfig* location);
 
   static void trim_whitespace(std::string* line);
   static void remove_comments(std::string* line);

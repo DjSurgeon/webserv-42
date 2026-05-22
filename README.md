@@ -17,6 +17,7 @@ The project has successfully completed its core infrastructure foundation across
 3. **Configuration Architecture (NGINX Style):**
    - A highly modular and strict C++98 hierarchical inheritance tree (`Context` -> `ServerConfig` & `LocationConfig`) established to store layout rules efficiently.
    - It guarantees memory-safe deep cloning between configuration contexts leveraging the Orthodox Canonical Form, effectively preparing the runtime to absorb custom `.conf` directives safely.
+   - **Custom Configuration Parser**: A bespoke Recursive Descent Parser (`ConfigParser`) that ingests, tokenizes, and structures complex `.conf` layout files in $O(N)$ time complexity. It automatically handles comment sanitization, whitespace trimming, and context cascading (where locations safely inherit properties from their parent servers) directly translating text into executable C++ runtime structures.
 
 ---
 

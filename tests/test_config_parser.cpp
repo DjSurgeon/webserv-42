@@ -1,10 +1,10 @@
 // Copyright 2026 serjimen vja-nie dlesieur
 #include <cassert>
+#include <fstream>
 #include <iostream>
 #include <stdexcept>
 #include <string>
 #include <vector>
-#include <fstream>
 
 #include "config/ConfigParser.hpp"
 
@@ -61,12 +61,14 @@ void test_preprocessing_edge_cases() {
 }
 
 void test_block_parsing_valid() {
-  std::cout << "[Test] Verifying complex but valid block parsing..." << std::endl;
+  std::cout << "[Test] Verifying complex but valid block parsing..."
+            << std::endl;
   try {
     ConfigParser parser("tests/assets/test_complex_valid.conf");
     const std::vector<ServerConfig>& servers = parser.get_servers();
 
-    // test_complex_valid.conf: "server { location / { } } server{location/api{}}"
+    // test_complex_valid.conf: "server { location / { } }
+    // server{location/api{}}"
     bool pass = (servers.size() == 2);
     if (pass) {
       if (servers[0].get_locations().size() != 1) pass = false;
@@ -91,11 +93,15 @@ void test_block_parsing_errors() {
   std::cout << "[Test] Verifying syntax error detection..." << std::endl;
 
   std::vector<TestCase> cases;
-  
-  TestCase c1 = {"tests/assets/test_invalid_missing_brace.conf", "Missing brace"};
-  TestCase c2 = {"tests/assets/test_invalid_no_brace_after_server.conf", "No brace after server"};
-  TestCase c3 = {"tests/assets/test_invalid_root_directive.conf", "Directive at root level"};
-  TestCase c4 = {"tests/assets/test_invalid_missing_location_path.conf", "Missing location path"};
+
+  TestCase c1 = {"tests/assets/test_invalid_missing_brace.conf",
+                 "Missing brace"};
+  TestCase c2 = {"tests/assets/test_invalid_no_brace_after_server.conf",
+                 "No brace after server"};
+  TestCase c3 = {"tests/assets/test_invalid_root_directive.conf",
+                 "Directive at root level"};
+  TestCase c4 = {"tests/assets/test_invalid_missing_location_path.conf",
+                 "Missing location path"};
 
   cases.push_back(c1);
   cases.push_back(c2);
@@ -106,10 +112,12 @@ void test_block_parsing_errors() {
   for (size_t i = 0; i < cases.size(); ++i) {
     try {
       ConfigParser parser(cases[i].file);
-      std::cerr << "Fail: Expected exception for: " << cases[i].description << std::endl;
+      std::cerr << "Fail: Expected exception for: " << cases[i].description
+                << std::endl;
       all_caught = false;
     } catch (const std::runtime_error& e) {
-      // std::cout << "  (Caught expected error: " << e.what() << ")" << std::endl;
+      // std::cout << "  (Caught expected error: " << e.what() << ")" <<
+      // std::endl;
     }
   }
 

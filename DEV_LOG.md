@@ -547,3 +547,31 @@ Para soportar la estructura y herencia de bloques estilo NGINX (donde una ruta `
 ### 🧪 Fase 3: Pruebas y Validación
 - El código superó exitosamente el analizador `cpplint` cumpliendo al pie de la letra las `CODING_STANDARDS.md` (C++98 y Google Style).
 - Pruebas locales confirmaron 0 memory leaks y la correcta copia profunda de atributos de clase a través del árbol de herencia, dejándolo todo a punto para comenzar el analizador sintáctico del archivo de configuración.
+
+---
+
+## 📅 Día 6: Analizador Sintáctico de Configuración (ConfigParser)
+
+### 🎯 Objetivos del Día
+1. Desarrollar un analizador sintáctico (Parser) estricto y seguro para leer, limpiar y estructurar archivos `.conf` estilo NGINX.
+2. Implementar un pipeline de sanitización para ignorar comentarios y espacios superfluos.
+3. Construir una Máquina de Estados basada en Análisis Sintáctico Descendente Recursivo (*Recursive Descent Parser*) para gestionar jerarquías (bloques `server` y `location`).
+
+### 🏗️ Fase 1: Esqueleto y Pipeline de Lectura I/O
+- Se creó la clase `ConfigParser` con Forma Canónica Ortodoxa.
+- **I/O Defensivo**: En el constructor, se inicializa el `std::ifstream`. Si el archivo no existe o no tiene permisos, se lanza un `std::runtime_error` para prevenir que el servidor arranque en un estado ciego.
+- **Lectura Cruda**: Uso de `std::getline` para extraer todas las líneas del archivo directamente a la memoria (`_raw_lines`). El FD del archivo se cierra de inmediato gracias al RAII.
+
+### 🧹 Fase 2: Saneamiento y Tokenización
+- **`remove_comments`**: Función para recortar caracteres desde el primer `#` hasta el final de la línea mediante `std::string::erase()`.
+- **`trim_whitespace`**: Función para purgar todos los espacios iniciales y finales (`" \t\r\n\v\f"`) y evitar la creación de líneas vacías, salvaguardando la memoria RAM.
+- **`tokenize`**: En lugar de usar `stringstream` o expresiones regulares limitadas, se programó un escáner `O(N)` que procesa cada línea carácter a carácter. Aisla de manera asíncrona tokens especiales (`{`, `}`, `;`) permitiendo analizar sintaxis muy densa (ej. `server{listen 8080;}`).
+
+### 🧠 Fase 3: Análisis Sintáctico Descendente Recursivo
+- Para evitar que la función principal de análisis creciera exponencialmente con ifs anidados ("God Object"), se implementó una arquitectura de *Recursive Descent Parser*.
+- **Submáquinas**: `_parse_server_block` y `_parse_location_block` reciben los tokens planos y un índice por referencia (`size_t& i`).
+- **Herencia Automática**: Al detectar un bloque `location`, se clonan los parámetros de contexto (raíz, índices, páginas de error, etc.) directamente del servidor padre (`ServerConfig`), simulando la cascada estricta de configuración de NGINX.
+- **Control de Estados (Stacking)**: La jerarquía y finalización de los bloques anidados se maneja nativamente por la pila de llamadas (Call Stack) de C++, inyectando copias inmutables a los contenedores finales cuando los bloques se cierran correctamente con `}`. Se lanza un error fatal ante bloques no cerrados o directivas en la raíz.
+
+### 🔄 Extra: Refactorización en `StaticRouter`
+- Para mantener coherencia con la Guía de Estilo de Google y acatar las directrices del linter (`clang-tidy`), se actualizaron los parámetros de salida de `StaticRouter::process_route` a punteros (`HttpResponse* res`, `std::string* out_physical_path`). Esto mejora la legibilidad en las llamadas, haciéndo explícitas las mutaciones, y añade dos capas adicionales de protección anti-nullptr.

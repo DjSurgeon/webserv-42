@@ -1,12 +1,13 @@
 // Copyright 2026 serjimen vja-nie dlesieur
 #include "config/ConfigParser.hpp"
 
-#include "config/LocationConfig.hpp"
 #include <cctype>
 #include <fstream>
 #include <stdexcept>
 #include <string>
 #include <vector>
+
+#include "config/LocationConfig.hpp"
 
 ConfigParser::ConfigParser() {}
 
@@ -65,84 +66,102 @@ void ConfigParser::parse_tokens() {
   while (i < all_tokens.size()) {
     if (all_tokens[i] == "server") {
       ServerConfig server;
-      _parse_server_block(all_tokens, i, server);
+      _parse_server_block(all_tokens, &i, &server);
       _servers.push_back(server);
     } else {
-      throw std::runtime_error("Syntax error: expected 'server' block at root level");
+      throw std::runtime_error(
+          "Syntax error: expected 'server' block at root level");
     }
   }
 }
 
 void ConfigParser::_parse_server_block(const std::vector<std::string>& tokens,
-                                       size_t& i, ServerConfig& server) {
-  i++;  // Skip "server"
-  if (i >= tokens.size() || tokens[i] != "{") {
+                                       size_t* i, ServerConfig* server) {
+  if (!i || !server) {
+    return;
+  }
+  (*i)++;  // Skip "server"
+  if (*i >= tokens.size() || tokens[*i] != "{") {
     throw std::runtime_error("Syntax error: expected '{' after server");
   }
-  i++;  // Skip "{"
+  (*i)++;  // Skip "{"
 
-  while (i < tokens.size() && tokens[i] != "}") {
-    if (tokens[i] == "location") {
+  while (*i < tokens.size() && tokens[*i] != "}") {
+    if (tokens[*i] == "location") {
       LocationConfig loc;
       // Inherit context defaults
-      loc.set_root(server.get_root());
-      loc.set_index_files(server.get_index_files());
-      loc.set_error_pages(server.get_error_pages());
-      loc.set_client_max_body_size(server.get_client_max_body_size());
-      loc.set_autoindex(server.get_autoindex());
+      loc.set_root(server->get_root());
+      loc.set_index_files(server->get_index_files());
+      loc.set_error_pages(server->get_error_pages());
+      loc.set_client_max_body_size(server->get_client_max_body_size());
+      loc.set_autoindex(server->get_autoindex());
 
-      _parse_location_block(tokens, i, loc);
-      server.add_location(loc);
+      _parse_location_block(tokens, i, &loc);
+      server->add_location(loc);
     } else {
-      // Temporarily skip unknown directives like 'listen', 'server_name'
-      // until they are officially implemented.
-      while (i < tokens.size() && tokens[i] != ";" && tokens[i] != "}" &&
-             tokens[i] != "{") {
-        i++;
+      // Unknown directive: skip until ';'
+      // If we find '{' or '}' before ';', it's a syntax error.
+      size_t start_i = *i;
+      while (*i < tokens.size() && tokens[*i] != ";" && tokens[*i] != "{" &&
+             tokens[*i] != "}") {
+        (*i)++;
       }
-      if (i < tokens.size() && tokens[i] == ";") {
-        i++;
+      if (*i < tokens.size() && tokens[*i] == ";") {
+        (*i)++;  // Skip the semicolon
+      } else if (*i == start_i) {
+        // If we hit a brace without advancing, it's an unexpected symbol
+        throw std::runtime_error("Syntax error: unexpected '" + tokens[*i] +
+                                 "' in block");
       }
+      // If we advanced but hit a brace, the next outer loop iteration
+      // will handle it (and likely throw or exit if it's '}')
     }
   }
 
-  if (i >= tokens.size() || tokens[i] != "}") {
+  if (*i >= tokens.size() || tokens[*i] != "}") {
     throw std::runtime_error("Syntax error: missing '}' to close server block");
   }
-  i++;  // Skip "}"
+  (*i)++;  // Skip "}"
 }
 
 void ConfigParser::_parse_location_block(const std::vector<std::string>& tokens,
-                                         size_t& i, LocationConfig& location) {
-  i++;  // Skip "location"
-  if (i >= tokens.size()) {
+                                         size_t* i, LocationConfig* location) {
+  if (!i || !location) {
+    return;
+  }
+  (*i)++;  // Skip "location"
+  if (*i >= tokens.size()) {
     throw std::runtime_error("Syntax error: missing path for location");
   }
 
-  location.set_path(tokens[i]);
-  i++;  // Skip path
+  location->set_path(tokens[*i]);
+  (*i)++;  // Skip path
 
-  if (i >= tokens.size() || tokens[i] != "{") {
+  if (*i >= tokens.size() || tokens[*i] != "{") {
     throw std::runtime_error("Syntax error: expected '{' after location path");
   }
-  i++;  // Skip "{"
+  (*i)++;  // Skip "{"
 
-  while (i < tokens.size() && tokens[i] != "}") {
-    // Temporarily skip unknown directives inside location
-    while (i < tokens.size() && tokens[i] != ";" && tokens[i] != "}" &&
-           tokens[i] != "{") {
-      i++;
+  while (*i < tokens.size() && tokens[*i] != "}") {
+    // Unknown directive: skip until ';'
+    size_t start_i = *i;
+    while (*i < tokens.size() && tokens[*i] != ";" && tokens[*i] != "{" &&
+           tokens[*i] != "}") {
+      (*i)++;
     }
-    if (i < tokens.size() && tokens[i] == ";") {
-      i++;
+    if (*i < tokens.size() && tokens[*i] == ";") {
+      (*i)++;  // Skip the semicolon
+    } else if (*i == start_i) {
+      throw std::runtime_error("Syntax error: unexpected '" + tokens[*i] +
+                               "' in location block");
     }
   }
 
-  if (i >= tokens.size() || tokens[i] != "}") {
+  if (*i >= tokens.size() || tokens[*i] != "}") {
     throw std::runtime_error(
         "Syntax error: missing '}' to close location block");
   }
-  i++;  // Skip "}"
+  (*i)++;  // Skip "}"
 }
 
 void ConfigParser::trim_whitespace(std::string* line) {
