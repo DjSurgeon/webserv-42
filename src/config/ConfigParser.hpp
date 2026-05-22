@@ -29,6 +29,8 @@ class ConfigParser {
                            ServerConfig* server);
   void _parse_location_block(const std::vector<std::string>& tokens, size_t* i,
                              LocationConfig* location);
+  bool _parse_context_directive(const std::vector<std::string>& tokens,
+                                size_t* i, Context* ctx);
 
   static void trim_whitespace(std::string* line);
   static void remove_comments(std::string* line);

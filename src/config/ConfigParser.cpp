@@ -2,6 +2,7 @@
 #include "config/ConfigParser.hpp"
 
 #include <cctype>
+#include <cstdlib>
 #include <fstream>
 #include <stdexcept>
 #include <string>
@@ -98,6 +99,8 @@ void ConfigParser::_parse_server_block(const std::vector<std::string>& tokens,
 
       _parse_location_block(tokens, i, &loc);
       server->add_location(loc);
+    } else if (_parse_context_directive(tokens, i, server)) {
+      continue;
     } else {
       throw std::runtime_error("Syntax error: unknown directive '" + tokens[*i] +
                                "' in server block");
@@ -129,6 +132,9 @@ void ConfigParser::_parse_location_block(const std::vector<std::string>& tokens,
   (*i)++;  // Skip "{"
 
   while (*i < tokens.size() && tokens[*i] != "}") {
+    if (_parse_context_directive(tokens, i, location)) {
+      continue;
+    }
     throw std::runtime_error("Syntax error: unknown directive '" + tokens[*i] +
                              "' in location block");
   }
@@ -138,6 +144,53 @@ void ConfigParser::_parse_location_block(const std::vector<std::string>& tokens,
         "Syntax error: missing '}' to close location block");
   }
   (*i)++;  // Skip "}"
+}
+
+bool ConfigParser::_parse_context_directive(
+    const std::vector<std::string>& tokens, size_t* i, Context* ctx) {
+  if (!i || !ctx || *i >= tokens.size()) {
+    return false;
+  }
+
+  const std::string& key = tokens[*i];
+
+  if (key == "root") {
+    if (*i + 2 >= tokens.size()) {
+      throw std::runtime_error("Syntax error: incomplete 'root' directive");
+    }
+    if (tokens[*i + 2] != ";") {
+      throw std::runtime_error("Syntax error: missing ';' after 'root' value");
+    }
+    ctx->set_root(tokens[*i + 1]);
+    *i += 3;
+    return true;
+  }
+
+  if (key == "client_max_body_size") {
+    if (*i + 2 >= tokens.size()) {
+      throw std::runtime_error(
+          "Syntax error: incomplete 'client_max_body_size' directive");
+    }
+    if (tokens[*i + 2] != ";") {
+      throw std::runtime_error(
+          "Syntax error: missing ';' after 'client_max_body_size' value");
+    }
+    const std::string& value_str = tokens[*i + 1];
+
+    for (size_t j = 0; j < value_str.length(); ++j) {
+      if (!std::isdigit(static_cast<unsigned char>(value_str[j]))) {
+        throw std::runtime_error(
+            "Syntax error: invalid 'client_max_body_size' value (must be pure bytes)");
+      }
+    }
+
+    size_t val = static_cast<size_t>(std::strtoul(value_str.c_str(), NULL, 10));
+    ctx->set_client_max_body_size(val);
+    *i += 3;
+    return true;
+  }
+
+  return false;
 }
 
 void ConfigParser::trim_whitespace(std::string* line) {
