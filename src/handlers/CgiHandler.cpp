@@ -1,6 +1,7 @@
 // Copyright 2026 serjimen vja-nie dlesieur
 #include "handlers/CgiHandler.hpp"
 
+#include <sys/types.h>
 #include <unistd.h>
 
 #include <cctype>
@@ -59,20 +60,46 @@ bool CgiHandler::execute_script(const std::string& script_path,
     }
   }
 
-  // TODO(serjimen): fork() and execve()
-  // NOTE: Inside fork==0, if tmp_file != NULL, dup2 fileno(tmp_file) to STDIN.
-  // In parent, if tmp_file != NULL, fclose(tmp_file).
-
-  if (tmp_file != NULL) {
-    fclose(tmp_file);  // Temporary closure until fork is implemented
-  }
-
-  return false;
+  // 3. Clone process and execute
+  return _execute_fork(script_path, req, stdout_pipe, tmp_file, res);
 }
 
 // -----------------------------------------------------------------------------
 // Private Methods (Memory & Environment Management)
 // -----------------------------------------------------------------------------
+
+bool CgiHandler::_execute_fork(const std::string& script_path,
+                               const HttpRequest& req, int stdout_pipe[2],
+                               FILE* tmp_file, HttpResponse& res) const {
+  (void)script_path;
+  (void)req;
+  pid_t pid = fork();
+
+  if (pid < 0) {
+    // Fork failed: close all resources
+    close(stdout_pipe[0]);
+    close(stdout_pipe[1]);
+    if (tmp_file != NULL) {
+      fclose(tmp_file);
+    }
+    res.generate_error_response(500);
+    return true;  // Handled
+  } else if (pid == 0) {
+    // Child Process
+    // TODO(serjimen): dup2 and execve
+    if (tmp_file != NULL) {
+      fclose(tmp_file); // Temporary closure until dup2 is implemented
+    }
+  } else {
+    // Parent Process
+    if (tmp_file != NULL) {
+      fclose(tmp_file);
+    }
+    // TODO(serjimen): Register stdout_pipe[0] with EventLoop
+  }
+
+  return false;
+}
 
 bool CgiHandler::_initialize_stdout_pipe(int stdout_pipe[2]) const {
   if (pipe(stdout_pipe) == -1) {

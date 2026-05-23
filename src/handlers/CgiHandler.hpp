@@ -29,6 +29,9 @@ class CgiHandler {
 
   bool _initialize_stdout_pipe(int stdout_pipe[2]) const;
   FILE* _create_temp_body_file(const HttpRequest& req) const;
+  bool _execute_fork(const std::string& script_path, const HttpRequest& req,
+                     int stdout_pipe[2], FILE* tmp_file,
+                     HttpResponse& res) const;
 
   std::vector<std::string> _build_env_vector(const HttpRequest& req,
                                              const LocationConfig* loc) const;
