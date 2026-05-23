@@ -3,6 +3,7 @@
 
 #include <cctype>
 #include <cstddef>
+#include <cstring>
 #include <map>
 #include <string>
 #include <vector>
@@ -63,18 +64,18 @@ void CgiHandler::_add_custom_headers(
     const std::map<std::string, std::string>& headers) const {
   std::map<std::string, std::string>::const_iterator it;
 
-  it = headers.find("Content-Length");
+  it = headers.find("content-length");
   if (it != headers.end()) {
     env.push_back("CONTENT_LENGTH=" + it->second);
   }
 
-  it = headers.find("Content-Type");
+  it = headers.find("content-type");
   if (it != headers.end()) {
     env.push_back("CONTENT_TYPE=" + it->second);
   }
 
   for (it = headers.begin(); it != headers.end(); ++it) {
-    if (it->first == "Content-Length" || it->first == "Content-Type") {
+    if (it->first == "content-length" || it->first == "content-type") {
       continue;
     }
 
@@ -92,12 +93,25 @@ void CgiHandler::_add_custom_headers(
 
 char** CgiHandler::_allocate_env_array(
     const std::vector<std::string>& env_vec) const {
-  (void)env_vec;
-  // TODO(serjimen): Implement safe string copying to char**
-  return NULL;
+  size_t size = env_vec.size();
+  char** envp = new char*[size + 1];
+
+  for (size_t i = 0; i < size; ++i) {
+    envp[i] = new char[env_vec[i].length() + 1];
+    std::strcpy(envp[i], env_vec[i].c_str());
+  }
+  envp[size] = NULL;
+
+  return envp;
 }
 
 void CgiHandler::_free_env_array(char** envp) const {
-  (void)envp;
-  // TODO(serjimen): Implement safe deletion of char**
+  if (envp == NULL) {
+    return;
+  }
+
+  for (size_t i = 0; envp[i] != NULL; ++i) {
+    delete[] envp[i];
+  }
+  delete[] envp;
 }

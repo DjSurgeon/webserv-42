@@ -29,6 +29,7 @@ run_test() {
 
 # Run each test suite
 run_test "test_context" "src/config/Context.cpp" "tests/config/test_context.cpp"
+run_test "test_cgi_handler" "src/handlers/CgiHandler.cpp src/http/HttpRequest.cpp" "tests/handlers/test_cgi_handler.cpp"
 run_test "test_location_config" "src/config/Context.cpp src/config/LocationConfig.cpp" "tests/config/test_location_config.cpp"
 run_test "test_server_config" "src/config/Context.cpp src/config/LocationConfig.cpp src/config/ServerConfig.cpp" "tests/config/test_server_config.cpp"
 run_test "test_config_parser" "src/config/Context.cpp src/config/LocationConfig.cpp src/config/ServerConfig.cpp src/config/ConfigParser.cpp" "tests/config/test_config_parser.cpp"

@@ -22,6 +22,9 @@ Este documento actúa como el "mapa de calor" visual de nuestra suite de pruebas
 | `FileHandler` | Intento de borrar un directorio | Status 403 Forbidden, directorio persiste | ✅ Hecho |
 | `FileHandler` | Borrado de archivo sin permisos de escritura | Status 403 Forbidden, archivo persiste | ✅ Hecho |
 | `FileHandler` | Borrado exitoso de archivo | Status 204 No Content, el archivo desaparece | ✅ Hecho |
+| `CgiHandler` | Generación de variables Core (Method/Protocol) | REQUEST_METHOD y SERVER_PROTOCOL presentes | ✅ Hecho |
+| `CgiHandler` | Extracción de QUERY_STRING | Se obtiene valor tras el símbolo `?` | ✅ Hecho |
+| `CgiHandler` | Transformación de cabeceras HTTP a Meta-variables | Prefijo `HTTP_`, uppercase y guiones a guiones bajos | ✅ Hecho |
 | `FileHandler` | Generación de autoindex exitosa | Status 200 OK, HTML con lista de archivos | ✅ Hecho |
 | `FileHandler` | Fallo en autoindex (dir inexistente) | Status 403 Forbidden | ✅ Hecho |
 | `StaticRouter` | Método no permitido (vector vacío) | Asume solo `GET`, devuelve 405 si es `POST` | ✅ Hecho |

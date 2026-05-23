@@ -2,6 +2,7 @@
 #ifndef SRC_HANDLERS_CGIHANDLER_HPP_
 #define SRC_HANDLERS_CGIHANDLER_HPP_
 
+#include <map>
 #include <string>
 #include <vector>
 
@@ -17,6 +18,8 @@ class CgiHandler {
   ~CgiHandler();
 
  private:
+  friend void test_cgi_env_generation();
+
   std::vector<std::string> _build_env_vector(const HttpRequest& req,
                                              const LocationConfig* loc) const;
   void _add_core_variables(std::vector<std::string>& env,
