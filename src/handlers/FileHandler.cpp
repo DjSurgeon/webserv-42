@@ -60,6 +60,20 @@ bool FileHandler::serve_file(const std::string& physical_path,
   return true;
 }
 
+bool FileHandler::delete_file(const std::string& physical_path,
+                              HttpResponse& res) {
+  struct stat st;
+
+  // Check if file exists physically before doing anything destructive
+  if (stat(physical_path.c_str(), &st) != 0) {
+    res.generate_error_response(404);
+    return true;  // The request is handled (with an error response)
+  }
+
+  // TODO: Implement actual deletion logic
+  return false;
+}
+
 void FileHandler::generate_autoindex(const std::string& dir_path,
                                      const std::string& uri,
                                      HttpResponse& res) {

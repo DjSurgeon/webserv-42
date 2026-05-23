@@ -15,6 +15,7 @@ class FileHandler {
   ~FileHandler();
 
   bool serve_file(const std::string& physical_path, HttpResponse& res);
+  bool delete_file(const std::string& physical_path, HttpResponse& res);
   void generate_autoindex(const std::string& dir_path, const std::string& uri,
                           HttpResponse& res);
 
