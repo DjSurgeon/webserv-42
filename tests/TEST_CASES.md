@@ -11,6 +11,9 @@ Este documento actúa como el "mapa de calor" visual de nuestra suite de pruebas
 | `ConfigParser` | Directiva desconocida en `server` | Lanza `std::runtime_error` ("Fail Fast") | ✅ Hecho |
 | `ConfigParser` | Valor de `client_max_body_size` en bytes | Parsea a `size_t` correctamente | ✅ Hecho |
 | `ConfigParser` | Falta llave `}` al final del archivo | Lanza error de sintaxis | ✅ Hecho |
+| `FileHandler` | Mapeo MIME estándar (.html, .js, .png, etc.) | Devuelve tipo correcto (text/html, etc.) | ✅ Hecho |
+| `FileHandler` | Archivo sin extensión o extensión desconocida | Devuelve `application/octet-stream` | ✅ Hecho |
+| `FileHandler` | Múltiples puntos en nombre de archivo | Resuelve según la última extensión | ✅ Hecho |
 | `StaticRouter` | Método no permitido (vector vacío) | Asume solo `GET`, devuelve 405 si es `POST` | ✅ Hecho |
 
 *(Tabla en continua expansión)*
