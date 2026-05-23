@@ -17,7 +17,7 @@ The project has successfully completed its core infrastructure foundation across
 3. **Configuration Architecture (NGINX Style):**
    - A highly modular and strict C++98 hierarchical inheritance tree (`Context` -> `ServerConfig` & `LocationConfig`) established to store layout rules efficiently.
    - It guarantees memory-safe deep cloning between configuration contexts leveraging the Orthodox Canonical Form, effectively preparing the runtime to absorb custom `.conf` directives safely.
-   - **Custom Configuration Parser**: A bespoke Recursive Descent Parser (`ConfigParser`) that ingests, tokenizes, and structures complex `.conf` layout files in $O(N)$ time complexity. It automatically handles comment sanitization, whitespace trimming, and context cascading (where locations safely inherit properties from their parent servers) directly translating text into executable C++ runtime structures.
+   - **Custom Configuration Parser**: A bespoke Recursive Descent Parser (`ConfigParser`) that ingests, tokenizes, and structures complex `.conf` layout files in $O(N)$ time complexity. It automatically handles comment sanitization, whitespace trimming, and context cascading (where locations safely inherit properties from their parent servers) directly translating text into executable C++ runtime structures. Recently refactored to completely eliminate the "Arrow Code" anti-pattern, the parser is highly modularized into single-responsibility handlers, drastically reducing cyclomatic complexity.
 
 ---
 
@@ -31,13 +31,17 @@ To compile the primary server architecture:
 make
 ```
 
-To compile the integration and robustness stress test suite:
+### 🧪 Testing & Quality Assurance
+Webserv-42 treats tests as first-class citizens. To ensure rock-solid stability without regressions, we have implemented a strict QA ecosystem within the `tests/` directory:
+- **AAA Pattern**: All unit and integration tests strictly adhere to the **Arrange, Act, Assert** design pattern to guarantee clean, readable, and maintainable test code.
+- **Coverage Matrix**: A visual heat-map (`tests/TEST_CASES.md`) tracking edge cases, assertions, and current protection status.
+- **Automated Suites**: Tests can be launched effortlessly via built-in bash scripts.
+
+To compile and execute the complete test suite:
 ```bash
-c++ -Wall -Wextra -Werror -std=c++98 -Isrc \
-    src/network/ClientSocket.cpp \
-    src/http/HttpRequest.cpp \
-    src/http/RequestParser.cpp \
-    tests/test_parser_stress.cpp -o stress_runner
+make test
+# Or launch the comprehensive script:
+./tests/run_all_tests.sh
 ```
 
 ### Execution
@@ -46,11 +50,6 @@ The Primary server expects a layout configuration file as its sole runtime argum
 
 ```bash
 ./webserv [path_to_config.conf]
-```
-
-To launch the isolated engine stress test battery:
-```bash
-./stress_runner
 ```
 
 ---

@@ -575,3 +575,29 @@ Para soportar la estructura y herencia de bloques estilo NGINX (donde una ruta `
 
 ### 🔄 Extra: Refactorización en `StaticRouter`
 - Para mantener coherencia con la Guía de Estilo de Google y acatar las directrices del linter (`clang-tidy`), se actualizaron los parámetros de salida de `StaticRouter::process_route` a punteros (`HttpResponse* res`, `std::string* out_physical_path`). Esto mejora la legibilidad en las llamadas, haciéndo explícitas las mutaciones, y añade dos capas adicionales de protección anti-nullptr.
+
+---
+
+## 📅 Día 7: Refactorización Estructural del Parser y Estandarización de Tests
+
+### 🎯 Objetivos del Día
+1. Erradicar el anti-patrón "Arrow Code" (exceso de indentación) en el parser de configuración dividiendo los métodos monolíticos en funciones atómicas.
+2. Resolver falsos positivos del motor de autocompletado del IDE configurando correctamente los *include paths*.
+3. Elevar las pruebas del proyecto a ciudadanos de primera clase, estandarizando su escritura bajo el patrón AAA y documentando una Matriz de Cobertura visual.
+
+### 🏗️ Fase 1: Desmantelando "God Objects" en ConfigParser
+- **El Problema**: Los métodos `_parse_server_block` y `_parse_location_block` habían crecido hasta convertirse en "God Objects", albergando múltiples bloques `if-else` y bucles anidados para parsear cada directiva. Esto disparó la complejidad ciclomática, haciendo la lectura y depuración casi imposibles.
+- **La Solución**: Se aplicó una refactorización estricta de *Extract Method*:
+  - Para los servidores: La lógica se delegó a `_handle_location_directive`, `_handle_listen_directive` y `_handle_server_name_directive`.
+  - Para las rutas (locations): La lógica se delegó a `_handle_allowed_methods_directive`, `_handle_cgi_path_directive` y `_handle_redirect_directive`.
+- **El Resultado**: Ambos bloques principales ahora son bucles `while` completamente declarativos que leen un token y despachan a la función atómica correspondiente en tiempo $O(1)$. El código es limpio, mantenible y respeta el principio de responsabilidad única (Single Responsibility Principle).
+
+### 🔧 Fase 2: Resolución de Falsos Positivos (IntelliSense)
+- Se detectó que VS Code lanzaba errores visuales espurios como *"Use of undeclared identifier 'ConfigParser'"* a pesar de que el código compilaba perfectamente con `make`.
+- **Fix**: Se generó el archivo `.vscode/c_cpp_properties.json` inyectando `${workspaceFolder}/src` en el `includePath`. Esto alinea el comportamiento del linter C++ con nuestro flag de compilación `-Isrc`, silenciando las falsas alarmas y permitiendo programar sin ruido visual.
+
+### 🧪 Fase 3: Pruebas como Ciudadanos de Primera Clase
+- A medida que Webserv crece, un conjunto de scripts sueltos no es suficiente para mantener la estabilidad del equipo. Se ha estructurado un departamento virtual de Quality Assurance (QA).
+- **El Estándar (AAA)**: Se estableció oficialmente el patrón de diseño de pruebas **Arrange, Act, Assert** documentado en `tests/README.md`. Toda nueva prueba debe seguir visualmente estas 3 fases con comentarios para evitar el temido "código espagueti de pruebas".
+- **La Matriz**: Se creó `tests/TEST_CASES.md`, una matriz de cobertura visual tabular. Permite identificar de un vistazo qué "Edge Cases" están cubiertos por aserciones concretas sin necesidad de leer el código fuente C++.
+- **Limpieza**: La antigua guía de pruebas manuales (`docs/TESTING_GUIDE.md`) se fusionó limpiamente en el nuevo ecosistema de `tests/`, garantizando una Única Fuente de Verdad (Single Source of Truth).
