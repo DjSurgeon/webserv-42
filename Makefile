@@ -73,9 +73,9 @@ LIB_SRCS	= $(SRC_DIR)/config/Context.cpp \
 			  $(SRC_DIR)/network/ListeningSocket.cpp \
 			  $(SRC_DIR)/network/ClientSocket.cpp \
 			  $(SRC_DIR)/network/EventLoop.cpp \
-			  $(TEST_DIR)/test_globals.cpp
+			  $(TEST_DIR)/integration/test_globals.cpp
 
-TEST_SRCS	= $(filter-out $(TEST_DIR)/test_globals.cpp, $(wildcard $(TEST_DIR)/*.cpp))
+TEST_SRCS	= $(filter-out $(TEST_DIR)/integration/test_globals.cpp $(TEST_DIR)/integration/stress_client.cpp, $(wildcard $(TEST_DIR)/*/*.cpp))
 TEST_NAMES	= $(notdir $(TEST_SRCS:.cpp=))
 TEST_BINS	= $(addprefix $(BIN_DIR)/, $(TEST_NAMES))
 
@@ -135,7 +135,7 @@ re: fclean all
 
 stress: $(BIN_DIR)/stress_client
 
-$(BIN_DIR)/stress_client: $(TEST_DIR)/stress_client.cpp
+$(BIN_DIR)/stress_client: $(TEST_DIR)/integration/stress_client.cpp
 	@mkdir -p $(BIN_DIR)
 	@echo "  $(CYAN)$(BOLD)⚙$(RESET)  $(DIM)Compiling stress client$(RESET) $<"
 	@$(CXX) $(CXXFLAGS) $(INCLUDES) $< -o $@
@@ -173,13 +173,17 @@ test: $(TEST_BINS)
 		echo ""; \
 	fi
 
-$(BIN_DIR)/%: $(TEST_DIR)/%.cpp $(LIB_SRCS) $(HDRS)
+$(BIN_DIR)/%: $(TEST_DIR)/*/*.cpp $(LIB_SRCS) $(HDRS)
 	@mkdir -p $(BIN_DIR)
 	@echo "  $(CYAN)$(BOLD)⚙$(RESET)  $(DIM)Compiling test$(RESET) $<"
-	@$(CXX) $(CXXFLAGS) $(INCLUDES) $(LIB_SRCS) $< -o $@
+	@# Encontramos el archivo fuente correcto para el binario
+	@SRC_FILE=$$(find $(TEST_DIR) -name "$*.cpp" | head -n 1); \
+	$(CXX) $(CXXFLAGS) $(INCLUDES) $(LIB_SRCS) $$SRC_FILE -o $@
 
 # ──────────────────────────────────────────────────────────────────────────── #
 #                                 PHONY                                        #
 # ──────────────────────────────────────────────────────────────────────────── #
 
-.PHONY: all clean fclean re test
+.PHONY: all clean fclean re test stress
+debug:
+	@echo $(TEST_BINS)

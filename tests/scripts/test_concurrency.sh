@@ -32,8 +32,8 @@ simulate_client() {
         sleep 0.2
         echo -n " HTTP/1.1"
         sleep 0.2
-        echo -e "\r\nHost: localhost\r\n\r\n"
-    ) | nc -q 1 localhost $SERVER_PORT 2>/dev/null )
+        echo -e "\r\nHost: 127.0.0.1\r\n\r\n"
+    ) | nc 127.0.0.1 $SERVER_PORT 2>/dev/null )
     
     if [[ "$response" == *"Hello, World!"* ]]; then
         return 0

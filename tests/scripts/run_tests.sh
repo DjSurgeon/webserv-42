@@ -5,7 +5,7 @@ CXX=c++
 CXXFLAGS="-Wall -Wextra -Werror -std=c++98"
 INC="-Isrc"
 SRC="src/network/ListeningSocket.cpp src/network/ClientSocket.cpp"
-TEST_SRC="tests/test_sockets.cpp"
+TEST_SRC="tests/network/test_sockets.cpp"
 BIN="bin/test_sockets"
 
 # Create bin directory if it doesn't exist
