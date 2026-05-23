@@ -27,6 +27,7 @@ Este documento actúa como el "mapa de calor" visual de nuestra suite de pruebas
 | `CgiHandler` | Transformación de cabeceras HTTP a Meta-variables | Prefijo `HTTP_`, uppercase y guiones a guiones bajos | ✅ Hecho |
 | `CgiHandler` | Reserva y liberación de memoria del entorno CGI (`char**`) | El array termina en NULL y los valores coinciden. Valgrind reporta 0 leaks | ✅ Hecho |
 | `CgiHandler` | Inicialización de Pipes IPC | Crea File Descriptors válidos sin fugas | ✅ Hecho |
+| `CgiHandler` | Resolución de Intérprete CGI | Selección automática por extensión o manual por config | ✅ Hecho |
 | `CgiHandler` | Mecanismo Anti-Deadlock (Bomba 10MB) | Usa `tmpfile` para STDIN, evita bloqueos de buffer | ✅ Hecho |
 | `CgiHandler` | Auditoría de Recursos (100 peticiones) | Zero FD Leaks tras ejecución masiva | ✅ Hecho |
 | `FileHandler` | Generación de autoindex exitosa | Status 200 OK, HTML con lista de archivos | ✅ Hecho |

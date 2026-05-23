@@ -20,18 +20,21 @@ class CgiHandler {
   ~CgiHandler();
 
   bool execute_script(const std::string& script_path, const HttpRequest& req,
-                      HttpResponse& res);
+                      const LocationConfig* loc, HttpResponse& res);
 
  private:
   friend void test_cgi_env_generation();
   friend void test_cgi_env_allocation();
   friend void test_cgi_ipc_mechanisms();
+  friend void test_cgi_interpreter_resolution();
 
   bool _initialize_stdout_pipe(int stdout_pipe[2]) const;
   FILE* _create_temp_body_file(const HttpRequest& req) const;
   bool _execute_fork(const std::string& script_path, const HttpRequest& req,
-                     int stdout_pipe[2], FILE* tmp_file,
-                     HttpResponse& res) const;
+                     const LocationConfig* loc, int stdout_pipe[2],
+                     FILE* tmp_file, HttpResponse& res) const;
+  std::string _get_interpreter(const std::string& script_path,
+                               const LocationConfig* loc) const;
 
   std::vector<std::string> _build_env_vector(const HttpRequest& req,
                                              const LocationConfig* loc) const;

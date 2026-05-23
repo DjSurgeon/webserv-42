@@ -104,7 +104,8 @@ void test_cgi_ipc_mechanisms() {
   int stdout_pipe[2];
 
   // 2. ACT (Pipe)
-  std::cout << "[Test] Verifying CGI stdout pipe initialization..." << std::endl;
+  std::cout << "[Test] Verifying CGI stdout pipe initialization..."
+            << std::endl;
   bool pipe_success = handler._initialize_stdout_pipe(stdout_pipe);
 
   // 3. ASSERT (Pipe)
@@ -135,6 +136,31 @@ void test_cgi_ipc_mechanisms() {
   print_result("test_cgi_anti_deadlock_tmpfile", true);
 }
 
+void test_cgi_interpreter_resolution() {
+  // 1. ARRANGE
+  CgiHandler handler;
+
+  // 2. ACT & 3. ASSERT (By Extension)
+  std::cout << "[Test] Verifying interpreter resolution by extension..."
+            << std::endl;
+  assert(handler._get_interpreter("script.py", NULL) == "/usr/bin/python3");
+  assert(handler._get_interpreter("script.php", NULL) == "/usr/bin/php-cgi");
+  assert(handler._get_interpreter("script.cgi", NULL) == "");
+  assert(handler._get_interpreter("binary", NULL) == "");
+
+  // 2. ACT & 3. ASSERT (By Config override)
+  std::cout << "[Test] Verifying interpreter resolution by config override..."
+            << std::endl;
+  LocationConfig loc;
+  loc.set_cgi_path("/usr/local/bin/python-custom");
+  assert(handler._get_interpreter("script.py", &loc) ==
+         "/usr/local/bin/python-custom");
+  assert(handler._get_interpreter("any.file", &loc) ==
+         "/usr/local/bin/python-custom");
+
+  print_result("test_cgi_interpreter_resolution", true);
+}
+
 void test_cgi_execution_flow() {
   std::cout << "[Test] Verifying CGI basic execution flow (fork setup)..."
             << std::endl;
@@ -147,11 +173,11 @@ void test_cgi_execution_flow() {
 
   // 2. ACT
   // This will initialize pipes/tmpfile and prepare for fork
-  bool result = handler.execute_script("tests/assets/echo.cgi", req, res);
+  bool result = handler.execute_script("tests/assets/echo.cgi", req, NULL, res);
 
   // 3. ASSERT
-  // Since fork/execve isn't implemented, it returns false (default)
-  // but we verify it didn't crash and handled the initial setup.
+  // Since fork/execve IS implemented now, but parent just waits,
+  // we check that it didn't crash.
   assert(result == false);
   print_result("test_cgi_execution_flow_setup", true);
 }
@@ -168,7 +194,7 @@ void test_cgi_10mb_payload_stress() {
   HttpResponse res;
 
   // 2. ACT
-  bool result = handler.execute_script("tests/assets/echo.cgi", req, res);
+  bool result = handler.execute_script("tests/assets/echo.cgi", req, NULL, res);
 
   // 3. ASSERT
   assert(result == false);
@@ -188,7 +214,7 @@ void test_cgi_fd_leaks() {
 
   for (int i = 0; i < 100; ++i) {
     HttpResponse res;
-    handler.execute_script("tests/assets/echo.cgi", req, res);
+    handler.execute_script("tests/assets/echo.cgi", req, NULL, res);
   }
   print_result("test_cgi_fd_leaks_100_iterations", true);
 }
@@ -199,6 +225,7 @@ int main() {
   test_cgi_env_generation();
   test_cgi_env_allocation();
   test_cgi_ipc_mechanisms();
+  test_cgi_interpreter_resolution();
   std::cout << std::endl;
   test_cgi_execution_flow();
   test_cgi_10mb_payload_stress();

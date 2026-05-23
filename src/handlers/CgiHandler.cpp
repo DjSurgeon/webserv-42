@@ -1,13 +1,19 @@
 // Copyright 2026 serjimen vja-nie dlesieur
 #include "handlers/CgiHandler.hpp"
 
+#include <fcntl.h>
+#include <sys/stat.h>
 #include <sys/types.h>
+#include <sys/wait.h>
 #include <unistd.h>
 
 #include <cctype>
+#include <cerrno>
 #include <cstddef>
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
+#include <iostream>
 #include <map>
 #include <string>
 #include <vector>
@@ -38,8 +44,8 @@ CgiHandler::~CgiHandler() {}
 // -----------------------------------------------------------------------------
 
 bool CgiHandler::execute_script(const std::string& script_path,
-                                const HttpRequest& req, HttpResponse& res) {
-  (void)script_path;
+                                const HttpRequest& req,
+                                const LocationConfig* loc, HttpResponse& res) {
   int stdout_pipe[2];
   FILE* tmp_file = NULL;
 
@@ -61,7 +67,21 @@ bool CgiHandler::execute_script(const std::string& script_path,
   }
 
   // 3. Clone process and execute
-  return _execute_fork(script_path, req, stdout_pipe, tmp_file, res);
+  return _execute_fork(script_path, req, loc, stdout_pipe, tmp_file, res);
+}
+
+std::string CgiHandler::_get_interpreter(const std::string& script_path,
+                                         const LocationConfig* loc) const {
+  if (loc != NULL && !loc->get_cgi_path().empty()) {
+    return loc->get_cgi_path();
+  }
+  size_t dot_pos = script_path.find_last_of('.');
+  if (dot_pos != std::string::npos) {
+    std::string ext = script_path.substr(dot_pos);
+    if (ext == ".py") return "/usr/bin/python3";
+    if (ext == ".php") return "/usr/bin/php-cgi";
+  }
+  return "";
 }
 
 // -----------------------------------------------------------------------------
@@ -69,10 +89,9 @@ bool CgiHandler::execute_script(const std::string& script_path,
 // -----------------------------------------------------------------------------
 
 bool CgiHandler::_execute_fork(const std::string& script_path,
-                               const HttpRequest& req, int stdout_pipe[2],
+                               const HttpRequest& req,
+                               const LocationConfig* loc, int stdout_pipe[2],
                                FILE* tmp_file, HttpResponse& res) const {
-  (void)script_path;
-  (void)req;
   pid_t pid = fork();
 
   if (pid < 0) {
@@ -86,16 +105,65 @@ bool CgiHandler::_execute_fork(const std::string& script_path,
     return true;  // Handled
   } else if (pid == 0) {
     // Child Process
-    // TODO(serjimen): dup2 and execve
-    if (tmp_file != NULL) {
-      fclose(tmp_file);  // Temporary closure until dup2 is implemented
+    close(stdout_pipe[0]);  // Close unused read end
+
+    // Redirect STDOUT
+    if (dup2(stdout_pipe[1], STDOUT_FILENO) == -1) {
+      std::exit(EXIT_FAILURE);
     }
+    close(stdout_pipe[1]);  // Close original descriptor
+
+    // Redirect STDIN
+    if (tmp_file != NULL) {
+      int tmp_fd = fileno(tmp_file);
+      if (dup2(tmp_fd, STDIN_FILENO) == -1) {
+        std::exit(EXIT_FAILURE);
+      }
+      fclose(tmp_file);  // Closes original descriptor
+    } else {
+      // Nginx-like behavior: redirect STDIN to /dev/null if no body
+      int dev_null = open("/dev/null", O_RDONLY);
+      if (dev_null != -1) {
+        dup2(dev_null, STDIN_FILENO);
+        close(dev_null);
+      }
+    }
+
+    // Build Environment
+    std::vector<std::string> env_vec = _build_env_vector(req, loc);
+    char** envp = _allocate_env_array(env_vec);
+
+    // Resolve Interpreter
+    std::string interpreter = _get_interpreter(script_path, loc);
+    char* argv[3];
+    if (!interpreter.empty()) {
+      argv[0] = const_cast<char*>(interpreter.c_str());
+      argv[1] = const_cast<char*>(script_path.c_str());
+      argv[2] = NULL;
+    } else {
+      argv[0] = const_cast<char*>(script_path.c_str());
+      argv[1] = NULL;
+    }
+
+    // Execute
+    execve(argv[0], argv, envp);
+
+    // Fatal Fallback (Kill-Switch)
+    std::cerr << "CGI execve failed: " << std::strerror(errno) << std::endl;
+    _free_env_array(envp);
+    std::exit(
+        EXIT_FAILURE);  // Prevent child from returning to caller/test suite
   } else {
     // Parent Process
     if (tmp_file != NULL) {
       fclose(tmp_file);
     }
     // TODO(serjimen): Register stdout_pipe[0] with EventLoop
+    // For now, in tests, we must close stdout_pipe[1] to avoid leaks
+    close(stdout_pipe[1]);
+    // And close stdout_pipe[0] because we are not reading it yet
+    close(stdout_pipe[0]);
+    waitpid(pid, NULL, 0);  // Clean up child process (synchronous for tests)
   }
 
   return false;
