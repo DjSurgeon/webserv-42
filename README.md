@@ -23,6 +23,7 @@ The project has successfully completed its core infrastructure foundation across
    - `FileHandler`: A secure, non-blocking I/O engine responsible for physical file serving and dynamic autoindexing. It strictly adheres to POSIX standards (`<dirent.h>`, `<sys/stat.h>`, `<unistd.h>`) to authenticate read permissions and sanitize paths before opening files.
    - **Binary Safety & Performance**: Employs `std::ios::binary` and stream buffering (`rdbuf()`) for ultra-fast, zero-corruption reads of media files.
    - **Dynamic Autoindex**: Safely generates navigational HTML indices for directories, preventing dead links via strict URI sanitization, fully bypassing nested "Arrow Code" through single-responsibility helper functions.
+   - **Strict DELETE Engine**: Implements the HTTP DELETE method with multiple layers of system-level defensive programming. Validates file existence and write permissions (`W_OK`), strictly denies recursive directory wipes, and elegantly handles hardware race-conditions. It correctly signals successful deletions using the exact standard `204 No Content` HTTP format without emitting any payload bytes.
 
 ---
 

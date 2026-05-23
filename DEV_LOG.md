@@ -627,3 +627,12 @@ Para soportar la estructura y herencia de bloques estilo NGINX (donde una ruta `
 - Se introdujo compatibilidad POSIX para exploración de directorios nativos en C usando `<dirent.h>`.
 - **SRP (Responsabilidad Única)**: Se separó la lógica de lectura/ensamblado en `_build_autoindex_html`. Si `opendir` arroja NULL (falta de permisos), se delega hacia un HTML seguro de error 403.
 - Si el directorio se lee con éxito, el bucle de `readdir` se salta los nodos oscuros (`.` y `..`), previene rutas defectuosas inyectando `safe_uri` (eliminando dobles *slashes* accidentales), y empaqueta un listado `<ul>` estricto en HTML, cerrando limpiamente con `closedir` para eliminar el riesgo de *File Descriptor Leaks*.
+
+### 🗑️ Fase 4: Destrucción Segura de Archivos (Método DELETE)
+- Se implementó la directiva completa del método HTTP DELETE mediante la función `delete_file()`.
+- **SRP y Muros de Seguridad**: Al igual que con la lectura, la validación se extrajo al helper privado `_validate_delete_access()`. Se implementaron tres capas de seguridad antes de permitir cualquier borrado:
+  1. `stat()`: Verifica que el objetivo realmente exista físicamente (Fallo -> 404 Not Found).
+  2. `S_ISDIR`: Previene borrar carpetas enteras de forma recursiva (Fallo -> 403 Forbidden).
+  3. `access(path, W_OK)`: Confirma que Webserv tiene permisos de escritura sobre el archivo (Fallo -> 403 Forbidden).
+- **Ejecución y Contingencia**: Se empleó la llamada del Kernel `unlink()` para desvincular el archivo. Se programó una protección contra "Race Conditions" (si `unlink` falla inesperadamente devolviendo `-1`, el servidor responde con 500 Internal Server Error).
+- **RFC Compliant**: Si el borrado es exitoso, la respuesta se construye estrictamente según el estándar HTTP/1.1 para DELETE, inyectando un **204 No Content**, sin cuerpo HTML y sin cabeceras `Content-Type` o `Content-Length`.
