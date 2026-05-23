@@ -99,11 +99,42 @@ void ConfigParser::_parse_server_block(const std::vector<std::string>& tokens,
 
       _parse_location_block(tokens, i, &loc);
       server->add_location(loc);
+    } else if (tokens[*i] == "listen") {
+      (*i)++;
+      if (*i >= tokens.size() || tokens[*i] == ";") {
+        throw std::runtime_error("Syntax error: incomplete 'listen' directive");
+      }
+      std::string listen_val = tokens[*i];
+      // Basic parse: check if there's a colon
+      size_t colon_pos = listen_val.find(':');
+      if (colon_pos != std::string::npos) {
+        server->set_host(listen_val.substr(0, colon_pos));
+        server->set_port(std::atoi(listen_val.substr(colon_pos + 1).c_str()));
+      } else {
+        // Assume it's just a port for now
+        server->set_port(std::atoi(listen_val.c_str()));
+      }
+      (*i)++;
+      if (*i >= tokens.size() || tokens[*i] != ";") {
+        throw std::runtime_error("Syntax error: missing ';' after 'listen'");
+      }
+      (*i)++;
+    } else if (tokens[*i] == "server_name") {
+      (*i)++;
+      while (*i < tokens.size() && tokens[*i] != ";") {
+        server->add_server_name(tokens[*i]);
+        (*i)++;
+      }
+      if (*i >= tokens.size() || tokens[*i] != ";") {
+        throw std::runtime_error(
+            "Syntax error: missing ';' after 'server_name'");
+      }
+      (*i)++;
     } else if (_parse_context_directive(tokens, i, server)) {
       continue;
     } else {
-      throw std::runtime_error("Syntax error: unknown directive '" + tokens[*i] +
-                               "' in server block");
+      throw std::runtime_error("Syntax error: unknown directive '" +
+                               tokens[*i] + "' in server block");
     }
   }
 
@@ -132,11 +163,45 @@ void ConfigParser::_parse_location_block(const std::vector<std::string>& tokens,
   (*i)++;  // Skip "{"
 
   while (*i < tokens.size() && tokens[*i] != "}") {
-    if (_parse_context_directive(tokens, i, location)) {
+    if (tokens[*i] == "allowed_methods") {
+      (*i)++;
+      while (*i < tokens.size() && tokens[*i] != ";") {
+        location->add_allowed_method(tokens[*i]);
+        (*i)++;
+      }
+      if (*i >= tokens.size() || tokens[*i] != ";") {
+        throw std::runtime_error(
+            "Syntax error: missing ';' after 'allowed_methods'");
+      }
+      (*i)++;
+    } else if (tokens[*i] == "cgi_path") {
+      (*i)++;
+      if (*i >= tokens.size() || tokens[*i] == ";") {
+        throw std::runtime_error("Syntax error: incomplete 'cgi_path'");
+      }
+      location->set_cgi_path(tokens[*i]);
+      (*i)++;
+      if (*i >= tokens.size() || tokens[*i] != ";") {
+        throw std::runtime_error("Syntax error: missing ';' after 'cgi_path'");
+      }
+      (*i)++;
+    } else if (tokens[*i] == "return" || tokens[*i] == "redirect") {
+      (*i)++;
+      if (*i >= tokens.size() || tokens[*i] == ";") {
+        throw std::runtime_error("Syntax error: incomplete 'redirect/return'");
+      }
+      location->set_redirect(tokens[*i]);
+      (*i)++;
+      if (*i >= tokens.size() || tokens[*i] != ";") {
+        throw std::runtime_error("Syntax error: missing ';' after redirect");
+      }
+      (*i)++;
+    } else if (_parse_context_directive(tokens, i, location)) {
       continue;
+    } else {
+      throw std::runtime_error("Syntax error: unknown directive '" +
+                               tokens[*i] + "' in location block");
     }
-    throw std::runtime_error("Syntax error: unknown directive '" + tokens[*i] +
-                             "' in location block");
   }
 
   if (*i >= tokens.size() || tokens[*i] != "}") {
@@ -166,6 +231,45 @@ bool ConfigParser::_parse_context_directive(
     return true;
   }
 
+  if (key == "index") {
+    (*i)++;
+    while (*i < tokens.size() && tokens[*i] != ";") {
+      ctx->add_index_file(tokens[*i]);
+      (*i)++;
+    }
+    if (*i >= tokens.size() || tokens[*i] != ";") {
+      throw std::runtime_error(
+          "Syntax error: missing ';' after 'index' values");
+    }
+    (*i)++;
+    return true;
+  }
+
+  if (key == "autoindex") {
+    if (*i + 2 >= tokens.size() || tokens[*i + 2] != ";") {
+      throw std::runtime_error("Syntax error: invalid 'autoindex' directive");
+    }
+    const std::string& val = tokens[*i + 1];
+    if (val == "on")
+      ctx->set_autoindex(true);
+    else if (val == "off")
+      ctx->set_autoindex(false);
+    else
+      throw std::runtime_error("Syntax error: autoindex must be 'on' or 'off'");
+    *i += 3;
+    return true;
+  }
+
+  if (key == "error_page") {
+    if (*i + 3 >= tokens.size() || tokens[*i + 3] != ";") {
+      throw std::runtime_error("Syntax error: invalid 'error_page' directive");
+    }
+    int code = std::atoi(tokens[*i + 1].c_str());
+    ctx->add_error_page(code, tokens[*i + 2]);
+    *i += 4;
+    return true;
+  }
+
   if (key == "client_max_body_size") {
     if (*i + 2 >= tokens.size()) {
       throw std::runtime_error(
@@ -180,7 +284,8 @@ bool ConfigParser::_parse_context_directive(
     for (size_t j = 0; j < value_str.length(); ++j) {
       if (!std::isdigit(static_cast<unsigned char>(value_str[j]))) {
         throw std::runtime_error(
-            "Syntax error: invalid 'client_max_body_size' value (must be pure bytes)");
+            "Syntax error: invalid 'client_max_body_size' value (must be pure "
+            "bytes)");
       }
     }
 
@@ -247,4 +352,47 @@ std::vector<std::string> ConfigParser::tokenize(const std::string& line) {
   }
 
   return tokens;
+}
+
+void ConfigParser::parse_directive(Context& ctx, const std::string& line) {
+  std::vector<std::string> tokens;
+  std::string current_token;
+
+  // Manual tokenization to split by spaces, but we don't need full parsing,
+  // we just need the first word and the rest of the string before the
+  // semicolon. Using the existing tokenize might be easier.
+  std::vector<std::string> line_tokens = tokenize(line);
+
+  if (line_tokens.empty()) {
+    return;
+  }
+
+  if (line_tokens.back() != ";") {
+    throw std::runtime_error(
+        "Syntax error: missing ';' at the end of directive '" + line + "'");
+  }
+
+  std::string key = line_tokens[0];
+
+  if (key == "root") {
+    if (line_tokens.size() != 3) {
+      throw std::runtime_error("Syntax error: invalid 'root' directive");
+    }
+    ctx.set_root(line_tokens[1]);
+  } else if (key == "client_max_body_size") {
+    if (line_tokens.size() != 3) {
+      throw std::runtime_error(
+          "Syntax error: invalid 'client_max_body_size' directive");
+    }
+    const std::string& value_str = line_tokens[1];
+    for (size_t j = 0; j < value_str.length(); ++j) {
+      if (!std::isdigit(static_cast<unsigned char>(value_str[j]))) {
+        throw std::runtime_error(
+            "Syntax error: invalid 'client_max_body_size' value (must be pure "
+            "bytes)");
+      }
+    }
+    size_t val = static_cast<size_t>(std::strtoul(value_str.c_str(), NULL, 10));
+    ctx.set_client_max_body_size(val);
+  }
 }

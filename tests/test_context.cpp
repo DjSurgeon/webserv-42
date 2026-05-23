@@ -1,5 +1,8 @@
 // Copyright 2026 serjimen vja-nie dlesieur
 #include <iostream>
+#include <map>
+#include <string>
+#include <vector>
 
 #include "config/Context.hpp"
 

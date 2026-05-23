@@ -7,6 +7,7 @@
 #include <cassert>
 #include <iostream>
 #include <stdexcept>
+#include <string>
 
 #include "network/ClientSocket.hpp"
 #include "network/ListeningSocket.hpp"

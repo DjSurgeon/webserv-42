@@ -1,4 +1,5 @@
 // Copyright 2026 serjimen vja-nie dlesieur
+#include <algorithm>
 #include <cassert>
 #include <iostream>
 #include <sstream>

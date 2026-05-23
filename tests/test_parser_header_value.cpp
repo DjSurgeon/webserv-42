@@ -1,6 +1,8 @@
 // Copyright 2026 serjimen vja-nie dlesieur
 #include <cassert>
 #include <iostream>
+#include <map>
+#include <string>
 
 #include "http/RequestParser.hpp"
 
