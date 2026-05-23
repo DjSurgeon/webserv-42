@@ -88,7 +88,7 @@ bool CgiHandler::_execute_fork(const std::string& script_path,
     // Child Process
     // TODO(serjimen): dup2 and execve
     if (tmp_file != NULL) {
-      fclose(tmp_file); // Temporary closure until dup2 is implemented
+      fclose(tmp_file);  // Temporary closure until dup2 is implemented
     }
   } else {
     // Parent Process
