@@ -2,6 +2,7 @@
 #include <unistd.h>
 
 #include <cassert>
+#include <cstdio>
 #include <cstring>
 #include <iostream>
 #include <string>
@@ -97,30 +98,42 @@ void test_cgi_env_allocation() {
   print_result("test_cgi_env_free (Valgrind will verify leaks)", true);
 }
 
-void test_cgi_pipes() {
+void test_cgi_ipc_mechanisms() {
   // 1. ARRANGE
   CgiHandler handler;
-  int stdin_pipe[2];
   int stdout_pipe[2];
 
-  // 2. ACT
-  std::cout << "[Test] Verifying CGI pipe initialization..." << std::endl;
-  bool success = handler._initialize_pipes(stdin_pipe, stdout_pipe);
+  // 2. ACT (Pipe)
+  std::cout << "[Test] Verifying CGI stdout pipe initialization..."
+            << std::endl;
+  bool pipe_success = handler._initialize_stdout_pipe(stdout_pipe);
 
-  // 3. ASSERT
-  assert(success == true);
-  assert(stdin_pipe[0] > 0);
-  assert(stdin_pipe[1] > 0);
+  // 3. ASSERT (Pipe)
+  assert(pipe_success == true);
   assert(stdout_pipe[0] > 0);
   assert(stdout_pipe[1] > 0);
-
-  print_result("test_cgi_pipes_initialization", true);
-
-  // 4. CLEANUP (Crucial for Valgrind FD tracking)
-  close(stdin_pipe[0]);
-  close(stdin_pipe[1]);
   close(stdout_pipe[0]);
   close(stdout_pipe[1]);
+  print_result("test_cgi_stdout_pipe", true);
+
+  // 1. ARRANGE (Temp File)
+  HttpRequest req;
+  req.set_method("POST");
+  req.set_body("CGI INPUT DATA");
+
+  // 2. ACT (Temp File)
+  std::cout << "[Test] Verifying Anti-Deadlock temp file creation..."
+            << std::endl;
+  FILE* tmp_file = handler._create_temp_body_file(req);
+
+  // 3. ASSERT (Temp File)
+  assert(tmp_file != NULL);
+  // Ensure the offset is back at 0 for child process reading
+  assert(std::ftell(tmp_file) == 0);
+
+  // 4. CLEANUP (Closes and deletes file)
+  std::fclose(tmp_file);
+  print_result("test_cgi_anti_deadlock_tmpfile", true);
 }
 
 int main() {
@@ -128,7 +141,7 @@ int main() {
 
   test_cgi_env_generation();
   test_cgi_env_allocation();
-  test_cgi_pipes();
+  test_cgi_ipc_mechanisms();
 
   std::cout << "\n=== CGI HANDLER TESTS COMPLETED ===" << std::endl;
   return 0;

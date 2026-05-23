@@ -5,6 +5,7 @@
 
 #include <cctype>
 #include <cstddef>
+#include <cstdio>
 #include <cstring>
 #include <map>
 #include <string>
@@ -38,17 +39,33 @@ CgiHandler::~CgiHandler() {}
 bool CgiHandler::execute_script(const std::string& script_path,
                                 const HttpRequest& req, HttpResponse& res) {
   (void)script_path;
-  (void)req;
-  int stdin_pipe[2];
   int stdout_pipe[2];
+  FILE* tmp_file = NULL;
 
-  // 1. Establish POSIX pipes for IPC
-  if (!_initialize_pipes(stdin_pipe, stdout_pipe)) {
+  // 1. Establish POSIX pipe for IPC (CGI to Server)
+  if (!_initialize_stdout_pipe(stdout_pipe)) {
     res.generate_error_response(500);
     return true;  // Handled
   }
 
+  // 2. Anti-Deadlock: Create temporary file for POST body
+  if (req.get_method() == "POST" && !req.get_body().empty()) {
+    tmp_file = _create_temp_body_file(req);
+    if (!tmp_file) {
+      close(stdout_pipe[0]);
+      close(stdout_pipe[1]);
+      res.generate_error_response(500);
+      return true;  // Handled
+    }
+  }
+
   // TODO(serjimen): fork() and execve()
+  // NOTE: Inside fork==0, if tmp_file != NULL, dup2 fileno(tmp_file) to STDIN.
+  // In parent, if tmp_file != NULL, fclose(tmp_file).
+
+  if (tmp_file != NULL) {
+    fclose(tmp_file);  // Temporary closure until fork is implemented
+  }
 
   return false;
 }
@@ -57,20 +74,35 @@ bool CgiHandler::execute_script(const std::string& script_path,
 // Private Methods (Memory & Environment Management)
 // -----------------------------------------------------------------------------
 
-bool CgiHandler::_initialize_pipes(int stdin_pipe[2],
-                                   int stdout_pipe[2]) const {
-  if (pipe(stdin_pipe) == -1) {
-    return false;
-  }
-
+bool CgiHandler::_initialize_stdout_pipe(int stdout_pipe[2]) const {
   if (pipe(stdout_pipe) == -1) {
-    // Prevent FD leak: close the successfully opened stdin_pipe before aborting
-    close(stdin_pipe[0]);
-    close(stdin_pipe[1]);
     return false;
   }
-
   return true;
+}
+
+FILE* CgiHandler::_create_temp_body_file(const HttpRequest& req) const {
+  FILE* tmp_file = tmpfile();
+  if (!tmp_file) {
+    return NULL;
+  }
+
+  int tmp_fd = fileno(tmp_file);
+  const std::string& body = req.get_body();
+
+  ssize_t bytes_written = write(tmp_fd, body.c_str(), body.length());
+  if (bytes_written == -1 ||
+      static_cast<size_t>(bytes_written) != body.length()) {
+    fclose(tmp_file);
+    return NULL;
+  }
+
+  if (lseek(tmp_fd, 0, SEEK_SET) == -1) {
+    fclose(tmp_file);
+    return NULL;
+  }
+
+  return tmp_file;
 }
 
 std::vector<std::string> CgiHandler::_build_env_vector(

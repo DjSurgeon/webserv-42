@@ -2,6 +2,7 @@
 #ifndef SRC_HANDLERS_CGIHANDLER_HPP_
 #define SRC_HANDLERS_CGIHANDLER_HPP_
 
+#include <cstdio>
 #include <map>
 #include <string>
 #include <vector>
@@ -24,9 +25,10 @@ class CgiHandler {
  private:
   friend void test_cgi_env_generation();
   friend void test_cgi_env_allocation();
-  friend void test_cgi_pipes();
+  friend void test_cgi_ipc_mechanisms();
 
-  bool _initialize_pipes(int stdin_pipe[2], int stdout_pipe[2]) const;
+  bool _initialize_stdout_pipe(int stdout_pipe[2]) const;
+  FILE* _create_temp_body_file(const HttpRequest& req) const;
 
   std::vector<std::string> _build_env_vector(const HttpRequest& req,
                                              const LocationConfig* loc) const;
