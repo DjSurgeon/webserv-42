@@ -51,6 +51,7 @@ run_stress_mode "flood" 300
 run_stress_mode "garbage" 200
 run_stress_mode "drop" 300
 run_stress_mode "slowloris" 100
+run_stress_mode "delete" 200
 
 # 5. Final verification with a normal request
 echo "Verifying server responsiveness after stress..."

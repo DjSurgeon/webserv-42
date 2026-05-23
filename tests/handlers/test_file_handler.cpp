@@ -5,6 +5,7 @@
 #include <cassert>
 #include <fstream>
 #include <iostream>
+#include <sstream>
 #include <string>
 
 #include "handlers/FileHandler.hpp"
@@ -304,6 +305,74 @@ void test_autoindex_forbidden() {
   print_result("test_autoindex_forbidden", true);
 }
 
+void test_memory_bomb_large_file() {
+  std::cout << "[Test] Memory Stress: Attempting to serve a 500MB file..."
+            << std::endl;
+  // 1. ARRANGE
+  FileHandler handler;
+  HttpResponse res;
+  std::string path = "/tmp/memory_bomb.bin";
+
+  // Create a 500MB dummy file
+  std::cout << "  -> Generating 500MB file (this might take a moment)..."
+            << std::endl;
+  std::ofstream ofs(path.c_str(), std::ios::binary | std::ios::out);
+  ofs.seekp(500 * 1024 * 1024 - 1);
+  ofs.write("", 1);
+  ofs.close();
+
+  // 2. ACT
+  std::cout << "  -> Invoking serve_file (expecting massive RAM spike)..."
+            << std::endl;
+  bool result = handler.serve_file(path, res);
+
+  // 3. ASSERT
+  assert(result == true);
+  assert(res.to_string().length() > 500 * 1024 * 1024);
+  std::cout << GREEN << "  -> Success: Server loaded 500MB into RAM string!"
+            << RESET << std::endl;
+
+  delete_test_file(path);
+  print_result("test_memory_bomb_large_file", true);
+}
+
+void test_massive_autoindex() {
+  std::cout << "[Test] Performance Stress: Autoindex with 10,000 files..."
+            << std::endl;
+  // 1. ARRANGE
+  FileHandler handler;
+  HttpResponse res;
+  std::string dir_path = "/tmp/massive_dir/";
+  mkdir(dir_path.c_str(), 0755);
+
+  std::cout << "  -> Creating 10,000 dummy files..." << std::endl;
+  for (int i = 0; i < 10000; ++i) {
+    std::stringstream ss;
+    ss << dir_path << "file_" << i << ".txt";
+    create_test_file(ss.str(), "x");
+  }
+
+  // 2. ACT
+  std::cout << "  -> Generating autoindex..." << std::endl;
+  handler.generate_autoindex(dir_path, "/massive/", res);
+  std::string res_str = res.to_string();
+
+  // 3. ASSERT
+  assert(res_str.find("HTTP/1.1 200 OK") != std::string::npos);
+  assert(res_str.find("file_9999.txt") != std::string::npos);
+  std::cout << GREEN << "  -> Success: Generated HTML for 10,000 files!"
+            << RESET << std::endl;
+
+  // Cleanup
+  for (int i = 0; i < 10000; ++i) {
+    std::stringstream ss;
+    ss << dir_path << "file_" << i << ".txt";
+    unlink(ss.str().c_str());
+  }
+  rmdir(dir_path.c_str());
+  print_result("test_massive_autoindex", true);
+}
+
 int main() {
   std::cout << "=== STARTING FILE HANDLER COMPREHENSIVE TESTS ===\n"
             << std::endl;
@@ -321,6 +390,9 @@ int main() {
   std::cout << std::endl;
   test_autoindex_success();
   test_autoindex_forbidden();
+  std::cout << std::endl;
+  test_memory_bomb_large_file();
+  test_massive_autoindex();
 
   std::cout << "\n=== FILE HANDLER TESTS COMPLETED ===" << std::endl;
   return 0;

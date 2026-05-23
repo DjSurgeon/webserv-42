@@ -22,6 +22,7 @@ enum e_test_mode {
   MODE_SLOWLORIS,
   MODE_GARBAGE,
   MODE_DROP,
+  MODE_DELETE,
   MODE_UNKNOWN
 };
 
@@ -38,6 +39,7 @@ e_test_mode parse_mode(const std::string& m) {
   if (m == "slowloris") return MODE_SLOWLORIS;
   if (m == "garbage") return MODE_GARBAGE;
   if (m == "drop") return MODE_DROP;
+  if (m == "delete") return MODE_DELETE;
   return MODE_UNKNOWN;
 }
 
@@ -65,7 +67,8 @@ int main(int argc, char** argv) {
 
   if (mode == MODE_UNKNOWN) {
     std::cerr << "Usage: " << argv[0]
-              << " [--mode flood|slowloris|garbage|drop] [--count N] [--port P]"
+              << " [--mode flood|slowloris|garbage|drop|delete] [--count N] "
+                 "[--port P]"
               << std::endl;
     return 1;
   }
@@ -118,6 +121,9 @@ int main(int argc, char** argv) {
           "99999\r\n\r\nGARBAGE_DATA_STREAM_!!!";
     } else if (mode == MODE_DROP) {
       c.to_send = "GET /";
+    } else if (mode == MODE_DELETE) {
+      c.to_send =
+          "DELETE /file_to_delete.txt HTTP/1.1\r\nHost: localhost\r\n\r\n";
     }
 
     conns.push_back(c);
@@ -195,7 +201,8 @@ int main(int argc, char** argv) {
           active--;
         } else {
           // Received some response data
-          if (mode == MODE_FLOOD || mode == MODE_GARBAGE) {
+          if (mode == MODE_FLOOD || mode == MODE_GARBAGE ||
+              mode == MODE_DELETE) {
             // Mark as done after receiving something
             close(conns[i].fd);
             conns[i].fd = -1;

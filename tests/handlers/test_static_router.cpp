@@ -143,6 +143,39 @@ void test_stress() {
   print_result("test_stress", true);
 }
 
+void test_path_traversal_attack() {
+  std::cout << "[Test] Verifying Path Traversal (LFI) attack mitigation..."
+            << std::endl;
+  // 1. ARRANGE
+  StaticRouter router;
+  LocationConfig loc;
+  loc.set_root("/var/www");
+  HttpRequest req;
+  req.set_method("GET");
+  req.set_uri("/../../../../etc/passwd");
+  HttpResponse res;
+  std::string path;
+
+  // 2. ACT
+  // Note: We expect the router to EITHER sanitize the path OR return an error
+  // status.
+  router.process_route(req, &loc, &res, &path);
+
+  // 3. ASSERT
+  // Failure condition: If path contains "/etc/passwd" and doesn't start with
+  // root, it's a vulnerability.
+  bool contains_passwd = (path.find("/etc/passwd") != std::string::npos);
+  bool outside_root = (path.find("/var/www") != 0);
+
+  if (contains_passwd && outside_root) {
+    std::cout << RED << "VULNERABILITY DETECTED: Router allowed path: " << path
+              << RESET << std::endl;
+    print_result("test_path_traversal_attack", false);
+  } else {
+    print_result("test_path_traversal_attack", true);
+  }
+}
+
 int main() {
   std::cout << "=== STARTING STATIC ROUTER TESTS ===\n" << std::endl;
 
@@ -151,6 +184,7 @@ int main() {
   test_method_validation();
   std::cout << std::endl;
   test_path_translation();
+  test_path_traversal_attack();
   std::cout << std::endl;
   test_stress();
 
