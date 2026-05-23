@@ -19,6 +19,11 @@ The project has successfully completed its core infrastructure foundation across
    - It guarantees memory-safe deep cloning between configuration contexts leveraging the Orthodox Canonical Form, effectively preparing the runtime to absorb custom `.conf` directives safely.
    - **Custom Configuration Parser**: A bespoke Recursive Descent Parser (`ConfigParser`) that ingests, tokenizes, and structures complex `.conf` layout files in $O(N)$ time complexity. It automatically handles comment sanitization, whitespace trimming, and context cascading (where locations safely inherit properties from their parent servers) directly translating text into executable C++ runtime structures. Recently refactored to completely eliminate the "Arrow Code" anti-pattern, the parser is highly modularized into single-responsibility handlers, drastically reducing cyclomatic complexity.
 
+4. **Content Delivery Layer:**
+   - `FileHandler`: A secure, non-blocking I/O engine responsible for physical file serving and dynamic autoindexing. It strictly adheres to POSIX standards (`<dirent.h>`, `<sys/stat.h>`, `<unistd.h>`) to authenticate read permissions and sanitize paths before opening files.
+   - **Binary Safety & Performance**: Employs `std::ios::binary` and stream buffering (`rdbuf()`) for ultra-fast, zero-corruption reads of media files.
+   - **Dynamic Autoindex**: Safely generates navigational HTML indices for directories, preventing dead links via strict URI sanitization, fully bypassing nested "Arrow Code" through single-responsibility helper functions.
+
 ---
 
 ## 💻 Instructions

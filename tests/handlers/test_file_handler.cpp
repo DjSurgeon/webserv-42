@@ -32,7 +32,9 @@ static void create_test_file(const std::string& path,
   file.close();
 }
 
-static void delete_test_file(const std::string& path) { unlink(path.c_str()); }
+static void delete_test_file(const std::string& path) {
+  unlink(path.c_str());
+}
 
 // -----------------------------------------------------------------------------
 // Tests
@@ -161,6 +163,57 @@ void test_serve_directory_forbidden() {
   print_result("test_serve_directory_forbidden", true);
 }
 
+void test_autoindex_success() {
+  std::cout << "[Test] Verifying successful autoindex generation (200 OK)..."
+            << std::endl;
+  // 1. ARRANGE
+  FileHandler handler;
+  HttpResponse res;
+  std::string dir_path = "/tmp/test_autoindex/";
+  mkdir(dir_path.c_str(), 0755);
+  create_test_file(dir_path + "file1.txt", "content1");
+  create_test_file(dir_path + "file2.html", "content2");
+
+  // 2. ACT
+  handler.generate_autoindex(dir_path, "/auto/", res);
+  std::string res_str = res.to_string();
+
+  // 3. ASSERT
+  assert(res_str.find("HTTP/1.1 200 OK") != std::string::npos);
+  assert(res_str.find("Content-Type: text/html") != std::string::npos);
+  assert(res_str.find("<title>Index of /auto/</title>") != std::string::npos ||
+         res_str.find("<title>Index of /auto</title>") != std::string::npos);
+  assert(res_str.find("file1.txt") != std::string::npos);
+  assert(res_str.find("file2.html") != std::string::npos);
+  assert(res_str.find("href=\"/auto/file1.txt\"") != std::string::npos);
+
+  // Cleanup
+  delete_test_file(dir_path + "file1.txt");
+  delete_test_file(dir_path + "file2.html");
+  rmdir(dir_path.c_str());
+
+  print_result("test_autoindex_success", true);
+}
+
+void test_autoindex_forbidden() {
+  std::cout << "[Test] Verifying autoindex failure on non-existent dir (403)..."
+            << std::endl;
+  // 1. ARRANGE
+  FileHandler handler;
+  HttpResponse res;
+  std::string path = "/tmp/non_existent_autoindex_dir/";
+
+  // 2. ACT
+  handler.generate_autoindex(path, "/auto/", res);
+  std::string res_str = res.to_string();
+
+  // 3. ASSERT
+  // Logic in FileHandler returns 403 if opendir fails
+  assert(res_str.find("403 Forbidden") != std::string::npos);
+
+  print_result("test_autoindex_forbidden", true);
+}
+
 int main() {
   std::cout << "=== STARTING FILE HANDLER COMPREHENSIVE TESTS ===\n"
             << std::endl;
@@ -171,6 +224,9 @@ int main() {
   test_serve_file_not_found();
   test_serve_file_forbidden();
   test_serve_directory_forbidden();
+  std::cout << std::endl;
+  test_autoindex_success();
+  test_autoindex_forbidden();
 
   std::cout << "\n=== FILE HANDLER TESTS COMPLETED ===" << std::endl;
   return 0;

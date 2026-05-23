@@ -601,3 +601,29 @@ Para soportar la estructura y herencia de bloques estilo NGINX (donde una ruta `
 - **El Estándar (AAA)**: Se estableció oficialmente el patrón de diseño de pruebas **Arrange, Act, Assert** documentado en `tests/README.md`. Toda nueva prueba debe seguir visualmente estas 3 fases con comentarios para evitar el temido "código espagueti de pruebas".
 - **La Matriz**: Se creó `tests/TEST_CASES.md`, una matriz de cobertura visual tabular. Permite identificar de un vistazo qué "Edge Cases" están cubiertos por aserciones concretas sin necesidad de leer el código fuente C++.
 - **Limpieza**: La antigua guía de pruebas manuales (`docs/TESTING_GUIDE.md`) se fusionó limpiamente en el nuevo ecosistema de `tests/`, garantizando una Única Fuente de Verdad (Single Source of Truth).
+
+---
+
+## 📅 Día 8: Motor de Lectura Binaria y Explorador de Directorios (FileHandler)
+
+### 🎯 Objetivos del Día
+1. Implementar la clase `FileHandler` encargada de procesar rutas físicas y servir el contenido de los archivos con precisión.
+2. Construir una arquitectura robusta contra ataques y corrupción mediante llamadas POSIX atómicas y volcados de memoria en modo binario.
+3. Generar un sistema dinámico (Autoindex) que permita navegar visualmente por las carpetas del servidor cuando así se requiera.
+
+### 🧱 Fase 1: Arquitectura y Saneamiento del MIME
+- **Esqueleto**: Se creó `FileHandler.hpp/cpp` respetando la Forma Canónica Ortodoxa e integrándose perfectamente con `Makefile` y `HttpResponse`.
+- **Mapeo Declarativo**: Para deducir el `Content-Type` de los archivos, se implementó la función estática auxiliar `_get_mime_type`. Para evitar el anti-patrón "Arrow Code" (bloques masivos de `if / else if`), se utilizó un arreglo de estructuras (`MimeMap`) que recorre y asigna dinámicamente las extensiones, facilitando futuras ampliaciones del proyecto. Se incluye por defecto un fallback seguro a `application/octet-stream`.
+
+### 🛡️ Fase 2: I/O Estricto y Auditoría de Permisos (`serve_file`)
+- Se extrajo toda la lógica de seguridad y permisos en una función auxiliar atómica (`_validate_file_access`) cumpliendo con el SRP (Single Responsibility Principle).
+- Se implementó la librería `sys/stat.h` y `unistd.h` para auditar el acceso atómicamente:
+  - ¿Existe el archivo y podemos leerlo? (`access` con `F_OK` y `R_OK`). Si falla -> `404 Not Found` o `403 Forbidden`.
+  - ¿Es un directorio cuando esperábamos un archivo? (`S_ISDIR`). Si lo es -> `403 Forbidden` (Medida defensiva estilo NGINX).
+  - ¿Es un archivo regular? (`S_ISREG`). Si no -> `500 Internal Server Error`.
+- **Volcado Ultrarrápido**: Pasadas las auditorías, el fichero se abre con el flag defensivo `std::ios::binary` para evitar corrupciones de imágenes (ej. PNG o JPG) bajo conversiones de línea. En vez de procesar byte por byte de manera ineficiente, el buffer bruto se empuja velozmente (`file.rdbuf()`) a un string mediante `std::ostringstream`, el cual se acopla inmediatamente al Body de la respuesta HTTP con un estatus `200 OK`.
+
+### 🗂️ Fase 3: Renderizado Dinámico de Directorios (`generate_autoindex`)
+- Se introdujo compatibilidad POSIX para exploración de directorios nativos en C usando `<dirent.h>`.
+- **SRP (Responsabilidad Única)**: Se separó la lógica de lectura/ensamblado en `_build_autoindex_html`. Si `opendir` arroja NULL (falta de permisos), se delega hacia un HTML seguro de error 403.
+- Si el directorio se lee con éxito, el bucle de `readdir` se salta los nodos oscuros (`.` y `..`), previene rutas defectuosas inyectando `safe_uri` (eliminando dobles *slashes* accidentales), y empaqueta un listado `<ul>` estricto en HTML, cerrando limpiamente con `closedir` para eliminar el riesgo de *File Descriptor Leaks*.
