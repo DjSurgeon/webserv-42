@@ -70,7 +70,7 @@ bool FileHandler::delete_file(const std::string& physical_path,
     return true;  // The request is handled (with an error response)
   }
 
-  // TODO: Implement actual deletion logic
+  // TODO(serjimen): Implement actual deletion logic
   return false;
 }
 

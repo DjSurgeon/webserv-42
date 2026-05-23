@@ -163,6 +163,25 @@ void test_serve_directory_forbidden() {
   print_result("test_serve_directory_forbidden", true);
 }
 
+void test_delete_file_not_found() {
+  std::cout << "[Test] Verifying delete non-existent file returns 404..."
+            << std::endl;
+  // 1. ARRANGE
+  FileHandler handler;
+  HttpResponse res;
+  std::string path = "/var/www/fake_file.txt";
+
+  // 2. ACT
+  bool result = handler.delete_file(path, res);
+  std::string res_str = res.to_string();
+
+  // 3. ASSERT
+  assert(result == true);
+  assert(res_str.find("404 Not Found") != std::string::npos);
+
+  print_result("test_delete_file_not_found", true);
+}
+
 void test_autoindex_success() {
   std::cout << "[Test] Verifying successful autoindex generation (200 OK)..."
             << std::endl;
@@ -224,6 +243,7 @@ int main() {
   test_serve_file_not_found();
   test_serve_file_forbidden();
   test_serve_directory_forbidden();
+  test_delete_file_not_found();
   std::cout << std::endl;
   test_autoindex_success();
   test_autoindex_forbidden();
