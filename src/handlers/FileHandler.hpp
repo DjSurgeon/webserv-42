@@ -17,6 +17,11 @@ class FileHandler {
   bool serve_file(const std::string& physical_path, HttpResponse& res);
 
  private:
+  struct MimeMap {
+    const char* ext;
+    const char* type;
+  };
+
   std::string _get_mime_type(const std::string& path);
 };
 
