@@ -24,6 +24,7 @@ class FileHandler {
     const char* type;
   };
 
+  bool _validate_file_access(const std::string& path, HttpResponse& res);
   std::string _get_mime_type(const std::string& path);
 };
 
