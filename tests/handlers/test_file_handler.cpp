@@ -182,6 +182,29 @@ void test_delete_file_not_found() {
   print_result("test_delete_file_not_found", true);
 }
 
+void test_delete_directory_forbidden() {
+  std::cout << "[Test] Verifying delete directory returns 403..." << std::endl;
+  // 1. ARRANGE
+  FileHandler handler;
+  HttpResponse res;
+  std::string path = "/tmp/test_del_dir";
+  mkdir(path.c_str(), 0755);
+
+  // 2. ACT
+  bool result = handler.delete_file(path, res);
+  std::string res_str = res.to_string();
+
+  // 3. ASSERT
+  assert(result == true);
+  assert(res_str.find("403 Forbidden") != std::string::npos);
+  // Verify directory STILL exists
+  assert(access(path.c_str(), F_OK) == 0);
+
+  // Cleanup
+  rmdir(path.c_str());
+  print_result("test_delete_directory_forbidden", true);
+}
+
 void test_autoindex_success() {
   std::cout << "[Test] Verifying successful autoindex generation (200 OK)..."
             << std::endl;
@@ -244,6 +267,7 @@ int main() {
   test_serve_file_forbidden();
   test_serve_directory_forbidden();
   test_delete_file_not_found();
+  test_delete_directory_forbidden();
   std::cout << std::endl;
   test_autoindex_success();
   test_autoindex_forbidden();

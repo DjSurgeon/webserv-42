@@ -19,6 +19,7 @@ Este documento actúa como el "mapa de calor" visual de nuestra suite de pruebas
 | `FileHandler` | Archivo sin permisos de lectura | Status 403 Forbidden | ✅ Hecho |
 | `FileHandler` | Intento de leer un directorio como archivo | Status 500 Internal Server Error | ✅ Hecho |
 | `FileHandler` | Borrado de archivo inexistente | Status 404 Not Found | ✅ Hecho |
+| `FileHandler` | Intento de borrar un directorio | Status 403 Forbidden, directorio persiste | ✅ Hecho |
 | `FileHandler` | Generación de autoindex exitosa | Status 200 OK, HTML con lista de archivos | ✅ Hecho |
 | `FileHandler` | Fallo en autoindex (dir inexistente) | Status 403 Forbidden | ✅ Hecho |
 | `StaticRouter` | Método no permitido (vector vacío) | Asume solo `GET`, devuelve 405 si es `POST` | ✅ Hecho |

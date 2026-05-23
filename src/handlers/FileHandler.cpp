@@ -70,6 +70,18 @@ bool FileHandler::delete_file(const std::string& physical_path,
     return true;  // The request is handled (with an error response)
   }
 
+  // Prevent directory deletion (recursive deletion not supported)
+  if (S_ISDIR(st.st_mode)) {
+    res.generate_error_response(403);
+    return true;
+  }
+
+  // Ensure the server process has permission to write (and thus delete) the file
+  if (access(physical_path.c_str(), W_OK) != 0) {
+    res.generate_error_response(403);
+    return true;
+  }
+
   // TODO(serjimen): Implement actual deletion logic
   return false;
 }
