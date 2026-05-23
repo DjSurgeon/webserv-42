@@ -24,6 +24,7 @@ class CgiHandler {
  private:
   friend void test_cgi_env_generation();
   friend void test_cgi_env_allocation();
+  friend void test_cgi_pipes();
 
   bool _initialize_pipes(int stdin_pipe[2], int stdout_pipe[2]) const;
 

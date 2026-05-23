@@ -25,6 +25,8 @@ Este documento actúa como el "mapa de calor" visual de nuestra suite de pruebas
 | `CgiHandler` | Generación de variables Core (Method/Protocol) | REQUEST_METHOD y SERVER_PROTOCOL presentes | ✅ Hecho |
 | `CgiHandler` | Extracción de QUERY_STRING | Se obtiene valor tras el símbolo `?` | ✅ Hecho |
 | `CgiHandler` | Transformación de cabeceras HTTP a Meta-variables | Prefijo `HTTP_`, uppercase y guiones a guiones bajos | ✅ Hecho |
+| `CgiHandler` | Reserva y liberación de memoria del entorno CGI (`char**`) | El array termina en NULL y los valores coinciden. Valgrind reporta 0 leaks | ✅ Hecho |
+| `CgiHandler` | Inicialización de Pipes IPC | Crea 4 File Descriptors válidos sin fugas (FD leaks) | ✅ Hecho |
 | `FileHandler` | Generación de autoindex exitosa | Status 200 OK, HTML con lista de archivos | ✅ Hecho |
 | `FileHandler` | Fallo en autoindex (dir inexistente) | Status 403 Forbidden | ✅ Hecho |
 | `StaticRouter` | Método no permitido (vector vacío) | Asume solo `GET`, devuelve 405 si es `POST` | ✅ Hecho |

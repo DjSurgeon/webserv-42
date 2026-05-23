@@ -1,4 +1,6 @@
 // Copyright 2026 serjimen vja-nie dlesieur
+#include <unistd.h>
+
 #include <cassert>
 #include <cstring>
 #include <iostream>
@@ -95,11 +97,38 @@ void test_cgi_env_allocation() {
   print_result("test_cgi_env_free (Valgrind will verify leaks)", true);
 }
 
+void test_cgi_pipes() {
+  // 1. ARRANGE
+  CgiHandler handler;
+  int stdin_pipe[2];
+  int stdout_pipe[2];
+
+  // 2. ACT
+  std::cout << "[Test] Verifying CGI pipe initialization..." << std::endl;
+  bool success = handler._initialize_pipes(stdin_pipe, stdout_pipe);
+
+  // 3. ASSERT
+  assert(success == true);
+  assert(stdin_pipe[0] > 0);
+  assert(stdin_pipe[1] > 0);
+  assert(stdout_pipe[0] > 0);
+  assert(stdout_pipe[1] > 0);
+
+  print_result("test_cgi_pipes_initialization", true);
+
+  // 4. CLEANUP (Crucial for Valgrind FD tracking)
+  close(stdin_pipe[0]);
+  close(stdin_pipe[1]);
+  close(stdout_pipe[0]);
+  close(stdout_pipe[1]);
+}
+
 int main() {
   std::cout << "=== STARTING CGI HANDLER UNIT TESTS ===\n" << std::endl;
 
   test_cgi_env_generation();
   test_cgi_env_allocation();
+  test_cgi_pipes();
 
   std::cout << "\n=== CGI HANDLER TESTS COMPLETED ===" << std::endl;
   return 0;

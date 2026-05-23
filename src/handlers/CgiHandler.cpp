@@ -1,12 +1,13 @@
 // Copyright 2026 serjimen vja-nie dlesieur
 #include "handlers/CgiHandler.hpp"
 
+#include <unistd.h>
+
 #include <cctype>
 #include <cstddef>
 #include <cstring>
 #include <map>
 #include <string>
-#include <unistd.h>
 #include <vector>
 
 #include "http/HttpResponse.hpp"
