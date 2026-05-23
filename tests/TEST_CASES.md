@@ -14,6 +14,10 @@ Este documento actúa como el "mapa de calor" visual de nuestra suite de pruebas
 | `FileHandler` | Mapeo MIME estándar (.html, .js, .png, etc.) | Devuelve tipo correcto (text/html, etc.) | ✅ Hecho |
 | `FileHandler` | Archivo sin extensión o extensión desconocida | Devuelve `application/octet-stream` | ✅ Hecho |
 | `FileHandler` | Múltiples puntos en nombre de archivo | Resuelve según la última extensión | ✅ Hecho |
+| `FileHandler` | Lectura exitosa de archivo existente | Status 200 OK, body y Content-Length correctos | ✅ Hecho |
+| `FileHandler` | Archivo inexistente | Status 404 Not Found | ✅ Hecho |
+| `FileHandler` | Archivo sin permisos de lectura | Status 403 Forbidden | ✅ Hecho |
+| `FileHandler` | Intento de leer un directorio como archivo | Status 500 Internal Server Error | ✅ Hecho |
 | `StaticRouter` | Método no permitido (vector vacío) | Asume solo `GET`, devuelve 405 si es `POST` | ✅ Hecho |
 
 *(Tabla en continua expansión)*

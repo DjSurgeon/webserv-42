@@ -1,13 +1,13 @@
 // Copyright 2026 serjimen vja-nie dlesieur
 #include "handlers/FileHandler.hpp"
 
+#include <dirent.h>
+#include <sys/stat.h>
 #include <unistd.h>
 
+#include <cstddef>
 #include <fstream>
 #include <sstream>
-
-
-#include <cstddef>
 #include <string>
 
 // -----------------------------------------------------------------------------
@@ -37,7 +37,7 @@ bool FileHandler::serve_file(const std::string& physical_path,
                              HttpResponse& res) {
   // Delegate validation logic
   if (!_validate_file_access(physical_path, res)) {
-    return true; // The error response is already set by the helper
+    return true;  // The error response is already set by the helper
   }
 
   // Open file in binary mode to prevent corruption of images/assets
@@ -60,28 +60,86 @@ bool FileHandler::serve_file(const std::string& physical_path,
   return true;
 }
 
+void FileHandler::generate_autoindex(const std::string& dir_path,
+                                     const std::string& uri,
+                                     HttpResponse& res) {
+  std::string html_content = _build_autoindex_html(dir_path, uri);
+
+  if (html_content.empty()) {
+    // Si devuelve un string vacío, significa que opendir falló
+    res.generate_error_response(403);
+    return;
+  }
+
+  res.set_body(html_content);
+  res.add_header("Content-Type", "text/html");
+
+  std::ostringstream cl;
+  cl << html_content.length();
+  res.add_header("Content-Length", cl.str());
+  res.set_status(200, "OK");
+}
+
 // -----------------------------------------------------------------------------
 // Private Methods
 // -----------------------------------------------------------------------------
 
+std::string FileHandler::_build_autoindex_html(const std::string& dir_path,
+                                               const std::string& uri) {
+  DIR* dir = opendir(dir_path.c_str());
+  if (dir == NULL) {
+    return "";
+  }
+
+  std::string safe_uri = uri;
+  if (!safe_uri.empty() && safe_uri[safe_uri.length() - 1] != '/') {
+    safe_uri += "/";
+  }
+
+  std::ostringstream html;
+  html << "<html><head><title>Index of " << uri
+       << "</title></head><body><h1>Index of " << uri << "</h1><ul>\n";
+
+  struct dirent* entry;
+  while ((entry = readdir(dir)) != NULL) {
+    std::string name = entry->d_name;
+    if (name == "." || name == "..") {
+      continue;
+    }
+    html << "  <li><a href=\"" << safe_uri << name << "\">" << name
+         << "</a></li>\n";
+  }
+  html << "</ul></body></html>";
+
+  closedir(dir);
+  return html.str();
+}
+
 bool FileHandler::_validate_file_access(const std::string& path,
                                         HttpResponse& res) {
-  // Check if file exists
-  if (access(path.c_str(), F_OK) != 0) {
+  struct stat st;
+
+  // Check if file exists and get info
+  if (stat(path.c_str(), &st) != 0) {
     res.generate_error_response(404);
+    return false;
+  }
+
+  // Ensure it is a regular file (not a directory)
+  // NGINX returns 403 Forbidden for directories when autoindex is off
+  if (S_ISDIR(st.st_mode)) {
+    res.generate_error_response(403);
+    return false;
+  }
+
+  if (!S_ISREG(st.st_mode)) {
+    res.generate_error_response(500);
     return false;
   }
 
   // Check if we have read permissions
   if (access(path.c_str(), R_OK) != 0) {
     res.generate_error_response(403);
-    return false;
-  }
-
-  // Check if we can open the file at all (e.g. not a directory when it shouldn't be)
-  std::ifstream test_file(path.c_str());
-  if (!test_file.is_open()) {
-    res.generate_error_response(500);
     return false;
   }
 

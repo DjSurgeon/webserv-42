@@ -178,9 +178,9 @@ test: $(TEST_BINS)
 
 $(BIN_DIR)/%: $(TEST_DIR)/*/*.cpp $(LIB_SRCS) $(HDRS)
 	@mkdir -p $(BIN_DIR)
-	@echo "  $(CYAN)$(BOLD)⚙$(RESET)  $(DIM)Compiling test$(RESET) $<"
 	@# Encontramos el archivo fuente correcto para el binario
 	@SRC_FILE=$$(find $(TEST_DIR) -name "$*.cpp" | head -n 1); \
+	echo "  $(CYAN)$(BOLD)⚙$(RESET)  $(DIM)Compiling test$(RESET) $$SRC_FILE"; \
 	$(CXX) $(CXXFLAGS) $(INCLUDES) $(LIB_SRCS) $$SRC_FILE -o $@
 
 # ──────────────────────────────────────────────────────────────────────────── #

@@ -1,5 +1,9 @@
 // Copyright 2026 serjimen vja-nie dlesieur
+#include <sys/stat.h>
+#include <unistd.h>
+
 #include <cassert>
+#include <fstream>
 #include <iostream>
 #include <string>
 
@@ -16,6 +20,23 @@ static void print_result(const std::string& test_name, bool success) {
                         : std::string(RED) + "FAILED")
             << RESET << std::endl;
 }
+
+// -----------------------------------------------------------------------------
+// Helpers
+// -----------------------------------------------------------------------------
+
+static void create_test_file(const std::string& path,
+                             const std::string& content) {
+  std::ofstream file(path.c_str());
+  file << content;
+  file.close();
+}
+
+static void delete_test_file(const std::string& path) { unlink(path.c_str()); }
+
+// -----------------------------------------------------------------------------
+// Tests
+// -----------------------------------------------------------------------------
 
 void test_get_mime_type() {
   // 1. ARRANGE
@@ -53,10 +74,103 @@ void test_get_mime_type() {
   print_result("test_unknown_extension", true);
 }
 
+void test_serve_file_success() {
+  std::cout << "[Test] Verifying successful file serving (200 OK)..."
+            << std::endl;
+  // 1. ARRANGE
+  FileHandler handler;
+  HttpResponse res;
+  std::string path = "/tmp/test_ok.txt";
+  std::string content = "Hello Webserv!";
+  create_test_file(path, content);
+
+  // 2. ACT
+  bool result = handler.serve_file(path, res);
+  std::string res_str = res.to_string();
+
+  // 3. ASSERT
+  assert(result == true);
+  assert(res_str.find("HTTP/1.1 200 OK") != std::string::npos);
+  assert(res_str.find("Content-Type: text/plain") != std::string::npos);
+  assert(res_str.find("Content-Length: 14") != std::string::npos);
+  assert(res_str.find(content) != std::string::npos);
+
+  delete_test_file(path);
+  print_result("test_serve_file_success", true);
+}
+
+void test_serve_file_not_found() {
+  std::cout << "[Test] Verifying file not found (404)..." << std::endl;
+  // 1. ARRANGE
+  FileHandler handler;
+  HttpResponse res;
+  std::string path = "/tmp/non_existent_404_test.txt";
+  delete_test_file(path);  // Ensure it doesn't exist
+
+  // 2. ACT
+  bool result = handler.serve_file(path, res);
+  std::string res_str = res.to_string();
+
+  // 3. ASSERT
+  assert(result == true);
+  assert(res_str.find("404 Not Found") != std::string::npos);
+
+  print_result("test_serve_file_not_found", true);
+}
+
+void test_serve_file_forbidden() {
+  std::cout << "[Test] Verifying permission denied (403)..." << std::endl;
+  // 1. ARRANGE
+  FileHandler handler;
+  HttpResponse res;
+  std::string path = "/tmp/test_forbidden.txt";
+  create_test_file(path, "Top Secret");
+  chmod(path.c_str(), 0000);  // Remove all permissions
+
+  // 2. ACT
+  bool result = handler.serve_file(path, res);
+  std::string res_str = res.to_string();
+
+  // 3. ASSERT
+  assert(result == true);
+  assert(res_str.find("403 Forbidden") != std::string::npos);
+
+  // Cleanup: Restore permissions so we can delete it
+  chmod(path.c_str(), 0644);
+  delete_test_file(path);
+  print_result("test_serve_file_forbidden", true);
+}
+
+void test_serve_directory_forbidden() {
+  std::cout << "[Test] Verifying directory access is Forbidden (403)..."
+            << std::endl;
+  // 1. ARRANGE
+  FileHandler handler;
+  HttpResponse res;
+  std::string path = "/tmp/";  // Path to a directory
+
+  // 2. ACT
+  bool result = handler.serve_file(path, res);
+  std::string res_str = res.to_string();
+
+  // 3. ASSERT
+  assert(result == true);
+  // NGINX behavior: Accessing a directory returns 403 Forbidden
+  assert(res_str.find("403 Forbidden") != std::string::npos);
+
+  print_result("test_serve_directory_forbidden", true);
+}
+
 int main() {
-  std::cout << "=== STARTING FILE HANDLER MIME TESTS ===\n" << std::endl;
+  std::cout << "=== STARTING FILE HANDLER COMPREHENSIVE TESTS ===\n"
+            << std::endl;
 
   test_get_mime_type();
+  std::cout << std::endl;
+  test_serve_file_success();
+  test_serve_file_not_found();
+  test_serve_file_forbidden();
+  test_serve_directory_forbidden();
 
   std::cout << "\n=== FILE HANDLER TESTS COMPLETED ===" << std::endl;
   return 0;
