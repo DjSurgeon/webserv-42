@@ -205,6 +205,54 @@ void test_delete_directory_forbidden() {
   print_result("test_delete_directory_forbidden", true);
 }
 
+void test_delete_file_forbidden() {
+  std::cout << "[Test] Verifying delete read-only file returns 403..."
+            << std::endl;
+  // 1. ARRANGE
+  FileHandler handler;
+  HttpResponse res;
+  std::string path = "/tmp/test_del_forbidden.txt";
+  create_test_file(path, "Forbidden content");
+  chmod(path.c_str(), 0400);  // Read-only permission
+
+  // 2. ACT
+  bool result = handler.delete_file(path, res);
+  std::string res_str = res.to_string();
+
+  // 3. ASSERT
+  assert(result == true);
+  assert(res_str.find("403 Forbidden") != std::string::npos);
+  // Verify file STILL exists
+  assert(access(path.c_str(), F_OK) == 0);
+
+  // Cleanup: Restore permissions to delete
+  chmod(path.c_str(), 0644);
+  delete_test_file(path);
+  print_result("test_delete_file_forbidden", true);
+}
+
+void test_delete_file_success() {
+  std::cout << "[Test] Verifying real file deletion (204 No Content)..."
+            << std::endl;
+  // 1. ARRANGE
+  FileHandler handler;
+  HttpResponse res;
+  std::string path = "/tmp/test_del_success.txt";
+  create_test_file(path, "To be deleted");
+
+  // 2. ACT
+  bool result = handler.delete_file(path, res);
+  std::string res_str = res.to_string();
+
+  // 3. ASSERT
+  assert(result == true);
+  assert(res_str.find("204 No Content") != std::string::npos);
+  // Verify file is physically GONE
+  assert(access(path.c_str(), F_OK) != 0);
+
+  print_result("test_delete_file_success", true);
+}
+
 void test_autoindex_success() {
   std::cout << "[Test] Verifying successful autoindex generation (200 OK)..."
             << std::endl;
@@ -268,6 +316,8 @@ int main() {
   test_serve_directory_forbidden();
   test_delete_file_not_found();
   test_delete_directory_forbidden();
+  test_delete_file_forbidden();
+  test_delete_file_success();
   std::cout << std::endl;
   test_autoindex_success();
   test_autoindex_forbidden();

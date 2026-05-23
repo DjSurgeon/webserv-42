@@ -28,6 +28,7 @@ class FileHandler {
   };
 
   bool _validate_file_access(const std::string& path, HttpResponse& res);
+  bool _validate_delete_access(const std::string& path, HttpResponse& res);
   std::string _get_mime_type(const std::string& path);
   std::string _build_autoindex_html(const std::string& dir_path,
                                     const std::string& uri);

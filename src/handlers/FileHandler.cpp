@@ -62,28 +62,22 @@ bool FileHandler::serve_file(const std::string& physical_path,
 
 bool FileHandler::delete_file(const std::string& physical_path,
                               HttpResponse& res) {
-  struct stat st;
-
-  // Check if file exists physically before doing anything destructive
-  if (stat(physical_path.c_str(), &st) != 0) {
-    res.generate_error_response(404);
-    return true;  // The request is handled (with an error response)
+  // Delegate validation logic (checks existence, permissions, and directory
+  // protection)
+  if (!_validate_delete_access(physical_path, res)) {
+    return true;  // The error response is already set by the helper
   }
 
-  // Prevent directory deletion (recursive deletion not supported)
-  if (S_ISDIR(st.st_mode)) {
-    res.generate_error_response(403);
+  // Execute the destructive POSIX call
+  if (unlink(physical_path.c_str()) == -1) {
+    // Race condition or unexpected hardware error
+    res.generate_error_response(500);
     return true;
   }
 
-  // Ensure the server process has permission to write (and thus delete) the file
-  if (access(physical_path.c_str(), W_OK) != 0) {
-    res.generate_error_response(403);
-    return true;
-  }
-
-  // TODO(serjimen): Implement actual deletion logic
-  return false;
+  // Success: 204 No Content is the standard response for a successful DELETE
+  res.set_status(204, "No Content");
+  return true;
 }
 
 void FileHandler::generate_autoindex(const std::string& dir_path,
@@ -165,6 +159,31 @@ bool FileHandler::_validate_file_access(const std::string& path,
 
   // Check if we have read permissions
   if (access(path.c_str(), R_OK) != 0) {
+    res.generate_error_response(403);
+    return false;
+  }
+
+  return true;
+}
+
+bool FileHandler::_validate_delete_access(const std::string& path,
+                                          HttpResponse& res) {
+  struct stat st;
+
+  // Check if file exists physically before doing anything destructive
+  if (stat(path.c_str(), &st) != 0) {
+    res.generate_error_response(404);
+    return false;
+  }
+
+  // Prevent directory deletion (recursive deletion not supported)
+  if (S_ISDIR(st.st_mode)) {
+    res.generate_error_response(403);
+    return false;
+  }
+
+  // Ensure the server process has permission to write (and thus delete)
+  if (access(path.c_str(), W_OK) != 0) {
     res.generate_error_response(403);
     return false;
   }
