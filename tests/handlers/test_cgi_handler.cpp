@@ -1,5 +1,6 @@
 // Copyright 2026 serjimen vja-nie dlesieur
 #include <cassert>
+#include <cstring>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -69,10 +70,36 @@ void test_cgi_env_generation() {
   print_result("test_cgi_env_no_query_string", true);
 }
 
+void test_cgi_env_allocation() {
+  // 1. ARRANGE
+  CgiHandler handler;
+  std::vector<std::string> env_vec;
+  env_vec.push_back("VAR1=VALUE1");
+  env_vec.push_back("VAR2=VALUE2");
+
+  // 2. ACT
+  char** envp = handler._allocate_env_array(env_vec);
+
+  // 3. ASSERT
+  std::cout << "[Test] Verifying CGI environment allocation and strcmp..."
+            << std::endl;
+  assert(envp != NULL);
+  assert(std::strcmp(envp[0], "VAR1=VALUE1") == 0);
+  assert(std::strcmp(envp[1], "VAR2=VALUE2") == 0);
+  assert(envp[2] == NULL);  // Must be NULL terminated for execve
+
+  print_result("test_cgi_env_allocation_logic", true);
+
+  // 4. CLEANUP
+  handler._free_env_array(envp);
+  print_result("test_cgi_env_free (Valgrind will verify leaks)", true);
+}
+
 int main() {
   std::cout << "=== STARTING CGI HANDLER UNIT TESTS ===\n" << std::endl;
 
   test_cgi_env_generation();
+  test_cgi_env_allocation();
 
   std::cout << "\n=== CGI HANDLER TESTS COMPLETED ===" << std::endl;
   return 0;

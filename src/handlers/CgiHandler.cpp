@@ -6,7 +6,10 @@
 #include <cstring>
 #include <map>
 #include <string>
+#include <unistd.h>
 #include <vector>
+
+#include "http/HttpResponse.hpp"
 
 // -----------------------------------------------------------------------------
 // Orthodox Canonical Form
@@ -28,8 +31,46 @@ CgiHandler& CgiHandler::operator=(const CgiHandler& other) {
 CgiHandler::~CgiHandler() {}
 
 // -----------------------------------------------------------------------------
+// Public Methods
+// -----------------------------------------------------------------------------
+
+bool CgiHandler::execute_script(const std::string& script_path,
+                                const HttpRequest& req, HttpResponse& res) {
+  (void)script_path;
+  (void)req;
+  int stdin_pipe[2];
+  int stdout_pipe[2];
+
+  // 1. Establish POSIX pipes for IPC
+  if (!_initialize_pipes(stdin_pipe, stdout_pipe)) {
+    res.generate_error_response(500);
+    return true;  // Handled
+  }
+
+  // TODO(serjimen): fork() and execve()
+
+  return false;
+}
+
+// -----------------------------------------------------------------------------
 // Private Methods (Memory & Environment Management)
 // -----------------------------------------------------------------------------
+
+bool CgiHandler::_initialize_pipes(int stdin_pipe[2],
+                                   int stdout_pipe[2]) const {
+  if (pipe(stdin_pipe) == -1) {
+    return false;
+  }
+
+  if (pipe(stdout_pipe) == -1) {
+    // Prevent FD leak: close the successfully opened stdin_pipe before aborting
+    close(stdin_pipe[0]);
+    close(stdin_pipe[1]);
+    return false;
+  }
+
+  return true;
+}
 
 std::vector<std::string> CgiHandler::_build_env_vector(
     const HttpRequest& req, const LocationConfig* loc) const {

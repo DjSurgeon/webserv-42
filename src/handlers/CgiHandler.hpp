@@ -8,6 +8,7 @@
 
 #include "config/LocationConfig.hpp"
 #include "http/HttpRequest.hpp"
+#include "http/HttpResponse.hpp"
 
 class CgiHandler {
  public:
@@ -17,8 +18,14 @@ class CgiHandler {
   CgiHandler& operator=(const CgiHandler& other);
   ~CgiHandler();
 
+  bool execute_script(const std::string& script_path, const HttpRequest& req,
+                      HttpResponse& res);
+
  private:
   friend void test_cgi_env_generation();
+  friend void test_cgi_env_allocation();
+
+  bool _initialize_pipes(int stdin_pipe[2], int stdout_pipe[2]) const;
 
   std::vector<std::string> _build_env_vector(const HttpRequest& req,
                                              const LocationConfig* loc) const;
