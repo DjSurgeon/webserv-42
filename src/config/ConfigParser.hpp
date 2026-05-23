@@ -27,8 +27,22 @@ class ConfigParser {
   std::vector<std::string> _flatten_tokens() const;
   void _parse_server_block(const std::vector<std::string>& tokens, size_t* i,
                            ServerConfig* server);
+  void _handle_location_directive(const std::vector<std::string>& tokens,
+                                  size_t* i, ServerConfig* server);
+  void _handle_listen_directive(const std::vector<std::string>& tokens,
+                                size_t* i, ServerConfig* server);
+  void _handle_server_name_directive(const std::vector<std::string>& tokens,
+                                     size_t* i, ServerConfig* server);
+
   void _parse_location_block(const std::vector<std::string>& tokens, size_t* i,
                              LocationConfig* location);
+  void _handle_allowed_methods_directive(const std::vector<std::string>& tokens,
+                                         size_t* i, LocationConfig* location);
+  void _handle_cgi_path_directive(const std::vector<std::string>& tokens,
+                                  size_t* i, LocationConfig* location);
+  void _handle_redirect_directive(const std::vector<std::string>& tokens,
+                                  size_t* i, LocationConfig* location);
+
   bool _parse_context_directive(const std::vector<std::string>& tokens,
                                 size_t* i, Context* ctx);
 

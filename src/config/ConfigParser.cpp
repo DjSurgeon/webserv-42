@@ -76,6 +76,56 @@ void ConfigParser::parse_tokens() {
   }
 }
 
+void ConfigParser::_handle_location_directive(
+    const std::vector<std::string>& tokens, size_t* i, ServerConfig* server) {
+  LocationConfig loc;
+  // Inherit context defaults
+  loc.set_root(server->get_root());
+  loc.set_index_files(server->get_index_files());
+  loc.set_error_pages(server->get_error_pages());
+  loc.set_client_max_body_size(server->get_client_max_body_size());
+  loc.set_autoindex(server->get_autoindex());
+
+  _parse_location_block(tokens, i, &loc);
+  server->add_location(loc);
+}
+
+void ConfigParser::_handle_listen_directive(
+    const std::vector<std::string>& tokens, size_t* i, ServerConfig* server) {
+  (*i)++;
+  if (*i >= tokens.size() || tokens[*i] == ";") {
+    throw std::runtime_error("Syntax error: incomplete 'listen' directive");
+  }
+  std::string listen_val = tokens[*i];
+  // Basic parse: check if there's a colon
+  size_t colon_pos = listen_val.find(':');
+  if (colon_pos != std::string::npos) {
+    server->set_host(listen_val.substr(0, colon_pos));
+    server->set_port(std::atoi(listen_val.substr(colon_pos + 1).c_str()));
+  } else {
+    // Assume it's just a port for now
+    server->set_port(std::atoi(listen_val.c_str()));
+  }
+  (*i)++;
+  if (*i >= tokens.size() || tokens[*i] != ";") {
+    throw std::runtime_error("Syntax error: missing ';' after 'listen'");
+  }
+  (*i)++;
+}
+
+void ConfigParser::_handle_server_name_directive(
+    const std::vector<std::string>& tokens, size_t* i, ServerConfig* server) {
+  (*i)++;
+  while (*i < tokens.size() && tokens[*i] != ";") {
+    server->add_server_name(tokens[*i]);
+    (*i)++;
+  }
+  if (*i >= tokens.size() || tokens[*i] != ";") {
+    throw std::runtime_error("Syntax error: missing ';' after 'server_name'");
+  }
+  (*i)++;
+}
+
 void ConfigParser::_parse_server_block(const std::vector<std::string>& tokens,
                                        size_t* i, ServerConfig* server) {
   if (!i || !server) {
@@ -88,53 +138,19 @@ void ConfigParser::_parse_server_block(const std::vector<std::string>& tokens,
   (*i)++;  // Skip "{"
 
   while (*i < tokens.size() && tokens[*i] != "}") {
-    if (tokens[*i] == "location") {
-      LocationConfig loc;
-      // Inherit context defaults
-      loc.set_root(server->get_root());
-      loc.set_index_files(server->get_index_files());
-      loc.set_error_pages(server->get_error_pages());
-      loc.set_client_max_body_size(server->get_client_max_body_size());
-      loc.set_autoindex(server->get_autoindex());
+    const std::string& directive = tokens[*i];
 
-      _parse_location_block(tokens, i, &loc);
-      server->add_location(loc);
-    } else if (tokens[*i] == "listen") {
-      (*i)++;
-      if (*i >= tokens.size() || tokens[*i] == ";") {
-        throw std::runtime_error("Syntax error: incomplete 'listen' directive");
-      }
-      std::string listen_val = tokens[*i];
-      // Basic parse: check if there's a colon
-      size_t colon_pos = listen_val.find(':');
-      if (colon_pos != std::string::npos) {
-        server->set_host(listen_val.substr(0, colon_pos));
-        server->set_port(std::atoi(listen_val.substr(colon_pos + 1).c_str()));
-      } else {
-        // Assume it's just a port for now
-        server->set_port(std::atoi(listen_val.c_str()));
-      }
-      (*i)++;
-      if (*i >= tokens.size() || tokens[*i] != ";") {
-        throw std::runtime_error("Syntax error: missing ';' after 'listen'");
-      }
-      (*i)++;
-    } else if (tokens[*i] == "server_name") {
-      (*i)++;
-      while (*i < tokens.size() && tokens[*i] != ";") {
-        server->add_server_name(tokens[*i]);
-        (*i)++;
-      }
-      if (*i >= tokens.size() || tokens[*i] != ";") {
-        throw std::runtime_error(
-            "Syntax error: missing ';' after 'server_name'");
-      }
-      (*i)++;
+    if (directive == "location") {
+      _handle_location_directive(tokens, i, server);
+    } else if (directive == "listen") {
+      _handle_listen_directive(tokens, i, server);
+    } else if (directive == "server_name") {
+      _handle_server_name_directive(tokens, i, server);
     } else if (_parse_context_directive(tokens, i, server)) {
       continue;
     } else {
-      throw std::runtime_error("Syntax error: unknown directive '" +
-                               tokens[*i] + "' in server block");
+      throw std::runtime_error("Syntax error: unknown directive '" + directive +
+                               "' in server block");
     }
   }
 
@@ -142,6 +158,51 @@ void ConfigParser::_parse_server_block(const std::vector<std::string>& tokens,
     throw std::runtime_error("Syntax error: missing '}' to close server block");
   }
   (*i)++;  // Skip "}"
+}
+
+void ConfigParser::_handle_allowed_methods_directive(
+    const std::vector<std::string>& tokens, size_t* i,
+    LocationConfig* location) {
+  (*i)++;
+  while (*i < tokens.size() && tokens[*i] != ";") {
+    location->add_allowed_method(tokens[*i]);
+    (*i)++;
+  }
+  if (*i >= tokens.size() || tokens[*i] != ";") {
+    throw std::runtime_error(
+        "Syntax error: missing ';' after 'allowed_methods'");
+  }
+  (*i)++;
+}
+
+void ConfigParser::_handle_cgi_path_directive(
+    const std::vector<std::string>& tokens, size_t* i,
+    LocationConfig* location) {
+  (*i)++;
+  if (*i >= tokens.size() || tokens[*i] == ";") {
+    throw std::runtime_error("Syntax error: incomplete 'cgi_path'");
+  }
+  location->set_cgi_path(tokens[*i]);
+  (*i)++;
+  if (*i >= tokens.size() || tokens[*i] != ";") {
+    throw std::runtime_error("Syntax error: missing ';' after 'cgi_path'");
+  }
+  (*i)++;
+}
+
+void ConfigParser::_handle_redirect_directive(
+    const std::vector<std::string>& tokens, size_t* i,
+    LocationConfig* location) {
+  (*i)++;
+  if (*i >= tokens.size() || tokens[*i] == ";") {
+    throw std::runtime_error("Syntax error: incomplete 'redirect/return'");
+  }
+  location->set_redirect(tokens[*i]);
+  (*i)++;
+  if (*i >= tokens.size() || tokens[*i] != ";") {
+    throw std::runtime_error("Syntax error: missing ';' after redirect");
+  }
+  (*i)++;
 }
 
 void ConfigParser::_parse_location_block(const std::vector<std::string>& tokens,
@@ -163,44 +224,19 @@ void ConfigParser::_parse_location_block(const std::vector<std::string>& tokens,
   (*i)++;  // Skip "{"
 
   while (*i < tokens.size() && tokens[*i] != "}") {
-    if (tokens[*i] == "allowed_methods") {
-      (*i)++;
-      while (*i < tokens.size() && tokens[*i] != ";") {
-        location->add_allowed_method(tokens[*i]);
-        (*i)++;
-      }
-      if (*i >= tokens.size() || tokens[*i] != ";") {
-        throw std::runtime_error(
-            "Syntax error: missing ';' after 'allowed_methods'");
-      }
-      (*i)++;
-    } else if (tokens[*i] == "cgi_path") {
-      (*i)++;
-      if (*i >= tokens.size() || tokens[*i] == ";") {
-        throw std::runtime_error("Syntax error: incomplete 'cgi_path'");
-      }
-      location->set_cgi_path(tokens[*i]);
-      (*i)++;
-      if (*i >= tokens.size() || tokens[*i] != ";") {
-        throw std::runtime_error("Syntax error: missing ';' after 'cgi_path'");
-      }
-      (*i)++;
-    } else if (tokens[*i] == "return" || tokens[*i] == "redirect") {
-      (*i)++;
-      if (*i >= tokens.size() || tokens[*i] == ";") {
-        throw std::runtime_error("Syntax error: incomplete 'redirect/return'");
-      }
-      location->set_redirect(tokens[*i]);
-      (*i)++;
-      if (*i >= tokens.size() || tokens[*i] != ";") {
-        throw std::runtime_error("Syntax error: missing ';' after redirect");
-      }
-      (*i)++;
+    const std::string& directive = tokens[*i];
+
+    if (directive == "allowed_methods") {
+      _handle_allowed_methods_directive(tokens, i, location);
+    } else if (directive == "cgi_path") {
+      _handle_cgi_path_directive(tokens, i, location);
+    } else if (directive == "return" || directive == "redirect") {
+      _handle_redirect_directive(tokens, i, location);
     } else if (_parse_context_directive(tokens, i, location)) {
       continue;
     } else {
-      throw std::runtime_error("Syntax error: unknown directive '" +
-                               tokens[*i] + "' in location block");
+      throw std::runtime_error("Syntax error: unknown directive '" + directive +
+                               "' in location block");
     }
   }
 
