@@ -16,7 +16,7 @@
  * @param client_fd Raw file descriptor from accept().
  * @throw std::runtime_error If the file descriptor is invalid or fcntl() fails.
  */
-ClientSocket::ClientSocket(int client_fd) : _fd(client_fd) {
+ClientSocket::ClientSocket(int client_fd) : _fd(client_fd), _should_close(false) {
   if (_fd < 0) {
     throw std::runtime_error("ClientSocket: Invalid file descriptor");
   }
@@ -121,4 +121,22 @@ void ClientSocket::consume_write_buffer(size_t bytes) {
   } else {
     _write_buffer.erase(0, bytes);
   }
+}
+
+/**
+ * @brief Sets the closure flag for the connection.
+ *
+ * @param close True if the connection should be closed after writing.
+ */
+void ClientSocket::set_should_close(bool close) {
+  _should_close = close;
+}
+
+/**
+ * @brief Gets the closure flag for the connection.
+ *
+ * @return true If the connection is marked for closure.
+ */
+bool ClientSocket::get_should_close() const {
+  return _should_close;
 }

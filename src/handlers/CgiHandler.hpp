@@ -22,6 +22,9 @@ class CgiHandler {
   bool execute_script(const std::string& script_path, const HttpRequest& req,
                       const LocationConfig* loc, HttpResponse& res);
 
+  bool parse_cgi_output(const std::string& raw_output,
+                        HttpResponse& res) const;
+
  private:
   friend void test_cgi_env_generation();
   friend void test_cgi_env_allocation();

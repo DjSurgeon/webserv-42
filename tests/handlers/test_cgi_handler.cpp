@@ -219,6 +219,66 @@ void test_cgi_fd_leaks() {
   print_result("test_cgi_fd_leaks_100_iterations", true);
 }
 
+void test_cgi_output_parsing() {
+  std::cout << "[Test] Verifying CGI output parsing logic..." << std::endl;
+  CgiHandler handler;
+
+  // Case A: Implicit Status (Default 200 OK)
+  {
+    HttpResponse res;
+    std::string raw = "Content-Type: text/html\r\n\r\n<h1>Hello</h1>";
+    handler.parse_cgi_output(raw, res);
+    std::string res_str = res.to_string();
+    assert(res_str.find("HTTP/1.1 200 OK") != std::string::npos);
+    assert(res_str.find("Content-Type: text/html") != std::string::npos);
+    assert(res_str.find("Content-Length: 14") != std::string::npos);
+    assert(res_str.find("<h1>Hello</h1>") != std::string::npos);
+    print_result("  -> Implicit 200 OK", true);
+  }
+
+  // Case B: Valid Output (\n\n boundary)
+  {
+    HttpResponse res;
+    std::string raw = "Content-Type: text/plain\n\nTexto plano";
+    handler.parse_cgi_output(raw, res);
+    std::string res_str = res.to_string();
+    assert(res_str.find("Content-Type: text/plain") != std::string::npos);
+    assert(res_str.find("Texto plano") != std::string::npos);
+    print_result("  -> Valid \n\n", true);
+  }
+
+  // Case C: Explicit Status (pseudo-header removal and mutation)
+  {
+    HttpResponse res;
+    std::string raw =
+        "Status: 404 Not Found\nContent-Type: application/json\nSet-Cookie: "
+        "session=123\n\n{\"error\":\"Not Found\"}";
+    handler.parse_cgi_output(raw, res);
+    std::string res_str = res.to_string();
+
+    // 1. Check mutation to 404
+    assert(res_str.find("HTTP/1.1 404 Not Found") != std::string::npos);
+    // 2. Check "Status:" is NOT in the final headers
+    assert(res_str.find("Status:") == std::string::npos);
+
+    assert(res_str.find("Content-Type: application/json") != std::string::npos);
+    assert(res_str.find("Set-Cookie: session=123") != std::string::npos);
+    print_result("  -> Explicit Status (Pseudo-header handling)", true);
+  }
+
+  // Case D: Malformed Output (No boundary)
+  {
+    HttpResponse res;
+    std::string raw = "Just some crazy text without any double newlines";
+    handler.parse_cgi_output(raw, res);
+    std::string res_str = res.to_string();
+    assert(res_str.find("502 Bad Gateway") != std::string::npos);
+    print_result("  -> Malformed (502 Check)", true);
+  }
+
+  print_result("test_cgi_output_parsing", true);
+}
+
 int main() {
   std::cout << "=== STARTING CGI HANDLER UNIT TESTS ===\n" << std::endl;
 
@@ -226,6 +286,8 @@ int main() {
   test_cgi_env_allocation();
   test_cgi_ipc_mechanisms();
   test_cgi_interpreter_resolution();
+  std::cout << std::endl;
+  test_cgi_output_parsing();
   std::cout << std::endl;
   test_cgi_execution_flow();
   test_cgi_10mb_payload_stress();

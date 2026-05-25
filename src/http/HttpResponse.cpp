@@ -17,6 +17,8 @@ static std::string get_reason_phrase(int code) {
       return "Method Not Allowed";
     case 500:
       return "Internal Server Error";
+    case 502:
+      return "Bad Gateway";
     default:
       return "Internal Server Error";
   }

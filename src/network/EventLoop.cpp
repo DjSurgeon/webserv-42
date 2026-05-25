@@ -220,6 +220,7 @@ void EventLoop::_handle_client_data(int fd) {
             "Connection: close\r\n"
             "\r\n"
             "Hello, World!");
+        client_it->second->set_should_close(true);
         break;
       } else if (state == STATE_ERROR) {
         std::cerr << "EventLoop: Parser error from client " << fd << "\n";
@@ -227,6 +228,7 @@ void EventLoop::_handle_client_data(int fd) {
             "HTTP/1.1 400 Bad Request\r\n"
             "Connection: close\r\n"
             "\r\n");
+        client_it->second->set_should_close(true);
         break;
       }
     }
@@ -257,6 +259,12 @@ void EventLoop::_handle_client_write(int fd) {
     if (sent > 0) {
       it->second->consume_write_buffer(sent);
     }
+  }
+
+  // Check if we should close the connection after sending all data
+  if (it->second->get_write_buffer().empty() &&
+      it->second->get_should_close()) {
+    removeSocket(fd);
   }
 }
 

@@ -42,8 +42,6 @@ simulate_client() {
     fi
 }
 
-echo "Server is running (PID: $SERVER_PID). Launching $NUM_CLIENTS concurrent clients..."
-
 # Launch clients in background and store their PIDs
 CLIENT_PIDS=()
 for i in $(seq 1 $NUM_CLIENTS); do

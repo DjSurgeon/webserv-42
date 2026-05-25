@@ -30,10 +30,15 @@ class ClientSocket {
   void consume_write_buffer(size_t bytes);
   void clear_write_buffer();
 
+  // --- Connection Lifecycle ---
+  void set_should_close(bool close);
+  bool get_should_close() const;
+
  private:
   int _fd;
   std::string _read_buffer;
   std::string _write_buffer;
+  bool _should_close;
 
   // Prevent copying (Strict C++98 compliance rule against double-close bugs)
   ClientSocket(const ClientSocket& other);

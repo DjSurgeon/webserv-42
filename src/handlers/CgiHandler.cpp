@@ -15,6 +15,7 @@
 #include <cstring>
 #include <iostream>
 #include <map>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -69,6 +70,93 @@ bool CgiHandler::execute_script(const std::string& script_path,
   // 3. Clone process and execute
   return _execute_fork(script_path, req, loc, stdout_pipe, tmp_file, res);
 }
+
+bool CgiHandler::parse_cgi_output(const std::string& raw_output,
+                                  HttpResponse& res) const {
+  size_t boundary_pos = raw_output.find("\r\n\r\n");
+  size_t boundary_len = 4;
+
+  if (boundary_pos == std::string::npos) {
+    boundary_pos = raw_output.find("\n\n");
+    boundary_len = 2;
+  }
+
+  if (boundary_pos == std::string::npos) {
+    // Malformed CGI output, no headers found
+    res.generate_error_response(502);
+    return false;
+  }
+
+  // Default status 200 OK
+  res.set_status(200, "OK");
+
+  std::string headers_str = raw_output.substr(0, boundary_pos);
+  std::string body_str = raw_output.substr(boundary_pos + boundary_len);
+
+  // Parse headers
+  size_t start = 0;
+  while (start < headers_str.length()) {
+    size_t end = headers_str.find('\n', start);
+    if (end == std::string::npos) {
+      end = headers_str.length();
+    }
+
+    std::string line = headers_str.substr(start, end - start);
+    if (!line.empty() && line[line.length() - 1] == '\r') {
+      line.erase(line.length() - 1);
+    }
+
+    size_t colon_pos = line.find(':');
+    if (colon_pos != std::string::npos) {
+      std::string key = line.substr(0, colon_pos);
+      std::string value = line.substr(colon_pos + 1);
+
+      // Trim leading spaces from value
+      size_t value_start = 0;
+      while (value_start < value.length() &&
+             (value[value_start] == ' ' || value[value_start] == '\t')) {
+        value_start++;
+      }
+      value = value.substr(value_start);
+
+      // Check for Status pseudo-header (case-insensitive)
+      std::string lower_key = key;
+      for (size_t i = 0; i < lower_key.length(); ++i) {
+        lower_key[i] = std::tolower(lower_key[i]);
+      }
+
+      if (lower_key == "status") {
+        size_t space_pos = value.find(' ');
+        int code = 200;
+        std::string phrase = "OK";
+        if (space_pos != std::string::npos) {
+          std::stringstream code_ss(value.substr(0, space_pos));
+          code_ss >> code;
+          phrase = value.substr(space_pos + 1);
+        } else {
+          std::stringstream code_ss(value);
+          code_ss >> code;
+          phrase = "";
+        }
+        res.set_status(code, phrase);
+      } else {
+        res.add_header(key, value);
+      }
+    }
+
+    start = end + 1;
+  }
+
+  res.set_body(body_str);
+
+  // Calculate and set exact Content-Length
+  std::stringstream ss;
+  ss << body_str.length();
+  res.add_header("Content-Length", ss.str());
+
+  return true;
+}
+
 
 std::string CgiHandler::_get_interpreter(const std::string& script_path,
                                          const LocationConfig* loc) const {
