@@ -18,24 +18,29 @@ StaticRouter& StaticRouter::operator=(const StaticRouter& other) {
 StaticRouter::~StaticRouter() {}
 
 bool StaticRouter::process_route(const HttpRequest& req,
+                                 const ServerConfig* server,
                                  const LocationConfig* loc, HttpResponse* res,
                                  std::string* out_physical_path) const {
-  if (!_check_null_location(loc, res)) {
+  if (!_check_null_context(server, loc, res)) {
     return false;
   }
 
-  if (!_validate_method(req, loc, res)) {
+  const Context* ctx = loc ? static_cast<const Context*>(loc)
+                           : static_cast<const Context*>(server);
+
+  if (!_validate_method(req, ctx, res)) {
     return false;
   }
 
-  _translate_path(req, loc, out_physical_path);
+  _translate_path(req, ctx, out_physical_path);
 
   return true;
 }
 
-bool StaticRouter::_check_null_location(const LocationConfig* loc,
-                                        HttpResponse* res) const {
-  if (loc == NULL) {
+bool StaticRouter::_check_null_context(const ServerConfig* server,
+                                       const LocationConfig* loc,
+                                       HttpResponse* res) const {
+  if (loc == NULL && server == NULL) {
     if (res) {
       res->generate_error_response(404);
     }
@@ -45,10 +50,10 @@ bool StaticRouter::_check_null_location(const LocationConfig* loc,
 }
 
 bool StaticRouter::_validate_method(const HttpRequest& req,
-                                    const LocationConfig* loc,
+                                    const Context* ctx,
                                     HttpResponse* res) const {
   const std::string& method = req.get_method();
-  const std::vector<std::string>& allowed_methods = loc->get_allowed_methods();
+  const std::vector<std::string>& allowed_methods = ctx->get_allowed_methods();
   bool method_allowed = false;
 
   if (allowed_methods.empty()) {
@@ -75,12 +80,12 @@ bool StaticRouter::_validate_method(const HttpRequest& req,
 }
 
 void StaticRouter::_translate_path(const HttpRequest& req,
-                                   const LocationConfig* loc,
+                                   const Context* ctx,
                                    std::string* out_physical_path) const {
   if (!out_physical_path) {
     return;
   }
-  const std::string& root = loc->get_root();
+  const std::string& root = ctx->get_root();
   const std::string& uri = req.get_uri();
 
   std::string clean_root = root;

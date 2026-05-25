@@ -15,6 +15,7 @@ Context::Context(const Context& other)
     : _root(other._root),
       _index_files(other._index_files),
       _error_pages(other._error_pages),
+      _allowed_methods(other._allowed_methods),
       _client_max_body_size(other._client_max_body_size),
       _autoindex(other._autoindex) {}
 
@@ -23,6 +24,7 @@ Context& Context::operator=(const Context& other) {
     _root = other._root;
     _index_files = other._index_files;
     _error_pages = other._error_pages;
+    _allowed_methods = other._allowed_methods;
     _client_max_body_size = other._client_max_body_size;
     _autoindex = other._autoindex;
   }
@@ -41,6 +43,10 @@ const std::vector<std::string>& Context::get_index_files() const {
 
 const std::map<int, std::string>& Context::get_error_pages() const {
   return _error_pages;
+}
+
+const std::vector<std::string>& Context::get_allowed_methods() const {
+  return _allowed_methods;
 }
 
 size_t Context::get_client_max_body_size() const {
@@ -69,6 +75,14 @@ void Context::set_error_pages(const std::map<int, std::string>& error_pages) {
 
 void Context::add_error_page(int code, const std::string& uri) {
   _error_pages[code] = uri;
+}
+
+void Context::set_allowed_methods(const std::vector<std::string>& allowed_methods) {
+  _allowed_methods = allowed_methods;
+}
+
+void Context::add_allowed_method(const std::string& allowed_method) {
+  _allowed_methods.push_back(allowed_method);
 }
 
 void Context::set_client_max_body_size(size_t size) {

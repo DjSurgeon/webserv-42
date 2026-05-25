@@ -8,6 +8,7 @@
 #include <map>
 #include <vector>
 
+#include "config/ServerConfig.hpp"
 #include "http/RequestParser.hpp"
 #include "network/ClientSocket.hpp"
 
@@ -20,7 +21,7 @@ class EventLoop {
   EventLoop& operator=(const EventLoop& other);
   ~EventLoop();
 
-  void addServerSocket(int fd);
+  void addServerSocket(int fd, const std::vector<ServerConfig>& configs);
   void addClientSocket(int fd);
   void removeSocket(int fd);
   void run();
@@ -30,6 +31,8 @@ class EventLoop {
   std::vector<int> _server_fds;
   std::map<int, ClientSocket*> _clients;
   std::map<int, RequestParser*> _parsers;
+  std::map<int, std::vector<ServerConfig> > _server_configs;
+  std::map<int, int> _client_to_server;
 
   static const int POLL_TIMEOUT = 1000;
 

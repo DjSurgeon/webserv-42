@@ -5,6 +5,7 @@
 #include <string>
 
 #include "config/LocationConfig.hpp"
+#include "config/ServerConfig.hpp"
 #include "http/HttpRequest.hpp"
 #include "http/HttpResponse.hpp"
 
@@ -17,14 +18,16 @@ class StaticRouter {
   ~StaticRouter();
 
   // Core Routing Method
-  bool process_route(const HttpRequest& req, const LocationConfig* loc,
-                     HttpResponse* res, std::string* out_physical_path) const;
+  bool process_route(const HttpRequest& req, const ServerConfig* server,
+                     const LocationConfig* loc, HttpResponse* res,
+                     std::string* out_physical_path) const;
 
  private:
-  bool _check_null_location(const LocationConfig* loc, HttpResponse* res) const;
-  bool _validate_method(const HttpRequest& req, const LocationConfig* loc,
+  bool _check_null_context(const ServerConfig* server, const LocationConfig* loc,
+                           HttpResponse* res) const;
+  bool _validate_method(const HttpRequest& req, const Context* ctx,
                         HttpResponse* res) const;
-  void _translate_path(const HttpRequest& req, const LocationConfig* loc,
+  void _translate_path(const HttpRequest& req, const Context* ctx,
                        std::string* out_physical_path) const;
 };
 

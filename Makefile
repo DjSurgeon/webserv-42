@@ -110,9 +110,9 @@ all: $(NAME)
 $(NAME): $(OBJS)
 	@$(CXX) $(CXXFLAGS) $(INCLUDES) $(OBJS) -o $(NAME)
 	@echo "$(BOLD)$(GREEN)"
-	@echo "  ╔══════════════════════════════════════════╗"
+	@echo "  ╔═════════════════════════════════════════════╗"
 	@echo "  ║      ✅  $(NAME) compiled successfully     ║"
-	@echo "  ╚══════════════════════════════════════════╝"
+	@echo "  ╚═════════════════════════════════════════════╝"
 	@echo "$(RESET)"
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp $(HDRS)

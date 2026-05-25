@@ -28,7 +28,7 @@ void test_null_location() {
   HttpResponse res;
   std::string path;
 
-  bool result = router.process_route(req, NULL, &res, &path);
+  bool result = router.process_route(req, NULL, NULL, &res, &path);
 
   // Should return false and set 404
   bool pass = (result == false &&
@@ -49,10 +49,10 @@ void test_method_validation() {
     req.set_uri("/index.html");
     HttpResponse res;
     std::string path;
-    assert(router.process_route(req, &loc, &res, &path) == true);
+    assert(router.process_route(req, NULL, &loc, &res, &path) == true);
 
     req.set_method("POST");
-    assert(router.process_route(req, &loc, &res, &path) == false);
+    assert(router.process_route(req, NULL, &loc, &res, &path) == false);
     assert(res.to_string().find("405 Method Not Allowed") != std::string::npos);
   }
 
@@ -66,10 +66,10 @@ void test_method_validation() {
     req.set_uri("/upload");
     HttpResponse res;
     std::string path;
-    assert(router.process_route(req, &loc, &res, &path) == true);
+    assert(router.process_route(req, NULL, &loc, &res, &path) == true);
 
     req.set_method("GET");
-    assert(router.process_route(req, &loc, &res, &path) == false);
+    assert(router.process_route(req, NULL, &loc, &res, &path) == false);
   }
 
   print_result("test_method_validation", true);
@@ -88,7 +88,7 @@ void test_path_translation() {
     req.set_uri("/index.html");
     HttpResponse res;
     std::string path;
-    router.process_route(req, &loc, &res, &path);
+    router.process_route(req, NULL, &loc, &res, &path);
     assert(path == "/var/www/index.html");
   }
 
@@ -101,7 +101,7 @@ void test_path_translation() {
     req.set_uri("/index.html");
     HttpResponse res;
     std::string path;
-    router.process_route(req, &loc, &res, &path);
+    router.process_route(req, NULL, &loc, &res, &path);
     assert(path == "/var/www/index.html");
   }
 
@@ -114,7 +114,7 @@ void test_path_translation() {
     req.set_uri("/css/style.css");
     HttpResponse res;
     std::string path;
-    router.process_route(req, &loc, &res, &path);
+    router.process_route(req, NULL, &loc, &res, &path);
     assert(path == "/css/style.css");
   }
 
@@ -135,7 +135,7 @@ void test_stress() {
   for (int i = 0; i < 100000; ++i) {
     HttpResponse res;
     std::string path;
-    if (!router.process_route(req, &loc, &res, &path)) {
+    if (!router.process_route(req, NULL, &loc, &res, &path)) {
       print_result("test_stress", false);
       return;
     }
@@ -159,7 +159,7 @@ void test_path_traversal_attack() {
   // 2. ACT
   // Note: We expect the router to EITHER sanitize the path OR return an error
   // status.
-  router.process_route(req, &loc, &res, &path);
+  router.process_route(req, NULL, &loc, &res, &path);
 
   // 3. ASSERT
   // Failure condition: If path contains "/etc/passwd" and doesn't start with

@@ -35,7 +35,7 @@ simulate_client() {
         echo -e "\r\nHost: 127.0.0.1\r\n\r\n"
     ) | nc 127.0.0.1 $SERVER_PORT 2>/dev/null )
     
-    if [[ "$response" == *"Hello, World!"* ]]; then
+    if [[ "$response" == *"Path resolved successfully"* ]]; then
         return 0
     else
         return 1
