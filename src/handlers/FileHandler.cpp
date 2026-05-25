@@ -34,7 +34,7 @@ FileHandler::~FileHandler() {}
 // -----------------------------------------------------------------------------
 
 bool FileHandler::serve_file(const std::string& physical_path,
-                             HttpResponse& res) {
+                             HttpResponse* res) {
   // Delegate validation logic
   if (!_validate_file_access(physical_path, res)) {
     return true;  // The error response is already set by the helper
@@ -49,19 +49,21 @@ bool FileHandler::serve_file(const std::string& physical_path,
   std::string file_content = ss.str();
 
   // Construct the 200 OK response
-  res.set_body(file_content);
-  res.add_header("Content-Type", _get_mime_type(physical_path));
+  if (res) {
+    res->set_body(file_content);
+    res->add_header("Content-Type", _get_mime_type(physical_path));
 
-  std::ostringstream cl;
-  cl << file_content.length();
-  res.add_header("Content-Length", cl.str());
+    std::ostringstream cl;
+    cl << file_content.length();
+    res->add_header("Content-Length", cl.str());
 
-  res.set_status(200, "OK");
+    res->set_status(200, "OK");
+  }
   return true;
 }
 
 bool FileHandler::delete_file(const std::string& physical_path,
-                              HttpResponse& res) {
+                              HttpResponse* res) {
   // Delegate validation logic (checks existence, permissions, and directory
   // protection)
   if (!_validate_delete_access(physical_path, res)) {
@@ -71,33 +73,40 @@ bool FileHandler::delete_file(const std::string& physical_path,
   // Execute the destructive POSIX call
   if (unlink(physical_path.c_str()) == -1) {
     // Race condition or unexpected hardware error
-    res.generate_error_response(500);
+    if (res) {
+      res->generate_error_response(500);
+    }
     return true;
   }
 
   // Success: 204 No Content is the standard response for a successful DELETE
-  res.set_status(204, "No Content");
+  if (res) {
+    res->set_status(204, "No Content");
+  }
   return true;
 }
 
 void FileHandler::generate_autoindex(const std::string& dir_path,
                                      const std::string& uri,
-                                     HttpResponse& res) {
+                                     HttpResponse* res) {
+  if (!res) {
+    return;
+  }
   std::string html_content = _build_autoindex_html(dir_path, uri);
 
   if (html_content.empty()) {
     // Si devuelve un string vacío, significa que opendir falló
-    res.generate_error_response(403);
+    res->generate_error_response(403);
     return;
   }
 
-  res.set_body(html_content);
-  res.add_header("Content-Type", "text/html");
+  res->set_body(html_content);
+  res->add_header("Content-Type", "text/html");
 
   std::ostringstream cl;
   cl << html_content.length();
-  res.add_header("Content-Length", cl.str());
-  res.set_status(200, "OK");
+  res->add_header("Content-Length", cl.str());
+  res->set_status(200, "OK");
 }
 
 // -----------------------------------------------------------------------------
@@ -136,30 +145,38 @@ std::string FileHandler::_build_autoindex_html(const std::string& dir_path,
 }
 
 bool FileHandler::_validate_file_access(const std::string& path,
-                                        HttpResponse& res) {
+                                        HttpResponse* res) {
   struct stat st;
 
   // Check if file exists and get info
   if (stat(path.c_str(), &st) != 0) {
-    res.generate_error_response(404);
+    if (res) {
+      res->generate_error_response(404);
+    }
     return false;
   }
 
   // Ensure it is a regular file (not a directory)
   // NGINX returns 403 Forbidden for directories when autoindex is off
   if (S_ISDIR(st.st_mode)) {
-    res.generate_error_response(403);
+    if (res) {
+      res->generate_error_response(403);
+    }
     return false;
   }
 
   if (!S_ISREG(st.st_mode)) {
-    res.generate_error_response(500);
+    if (res) {
+      res->generate_error_response(500);
+    }
     return false;
   }
 
   // Check if we have read permissions
   if (access(path.c_str(), R_OK) != 0) {
-    res.generate_error_response(403);
+    if (res) {
+      res->generate_error_response(403);
+    }
     return false;
   }
 
@@ -167,24 +184,30 @@ bool FileHandler::_validate_file_access(const std::string& path,
 }
 
 bool FileHandler::_validate_delete_access(const std::string& path,
-                                          HttpResponse& res) {
+                                          HttpResponse* res) {
   struct stat st;
 
   // Check if file exists physically before doing anything destructive
   if (stat(path.c_str(), &st) != 0) {
-    res.generate_error_response(404);
+    if (res) {
+      res->generate_error_response(404);
+    }
     return false;
   }
 
   // Prevent directory deletion (recursive deletion not supported)
   if (S_ISDIR(st.st_mode)) {
-    res.generate_error_response(403);
+    if (res) {
+      res->generate_error_response(403);
+    }
     return false;
   }
 
   // Ensure the server process has permission to write (and thus delete)
   if (access(path.c_str(), W_OK) != 0) {
-    res.generate_error_response(403);
+    if (res) {
+      res->generate_error_response(403);
+    }
     return false;
   }
 

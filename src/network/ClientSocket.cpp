@@ -16,7 +16,8 @@
  * @param client_fd Raw file descriptor from accept().
  * @throw std::runtime_error If the file descriptor is invalid or fcntl() fails.
  */
-ClientSocket::ClientSocket(int client_fd) : _fd(client_fd), _should_close(false) {
+ClientSocket::ClientSocket(int client_fd)
+    : _fd(client_fd), _should_close(false) {
   if (_fd < 0) {
     throw std::runtime_error("ClientSocket: Invalid file descriptor");
   }

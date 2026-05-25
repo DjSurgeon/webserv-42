@@ -88,7 +88,7 @@ void test_serve_file_success() {
   create_test_file(path, content);
 
   // 2. ACT
-  bool result = handler.serve_file(path, res);
+  bool result = handler.serve_file(path, &res);
   std::string res_str = res.to_string();
 
   // 3. ASSERT
@@ -111,7 +111,7 @@ void test_serve_file_not_found() {
   delete_test_file(path);  // Ensure it doesn't exist
 
   // 2. ACT
-  bool result = handler.serve_file(path, res);
+  bool result = handler.serve_file(path, &res);
   std::string res_str = res.to_string();
 
   // 3. ASSERT
@@ -131,7 +131,7 @@ void test_serve_file_forbidden() {
   chmod(path.c_str(), 0000);  // Remove all permissions
 
   // 2. ACT
-  bool result = handler.serve_file(path, res);
+  bool result = handler.serve_file(path, &res);
   std::string res_str = res.to_string();
 
   // 3. ASSERT
@@ -153,7 +153,7 @@ void test_serve_directory_forbidden() {
   std::string path = "/tmp/";  // Path to a directory
 
   // 2. ACT
-  bool result = handler.serve_file(path, res);
+  bool result = handler.serve_file(path, &res);
   std::string res_str = res.to_string();
 
   // 3. ASSERT
@@ -173,7 +173,7 @@ void test_delete_file_not_found() {
   std::string path = "/var/www/fake_file.txt";
 
   // 2. ACT
-  bool result = handler.delete_file(path, res);
+  bool result = handler.delete_file(path, &res);
   std::string res_str = res.to_string();
 
   // 3. ASSERT
@@ -192,7 +192,7 @@ void test_delete_directory_forbidden() {
   mkdir(path.c_str(), 0755);
 
   // 2. ACT
-  bool result = handler.delete_file(path, res);
+  bool result = handler.delete_file(path, &res);
   std::string res_str = res.to_string();
 
   // 3. ASSERT
@@ -217,7 +217,7 @@ void test_delete_file_forbidden() {
   chmod(path.c_str(), 0400);  // Read-only permission
 
   // 2. ACT
-  bool result = handler.delete_file(path, res);
+  bool result = handler.delete_file(path, &res);
   std::string res_str = res.to_string();
 
   // 3. ASSERT
@@ -242,7 +242,7 @@ void test_delete_file_success() {
   create_test_file(path, "To be deleted");
 
   // 2. ACT
-  bool result = handler.delete_file(path, res);
+  bool result = handler.delete_file(path, &res);
   std::string res_str = res.to_string();
 
   // 3. ASSERT
@@ -266,7 +266,7 @@ void test_autoindex_success() {
   create_test_file(dir_path + "file2.html", "content2");
 
   // 2. ACT
-  handler.generate_autoindex(dir_path, "/auto/", res);
+  handler.generate_autoindex(dir_path, "/auto/", &res);
   std::string res_str = res.to_string();
 
   // 3. ASSERT
@@ -295,7 +295,7 @@ void test_autoindex_forbidden() {
   std::string path = "/tmp/non_existent_autoindex_dir/";
 
   // 2. ACT
-  handler.generate_autoindex(path, "/auto/", res);
+  handler.generate_autoindex(path, "/auto/", &res);
   std::string res_str = res.to_string();
 
   // 3. ASSERT
@@ -324,7 +324,7 @@ void test_memory_bomb_large_file() {
   // 2. ACT
   std::cout << "  -> Invoking serve_file (expecting massive RAM spike)..."
             << std::endl;
-  bool result = handler.serve_file(path, res);
+  bool result = handler.serve_file(path, &res);
 
   // 3. ASSERT
   assert(result == true);
@@ -354,7 +354,7 @@ void test_massive_autoindex() {
 
   // 2. ACT
   std::cout << "  -> Generating autoindex..." << std::endl;
-  handler.generate_autoindex(dir_path, "/massive/", res);
+  handler.generate_autoindex(dir_path, "/massive/", &res);
   std::string res_str = res.to_string();
 
   // 3. ASSERT

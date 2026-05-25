@@ -46,13 +46,13 @@ CgiHandler::~CgiHandler() {}
 
 bool CgiHandler::execute_script(const std::string& script_path,
                                 const HttpRequest& req,
-                                const LocationConfig* loc, HttpResponse& res) {
+                                const LocationConfig* loc, HttpResponse* res) {
   int stdout_pipe[2];
   FILE* tmp_file = NULL;
 
   // 1. Establish POSIX pipe for IPC (CGI to Server)
   if (!_initialize_stdout_pipe(stdout_pipe)) {
-    res.generate_error_response(500);
+    if (res) res->generate_error_response(500);
     return true;  // Handled
   }
 
@@ -62,7 +62,7 @@ bool CgiHandler::execute_script(const std::string& script_path,
     if (!tmp_file) {
       close(stdout_pipe[0]);
       close(stdout_pipe[1]);
-      res.generate_error_response(500);
+      if (res) res->generate_error_response(500);
       return true;  // Handled
     }
   }
@@ -72,7 +72,8 @@ bool CgiHandler::execute_script(const std::string& script_path,
 }
 
 bool CgiHandler::parse_cgi_output(const std::string& raw_output,
-                                  HttpResponse& res) const {
+                                  HttpResponse* res) const {
+  if (!res) return false;
   size_t boundary_pos = raw_output.find("\r\n\r\n");
   size_t boundary_len = 4;
 
@@ -83,12 +84,12 @@ bool CgiHandler::parse_cgi_output(const std::string& raw_output,
 
   if (boundary_pos == std::string::npos) {
     // Malformed CGI output, no headers found
-    res.generate_error_response(502);
+    res->generate_error_response(502);
     return false;
   }
 
   // Default status 200 OK
-  res.set_status(200, "OK");
+  res->set_status(200, "OK");
 
   std::string headers_str = raw_output.substr(0, boundary_pos);
   std::string body_str = raw_output.substr(boundary_pos + boundary_len);
@@ -138,25 +139,24 @@ bool CgiHandler::parse_cgi_output(const std::string& raw_output,
           code_ss >> code;
           phrase = "";
         }
-        res.set_status(code, phrase);
+        res->set_status(code, phrase);
       } else {
-        res.add_header(key, value);
+        res->add_header(key, value);
       }
     }
 
     start = end + 1;
   }
 
-  res.set_body(body_str);
+  res->set_body(body_str);
 
   // Calculate and set exact Content-Length
   std::stringstream ss;
   ss << body_str.length();
-  res.add_header("Content-Length", ss.str());
+  res->add_header("Content-Length", ss.str());
 
   return true;
 }
-
 
 std::string CgiHandler::_get_interpreter(const std::string& script_path,
                                          const LocationConfig* loc) const {
@@ -179,7 +179,7 @@ std::string CgiHandler::_get_interpreter(const std::string& script_path,
 bool CgiHandler::_execute_fork(const std::string& script_path,
                                const HttpRequest& req,
                                const LocationConfig* loc, int stdout_pipe[2],
-                               FILE* tmp_file, HttpResponse& res) const {
+                               FILE* tmp_file, HttpResponse* res) const {
   pid_t pid = fork();
 
   if (pid < 0) {
@@ -189,7 +189,7 @@ bool CgiHandler::_execute_fork(const std::string& script_path,
     if (tmp_file != NULL) {
       fclose(tmp_file);
     }
-    res.generate_error_response(500);
+    if (res) res->generate_error_response(500);
     return true;  // Handled
   } else if (pid == 0) {
     // Child Process
@@ -293,42 +293,45 @@ std::vector<std::string> CgiHandler::_build_env_vector(
   (void)loc;
   std::vector<std::string> env;
 
-  _add_core_variables(env, req);
-  _add_query_string(env, req.get_uri());
-  _add_custom_headers(env, req.get_headers());
+  _add_core_variables(&env, req);
+  _add_query_string(&env, req.get_uri());
+  _add_custom_headers(&env, req.get_headers());
 
   return env;
 }
 
-void CgiHandler::_add_core_variables(std::vector<std::string>& env,
+void CgiHandler::_add_core_variables(std::vector<std::string>* env,
                                      const HttpRequest& req) const {
-  env.push_back("REQUEST_METHOD=" + req.get_method());
-  env.push_back("SERVER_PROTOCOL=HTTP/1.1");
+  if (!env) return;
+  env->push_back("REQUEST_METHOD=" + req.get_method());
+  env->push_back("SERVER_PROTOCOL=HTTP/1.1");
 }
 
-void CgiHandler::_add_query_string(std::vector<std::string>& env,
+void CgiHandler::_add_query_string(std::vector<std::string>* env,
                                    const std::string& uri) const {
+  if (!env) return;
   size_t query_pos = uri.find('?');
   if (query_pos != std::string::npos) {
-    env.push_back("QUERY_STRING=" + uri.substr(query_pos + 1));
+    env->push_back("QUERY_STRING=" + uri.substr(query_pos + 1));
   } else {
-    env.push_back("QUERY_STRING=");
+    env->push_back("QUERY_STRING=");
   }
 }
 
 void CgiHandler::_add_custom_headers(
-    std::vector<std::string>& env,
+    std::vector<std::string>* env,
     const std::map<std::string, std::string>& headers) const {
+  if (!env) return;
   std::map<std::string, std::string>::const_iterator it;
 
   it = headers.find("content-length");
   if (it != headers.end()) {
-    env.push_back("CONTENT_LENGTH=" + it->second);
+    env->push_back("CONTENT_LENGTH=" + it->second);
   }
 
   it = headers.find("content-type");
   if (it != headers.end()) {
-    env.push_back("CONTENT_TYPE=" + it->second);
+    env->push_back("CONTENT_TYPE=" + it->second);
   }
 
   for (it = headers.begin(); it != headers.end(); ++it) {
@@ -344,7 +347,7 @@ void CgiHandler::_add_custom_headers(
         env_key += std::toupper(it->first[i]);
       }
     }
-    env.push_back(env_key + "=" + it->second);
+    env->push_back(env_key + "=" + it->second);
   }
 }
 
@@ -355,7 +358,11 @@ char** CgiHandler::_allocate_env_array(
 
   for (size_t i = 0; i < size; ++i) {
     envp[i] = new char[env_vec[i].length() + 1];
-    std::strcpy(envp[i], env_vec[i].c_str());
+    // Use manual copy loop for C++98 and to avoid strcpy lint warning
+    for (size_t j = 0; j < env_vec[i].length(); ++j) {
+      envp[i][j] = env_vec[i][j];
+    }
+    envp[i][env_vec[i].length()] = '\0';
   }
   envp[size] = NULL;
 

@@ -43,13 +43,13 @@ class ConfigParser {
   void _handle_redirect_directive(const std::vector<std::string>& tokens,
                                   size_t* i, LocationConfig* location);
 
-  bool _parse_context_directive(const std::vector<std::string>& tokens,
-                                size_t* i, Context* ctx);
+  bool _parse_context_directives(const std::vector<std::string>& tokens,
+                                 size_t* i, Context* ctx);
 
   static void trim_whitespace(std::string* line);
   static void remove_comments(std::string* line);
   static std::vector<std::string> tokenize(const std::string& line);
-  void parse_directive(Context& ctx, const std::string& line);
+  void parse_directive(Context* ctx, const std::string& line);
 };
 
 #endif  // SRC_CONFIG_CONFIGPARSER_HPP_

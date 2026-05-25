@@ -20,10 +20,9 @@ class CgiHandler {
   ~CgiHandler();
 
   bool execute_script(const std::string& script_path, const HttpRequest& req,
-                      const LocationConfig* loc, HttpResponse& res);
+                      const LocationConfig* loc, HttpResponse* res);
 
-  bool parse_cgi_output(const std::string& raw_output,
-                        HttpResponse& res) const;
+  bool parse_cgi_output(const std::string& raw_output, HttpResponse* res) const;
 
  private:
   friend void test_cgi_env_generation();
@@ -35,18 +34,18 @@ class CgiHandler {
   FILE* _create_temp_body_file(const HttpRequest& req) const;
   bool _execute_fork(const std::string& script_path, const HttpRequest& req,
                      const LocationConfig* loc, int stdout_pipe[2],
-                     FILE* tmp_file, HttpResponse& res) const;
+                     FILE* tmp_file, HttpResponse* res) const;
   std::string _get_interpreter(const std::string& script_path,
                                const LocationConfig* loc) const;
 
   std::vector<std::string> _build_env_vector(const HttpRequest& req,
                                              const LocationConfig* loc) const;
-  void _add_core_variables(std::vector<std::string>& env,
+  void _add_core_variables(std::vector<std::string>* env,
                            const HttpRequest& req) const;
-  void _add_query_string(std::vector<std::string>& env,
+  void _add_query_string(std::vector<std::string>* env,
                          const std::string& uri) const;
   void _add_custom_headers(
-      std::vector<std::string>& env,
+      std::vector<std::string>* env,
       const std::map<std::string, std::string>& headers) const;
 
   char** _allocate_env_array(const std::vector<std::string>& env_vec) const;

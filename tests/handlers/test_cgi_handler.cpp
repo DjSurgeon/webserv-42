@@ -173,7 +173,8 @@ void test_cgi_execution_flow() {
 
   // 2. ACT
   // This will initialize pipes/tmpfile and prepare for fork
-  bool result = handler.execute_script("tests/assets/echo.cgi", req, NULL, res);
+  bool result =
+      handler.execute_script("tests/assets/echo.cgi", req, NULL, &res);
 
   // 3. ASSERT
   // Since fork/execve IS implemented now, but parent just waits,
@@ -194,7 +195,8 @@ void test_cgi_10mb_payload_stress() {
   HttpResponse res;
 
   // 2. ACT
-  bool result = handler.execute_script("tests/assets/echo.cgi", req, NULL, res);
+  bool result =
+      handler.execute_script("tests/assets/echo.cgi", req, NULL, &res);
 
   // 3. ASSERT
   assert(result == false);
@@ -214,7 +216,7 @@ void test_cgi_fd_leaks() {
 
   for (int i = 0; i < 100; ++i) {
     HttpResponse res;
-    handler.execute_script("tests/assets/echo.cgi", req, NULL, res);
+    handler.execute_script("tests/assets/echo.cgi", req, NULL, &res);
   }
   print_result("test_cgi_fd_leaks_100_iterations", true);
 }
@@ -227,7 +229,7 @@ void test_cgi_output_parsing() {
   {
     HttpResponse res;
     std::string raw = "Content-Type: text/html\r\n\r\n<h1>Hello</h1>";
-    handler.parse_cgi_output(raw, res);
+    handler.parse_cgi_output(raw, &res);
     std::string res_str = res.to_string();
     assert(res_str.find("HTTP/1.1 200 OK") != std::string::npos);
     assert(res_str.find("Content-Type: text/html") != std::string::npos);
@@ -240,7 +242,7 @@ void test_cgi_output_parsing() {
   {
     HttpResponse res;
     std::string raw = "Content-Type: text/plain\n\nTexto plano";
-    handler.parse_cgi_output(raw, res);
+    handler.parse_cgi_output(raw, &res);
     std::string res_str = res.to_string();
     assert(res_str.find("Content-Type: text/plain") != std::string::npos);
     assert(res_str.find("Texto plano") != std::string::npos);
@@ -253,7 +255,7 @@ void test_cgi_output_parsing() {
     std::string raw =
         "Status: 404 Not Found\nContent-Type: application/json\nSet-Cookie: "
         "session=123\n\n{\"error\":\"Not Found\"}";
-    handler.parse_cgi_output(raw, res);
+    handler.parse_cgi_output(raw, &res);
     std::string res_str = res.to_string();
 
     // 1. Check mutation to 404
@@ -270,7 +272,7 @@ void test_cgi_output_parsing() {
   {
     HttpResponse res;
     std::string raw = "Just some crazy text without any double newlines";
-    handler.parse_cgi_output(raw, res);
+    handler.parse_cgi_output(raw, &res);
     std::string res_str = res.to_string();
     assert(res_str.find("502 Bad Gateway") != std::string::npos);
     print_result("  -> Malformed (502 Check)", true);

@@ -146,7 +146,7 @@ void ConfigParser::_parse_server_block(const std::vector<std::string>& tokens,
       _handle_listen_directive(tokens, i, server);
     } else if (directive == "server_name") {
       _handle_server_name_directive(tokens, i, server);
-    } else if (_parse_context_directive(tokens, i, server)) {
+    } else if (_parse_context_directives(tokens, i, server)) {
       continue;
     } else {
       throw std::runtime_error("Syntax error: unknown directive '" + directive +
@@ -232,7 +232,7 @@ void ConfigParser::_parse_location_block(const std::vector<std::string>& tokens,
       _handle_cgi_path_directive(tokens, i, location);
     } else if (directive == "return" || directive == "redirect") {
       _handle_redirect_directive(tokens, i, location);
-    } else if (_parse_context_directive(tokens, i, location)) {
+    } else if (_parse_context_directives(tokens, i, location)) {
       continue;
     } else {
       throw std::runtime_error("Syntax error: unknown directive '" + directive +
@@ -247,7 +247,7 @@ void ConfigParser::_parse_location_block(const std::vector<std::string>& tokens,
   (*i)++;  // Skip "}"
 }
 
-bool ConfigParser::_parse_context_directive(
+bool ConfigParser::_parse_context_directives(
     const std::vector<std::string>& tokens, size_t* i, Context* ctx) {
   if (!i || !ctx || *i >= tokens.size()) {
     return false;
@@ -390,7 +390,10 @@ std::vector<std::string> ConfigParser::tokenize(const std::string& line) {
   return tokens;
 }
 
-void ConfigParser::parse_directive(Context& ctx, const std::string& line) {
+void ConfigParser::parse_directive(Context* ctx, const std::string& line) {
+  if (!ctx) {
+    return;
+  }
   std::vector<std::string> tokens;
   std::string current_token;
 
@@ -414,7 +417,7 @@ void ConfigParser::parse_directive(Context& ctx, const std::string& line) {
     if (line_tokens.size() != 3) {
       throw std::runtime_error("Syntax error: invalid 'root' directive");
     }
-    ctx.set_root(line_tokens[1]);
+    ctx->set_root(line_tokens[1]);
   } else if (key == "client_max_body_size") {
     if (line_tokens.size() != 3) {
       throw std::runtime_error(
@@ -429,6 +432,6 @@ void ConfigParser::parse_directive(Context& ctx, const std::string& line) {
       }
     }
     size_t val = static_cast<size_t>(std::strtoul(value_str.c_str(), NULL, 10));
-    ctx.set_client_max_body_size(val);
+    ctx->set_client_max_body_size(val);
   }
 }
