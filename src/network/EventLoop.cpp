@@ -2,6 +2,7 @@
 #include "network/EventLoop.hpp"
 
 #include <sys/socket.h>
+#include <sys/stat.h>
 #include <unistd.h>
 
 #include <iostream>
@@ -11,6 +12,7 @@
 #include <string>
 
 #include "handlers/CgiHandler.hpp"
+#include "handlers/FileHandler.hpp"
 #include "handlers/StaticRouter.hpp"
 
 /**
@@ -296,13 +298,30 @@ void EventLoop::_handle_client_data(int fd) {
             // triggers fork/exec.
             cgi.execute_script(physical_path, req, matched_loc, &res);
           } else {
-            res.set_status(200, "OK");
-            res.set_body("Path resolved successfully to: " + physical_path +
-                         "\n");
-            std::stringstream ss;
-            ss << res.to_string().length() - res.to_string().find("\r\n\r\n") -
-                      4;  // Hacky way for MVP
-            res.add_header("Content-Length", ss.str());
+            FileHandler file_handler;
+            const std::string& method = req.get_method();
+
+            if (method == "GET") {
+              struct stat st;
+              if (stat(physical_path.c_str(), &st) == 0 &&
+                  S_ISDIR(st.st_mode)) {
+                const Context* active_ctx =
+                    matched_loc ? static_cast<const Context*>(matched_loc)
+                                : static_cast<const Context*>(matched_server);
+                if (active_ctx->get_autoindex()) {
+                  file_handler.generate_autoindex(physical_path, req.get_uri(),
+                                                  &res);
+                } else {
+                  file_handler.serve_file(physical_path, &res);
+                }
+              } else {
+                file_handler.serve_file(physical_path, &res);
+              }
+            } else if (method == "DELETE") {
+              file_handler.delete_file(physical_path, &res);
+            } else {
+              res.generate_error_response(405);
+            }
           }
         }
 

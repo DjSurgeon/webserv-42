@@ -1,6 +1,8 @@
 // Copyright 2026 serjimen vja-nie dlesieur
 #include "handlers/StaticRouter.hpp"
 
+#include <sys/stat.h>
+
 #include <string>
 #include <vector>
 
@@ -118,4 +120,21 @@ void StaticRouter::_translate_path(const HttpRequest& req, const Context* ctx,
   }
 
   *out_physical_path = clean_root + clean_uri;
+
+  struct stat st;
+  if (stat(out_physical_path->c_str(), &st) == 0 && S_ISDIR(st.st_mode)) {
+    const std::vector<std::string>& index_files = ctx->get_index_files();
+    for (size_t i = 0; i < index_files.size(); ++i) {
+      std::string base_path = *out_physical_path;
+      if (!base_path.empty() && base_path[base_path.length() - 1] != '/') {
+        base_path += "/";
+      }
+      std::string test_path = base_path + index_files[i];
+      struct stat idx_st;
+      if (stat(test_path.c_str(), &idx_st) == 0 && S_ISREG(idx_st.st_mode)) {
+        *out_physical_path = test_path;
+        break;
+      }
+    }
+  }
 }
