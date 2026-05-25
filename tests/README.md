@@ -1,6 +1,6 @@
 # 🧪 Webserv-42 Testing Guide
 
-¡Bienvenido a la suite de pruebas de Webserv-42! Como ciudadanos de primera clase en este repositorio, los tests son la red de seguridad que garantiza que nuestro servidor HTTP es robusto y está libre de regresiones.
+¡Bienvenido a la suite de pruebas de Webserv-42! Como ciudadanos de primera clase en este repositorio, los tests son la red de seguridad que garantiza que nuestro servidor HTTP es robusto, está libre de fugas de memoria y cumple con los estándares RFC, incluso bajo ataques masivos.
 
 Cualquier miembro del equipo debe poder leer, ejecutar y añadir pruebas en menos de 2 minutos siguiendo esta guía.
 
@@ -11,29 +11,65 @@ Cualquier miembro del equipo debe poder leer, ejecutar y añadir pruebas en meno
 ### Dependencias
 Nuestro proyecto está estrictamente escrito en **C++98 puro**. No requerimos la instalación de frameworks pesados de pruebas (como GoogleTest o Catch2). Todo el arnés de pruebas es *custom* e integrado en nuestros scripts bash.
 
-### Comandos de Ejecución
-Existen múltiples formas de lanzar las pruebas dependiendo de tu enfoque:
+### Comandos de Ejecución Principales
 
-- **Suite Completa Automatizada**: Compila y ejecuta absolutamente todos los archivos de prueba unitarios y de integración.
-  ```bash
-  make test
-  # O alternativamente:
-  ./tests/run_all_tests.sh
-  ```
+El proyecto cuenta con una batería de pruebas dividida en tres niveles de profundidad. Para una validación completa antes de un *commit*, debes ejecutar los tres:
 
-- **Pruebas Específicas**: Si solo estás depurando el parser o un componente concreto.
-  ```bash
-  ./tests/run_tests.sh
-  ```
+1. **Suite de Pruebas Unitarias y Estructurales (make test)**
+   Compila y ejecuta todos los tests atómicos aislados. Esto incluye el parseo de configuración, validación de rutas estáticas, generación de respuestas HTTP, manejo de archivos y resolución de procesos CGI.
+   ```bash
+   make test
+   # O alternativamente:
+   ./tests/scripts/run_all_tests.sh
+   ```
 
-- **Pruebas de Estrés y Fragmentación**: Evalúa la FSM bajo asedio de red y condiciones extremas.
-  ```bash
-  ./tests/run_stress_tests.sh
-  ```
+2. **Test de Concurrencia a Nivel de Sistema**
+   Lanza el binario `webserv` en segundo plano y dispara 20 clientes concurrentes asíncronos para asegurar que el `EventLoop` multiplexa correctamente sin bloqueos.
+   ```bash
+   ./tests/scripts/test_concurrency.sh
+   ```
+
+3. **Batería de Estrés Masivo y Ataques de Red**
+   Utiliza un cliente C++ personalizado (`stress_client`) para lanzar ataques dirigidos contra el servidor:
+   - **Flood:** Cientos de peticiones válidas simultáneas.
+   - **Garbage:** Inyección de binarios y directivas HTTP inválidas.
+   - **Drop:** Desconexión abrupta de sockets a mitad de transmisión.
+   - **Slowloris:** Envío de 1 byte por segundo para intentar agotar los File Descriptors.
+   ```bash
+   ./tests/scripts/run_stress_tests.sh
+   ```
+
+> 💡 **Tip:** Para ejecutar la validación total del sistema con un solo comando:
+> `make all && ./tests/scripts/run_all_tests.sh && ./tests/scripts/run_stress_tests.sh`
 
 ---
 
-## 🛠️ 2. El Patrón "AAA" (El "Por qué")
+## 🏗️ 2. Arquitectura de las Pruebas Actuales
+
+El proyecto actualmente cuenta con **19 suites de pruebas** (estado: 100% PASS), agrupadas por dominios lógicos:
+
+### A. Configuración (`tests/config/`)
+- `test_context`: Valida la herencia y los valores por defecto.
+- `test_location_config` / `test_server_config`: Verifica la clonación profunda (Orthodox Canonical Form), el enrutamiento por *Longest Prefix Match* y la gestión de punteros.
+- `test_config_parser`: Pruebas de preprocesamiento (eliminación de espacios/comentarios), validación estructural de bloques anidados y detección estricta de errores de sintaxis en archivos `.conf`.
+
+### B. Manejadores (`tests/handlers/`)
+- `test_static_router`: Valida la traducción de URIs a rutas físicas (ej. root + path), normalización de barras (`/`) y validación de métodos HTTP permitidos (405).
+- `test_file_handler`: Pruebas de resolución de tipos MIME, permisos de lectura (403), NotFound (404), borrado físico de archivos y auto-generación de índices de directorios (`autoindex`).
+- `test_cgi_handler`: Valida la correcta generación del entorno (variables `HTTP_*`), bifurcación de procesos (`fork/execve`), redirección IPC (Pipes/Tempfiles) y parseo defensivo de la salida del CGI (detectando `Status:` y previniendo caídas con salidas malformadas).
+
+### C. Protocolo HTTP (`tests/http/`)
+- `test_http_request` / `test_http_response`: Validación de setters/getters y correcta serialización de respuestas al estándar HTTP/1.1 (CRLF).
+- `test_parser_*`: Batería exhaustiva de la Máquina de Estados Finita (FSM) que parsea métodos, URIs, versiones, cabeceras y cuerpos de forma no bloqueante, fragmentada y tolerante a fallos.
+
+### D. Red e Integración (`tests/network/` & `tests/integration/`)
+- `test_sockets`: Comprueba la gestión RAII de los sockets no bloqueantes (FDs).
+- `test_integration`: Une los sockets de cliente con el parser HTTP para simular latencia de red.
+- `test_parser_stress`: Valida la protección contra vulnerabilidades comunes (Buffer Overflows, Double Spaces, Negative Content-Lengths).
+
+---
+
+## 🛠️ 3. El Patrón "AAA" (El "Por qué")
 
 La regla de oro del Tech Lead es clara: *"Un test que falla y no se entiende por qué ha fallado, es peor que no tener test."*
 
@@ -66,32 +102,3 @@ void test_missing_semicolon_throws_error() {
 }
 ```
 *Si vas a crear un test nuevo, copia y pega esta estructura.*
-
----
-
-## 🌐 3. Testing Manual y Sandbox (Verificación Local)
-
-Antes de hacer un Pull Request, es obligatorio verificar los módulos atómicos con estos flujos de trabajo manuales si se están tocando capas de bajo nivel.
-
-### 🔌 Testing de la Capa de Red (Network Layer)
-Para verificar que `ListeningSocket` y `ClientSocket` aceptan conexiones sin bloquear el hilo principal:
-
-1. Compila y ejecuta el binario principal: `./webserv`
-2. Abre un terminal separado y dispara una conexión cruda usando `netcat` (`nc`):
-   ```bash
-   nc -v localhost 8080
-   ```
-**Criterio de Éxito:** Los registros (logs) del servidor deben mostrar una nueva conexión aceptada con un descriptor de archivo válido. El servidor debe permanecer completamente reactivo a un segundo comando `nc` ejecutado desde otra ventana del terminal.
-
-### 🧠 Testing del Flujo del HTTP Parser
-Para verificar de forma asilada que la Máquina de Estados Finita (FSM) fragmenta la red carácter a carácter sin pérdida de estado:
-
-Crea un arnés de prueba local (en un `main` temporal) e inyecta un array de caracteres fraccionado:
-
-```cpp
-// Simulando la llegada asíncrona de datos:
-parser.feed('G'); parser.feed('E'); parser.feed('T'); parser.feed(' ');
-// (Pausa simulando delay de la red...)
-parser.feed('/'); parser.feed('\r'); parser.feed('\n');
-```
-**Criterio de Éxito:** El parser debe permanecer grácilmente en los estados intermedios (`STATE_URI`, `STATE_VERSION`, etc.) durante la fragmentación temporal, y solo transicionar a `STATE_COMPLETE` cuando se hayan procesado al 100% los caracteres delimitadores del protocolo.

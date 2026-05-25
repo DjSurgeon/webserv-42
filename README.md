@@ -25,6 +25,11 @@ The project has successfully completed its core infrastructure foundation across
    - **Dynamic Autoindex**: Safely generates navigational HTML indices for directories, preventing dead links via strict URI sanitization, fully bypassing nested "Arrow Code" through single-responsibility helper functions.
    - **Strict DELETE Engine**: Implements the HTTP DELETE method with multiple layers of system-level defensive programming. Validates file existence and write permissions (`W_OK`), strictly denies recursive directory wipes, and elegantly handles hardware race-conditions. It correctly signals successful deletions using the exact standard `204 No Content` HTTP format without emitting any payload bytes.
 
+5. **CGI (Common Gateway Interface) Engine:**
+   - `CgiHandler`: A fully isolated IPC-driven module capable of forking external scripts dynamically (e.g., Python, PHP) based on location configurations.
+   - **Anti-Deadlock Storage**: Safe offloading of massive POST request payloads via `tmpfile` buffer allocations to bypass POSIX kernel pipe-locking capacity constraints.
+   - **RFC 3875 Strict Parser**: Implements an NGINX-style rigorous header separation routine (`\r\n\r\n` boundary checks) that aggressively sanitizes untrusted CGI output. Intercepts script pseudo-headers (like `Status`) directly into the HTTP core pipeline instead of erroneously leaking them into payloads, and safely injects an exact byte-calculated `Content-Length`. Any non-compliant execution immediately triggers a safe `502 Bad Gateway` containment boundary.
+
 ---
 
 ## 💻 Instructions

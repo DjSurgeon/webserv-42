@@ -636,3 +636,25 @@ Para soportar la estructura y herencia de bloques estilo NGINX (donde una ruta `
   3. `access(path, W_OK)`: Confirma que Webserv tiene permisos de escritura sobre el archivo (Fallo -> 403 Forbidden).
 - **Ejecución y Contingencia**: Se empleó la llamada del Kernel `unlink()` para desvincular el archivo. Se programó una protección contra "Race Conditions" (si `unlink` falla inesperadamente devolviendo `-1`, el servidor responde con 500 Internal Server Error).
 - **RFC Compliant**: Si el borrado es exitoso, la respuesta se construye estrictamente según el estándar HTTP/1.1 para DELETE, inyectando un **204 No Content**, sin cuerpo HTML y sin cabeceras `Content-Type` o `Content-Length`.
+
+---
+
+## 📅 Día 9: Motor CGI (Common Gateway Interface), Procesamiento de Cabeceras y Modo Estricto
+
+### 🎯 Objetivos del Día
+1. Implementar la lógica de procesamiento asíncrono de la salida generada por un script CGI (`parse_cgi_output`).
+2. Aislar las cabeceras emitidas por el CGI respecto al payload final (cuerpo HTTP).
+3. Asegurar la inyección estricta y transparente de meta-variables, estados HTTP y `Content-Length` en el objeto final `HttpResponse`.
+
+### 🏗️ Fase 1: Entorno de Ejecución (Environment)
+- Se desarrolló el mapeo dinámico de cabeceras entrantes a metavariables estándar del formato CGI (`HTTP_ACCEPT_LANGUAGE`, etc.), transformando a mayúsculas y reemplazando guiones por guiones bajos.
+- Se previno el temido *deadlock* de tuberías (pipes) en el sistema creando archivos temporales físicos para inyectar grandes *payloads* POST hacia los scripts vía su `STDIN`, liberando las colas TCP.
+
+### 🧹 Fase 2: Parseo y Separación (Boundary Detection)
+- El RFC 3875 exige que las cabeceras CGI y el cuerpo estén separados por una línea vacía. Se programó una búsqueda robusta del delimitador estándar `\r\n\r\n` y, como fallback de seguridad, el UNIX clásico `\n\n`.
+- **Modo Estricto NGINX:** Si el *script* CGI crashea o no emite una cabecera delimitadora, el parseador no vuelca ciegamente la basura como cuerpo de respuesta. La clase asume que la salida está malformada y detona inmediatamente un error `502 Bad Gateway`, aislando al usuario final del fallo interno del script.
+
+### 🧠 Fase 3: Intercepción de Status y Cálculo Dinámico
+- Una vez aisladas las cabeceras del CGI, iteramos línea a línea limpiando espacios superfluos (`trimming`) y extraemos todas las claves para inyectarlas vía `res.add_header()`.
+- **Intercepción Estratégica:** Las directivas CGI (pseudo-headers) como `Status` (ej. `Status: 201 Created`) no se envían al cliente. Fueron interceptadas mediante comparación *case-insensitive*, fraccionadas con `std::stringstream`, y pasadas directamente a `res.set_status()` para garantizar una *Status-Line* perfecta en el protocolo HTTP/1.1 nativo.
+- Se forzó un cálculo matemático del `Content-Length` sobre la longitud exacta de la string residual (cuerpo extraído del CGI) para sobreescribirlo siempre, asegurando que el *Socket TCP* no bloquee conexiones de tipo *Keep-Alive* por discrepancias de longitud generadas por un mal CGI.
