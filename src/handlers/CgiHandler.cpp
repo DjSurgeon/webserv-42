@@ -246,12 +246,30 @@ bool CgiHandler::_execute_fork(const std::string& script_path,
     if (tmp_file != NULL) {
       fclose(tmp_file);
     }
-    // TODO(serjimen): Register stdout_pipe[0] with EventLoop
-    // For now, in tests, we must close stdout_pipe[1] to avoid leaks
+
+    // Parent must close the write end
     close(stdout_pipe[1]);
-    // And close stdout_pipe[0] because we are not reading it yet
+
+    // Read synchronously from the child process output
+    std::string cgi_output;
+    char buffer[4096];
+    ssize_t bytes_read;
+    while ((bytes_read = read(stdout_pipe[0], buffer, sizeof(buffer))) > 0) {
+      cgi_output.append(buffer, bytes_read);
+    }
+
     close(stdout_pipe[0]);
-    waitpid(pid, NULL, 0);  // Clean up child process (synchronous for tests)
+
+    int status;
+    waitpid(pid, &status, 0);  // Clean up child process
+
+    // If script exited normally, parse its HTTP output
+    if (WIFEXITED(status) && WEXITSTATUS(status) == 0) {
+      parse_cgi_output(cgi_output, res);
+    } else {
+      if (res) res->generate_error_response(502, loc);
+    }
+    return true;  // We successfully populated 'res'
   }
 
   return false;

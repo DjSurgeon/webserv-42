@@ -179,7 +179,7 @@ void test_cgi_execution_flow() {
   // 3. ASSERT
   // Since fork/execve IS implemented now, but parent just waits,
   // we check that it didn't crash.
-  assert(result == false);
+  assert(result == true);
   print_result("test_cgi_execution_flow_setup", true);
 }
 
@@ -199,7 +199,7 @@ void test_cgi_10mb_payload_stress() {
       handler.execute_script("tests/assets/echo.cgi", req, NULL, &res);
 
   // 3. ASSERT
-  assert(result == false);
+  assert(result == true);
   std::cout << GREEN << "  -> Success: Handled 10MB body without blocking."
             << RESET << std::endl;
   print_result("test_cgi_10mb_payload_stress_setup", true);

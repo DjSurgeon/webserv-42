@@ -702,3 +702,32 @@ Para soportar la estructura y herencia de bloques estilo NGINX (donde una ruta `
 ### ⏭️ Fase 2: Cortocircuito de Redirección (301)
 - **Implementación en EventLoop:** Se añadió una validación en tiempo constante $O(1)$ tras resolver la ruta (`matched_loc`).
 - **El Cortocircuito:** Si el location block contiene una directiva `redirect`, el router (`StaticRouter`) y los Handlers se puentean por completo. El `EventLoop` ensambla directamente un status `301 Moved Permanently` con la cabecera mágica `Location` apuntando al nuevo sitio, optimizando el rendimiento frente a peticiones obsoletas.
+
+---
+
+## 📅 Día 12: Resiliencia Final, Master Config y Victoria de Valgrind
+
+### 🎯 Objetivos del Día
+1. Validar la resistencia del `ConfigParser` ante archivos `.conf` malformados (prevención de Core Dumps).
+2. Demostrar el escudo del *Firewall* mediante límites de tamaño de carga.
+3. Reparar caídas asíncronas de la tubería IPC en la ejecución de scripts CGI.
+4. Ensamblar la evaluación final y probar cero fugas (0 leaks) en el entorno cerrado.
+
+### 🛡️ Fase 1: Edge Cases y Escudos del Parser
+- **Pruebas de Destrucción:** Se inyectaron configuraciones con puntos y comas faltantes (`missing_semicolon.conf`), directivas sin cerrar (`unclosed_bracket.conf`), comandos inexistentes (`unknown_directive.conf`) y puertos ilegales.
+- **Resistencia:** El analizador sintáctico descendente recursivo (`ConfigParser`) repelió exitosamente cada ataque levantando excepciones controladas (`std::runtime_error`) y forzando un cierre limpio `exit(1)` con mensajes claros de *Syntax error*, imposibilitando *Segmentation Faults*.
+- **Límites de Payload:** Se implementó `client_max_body_size 10;`. Las solicitudes entrantes gigantescas son abortadas asíncronamente devolviendo el estado `413 Payload Too Large` instantáneamente, protegiendo los descriptores de disco.
+- **Zonas Restringidas:** Una ruta de solo lectura (`allowed_methods GET`) repele automáticamente el método POST con un estatus `405 Method Not Allowed`, blindando el enrutador.
+
+### 🐍 Fase 2: Saneamiento del IPC en CGI (Fix Broken Pipe)
+- **El Problema:** Al forkar el proceso en `CgiHandler`, el servidor padre cerraba ciegamente la tubería sin leerla, forzando a los scripts de Python a crashear con un `BrokenPipeError` al intentar escribir sus datos en un *Socket* fantasma.
+- **La Solución:** Se habilitó el *parent process* en `_execute_fork` para cerrar primero su descriptor de escritura local y, luego, realizar un bucle de lectura sincrónico extrayendo los datos crudos del CGI en un buffer. Los datos leídos se inyectan dinámicamente en el método original `parse_cgi_output`, recuperando los encabezados del lenguaje y el cuerpo HTML con una estabilidad envidiable.
+
+### 🏆 Fase 3: Entorno Master y 0 Leaks (Evaluación Final)
+- Se ensambló el ecosistema completo en `conf/eval_master.conf` que incluye: Virtual Hosting, Múltiples Puertos paralelos, Páginas de Errores Customizadas, Redirecciones Automáticas (301), y Autoindex.
+- **Análisis de Estrés con Valgrind:** Al correr el flujo entero de peticiones HTTP, parseo cruzado, ejecuciones PIPED de CGI, renderización y enrutamiento... Webserv superó con éxito la auditoría estricta de memoria:
+  ```
+  ==25250== All heap blocks were freed -- no leaks are possible
+  ==25250== ERROR SUMMARY: 0 errors from 0 contexts
+  ```
+- **Conclusión del Desarrollo:** La arquitectura basada íntegramente en directrices **RAII** e inspirada en **NGINX** culmina de forma exitosa. Se alcanzó la meta técnica exigida por la red 42 mediante la aplicación impecable del C++98.
