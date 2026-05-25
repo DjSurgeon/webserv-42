@@ -1,6 +1,7 @@
 // Copyright 2026 serjimen vja-nie dlesieur
 #include <csignal>
 #include <iostream>
+#include <vector>
 
 #include "config/ServerConfig.hpp"
 #include "network/EventLoop.hpp"

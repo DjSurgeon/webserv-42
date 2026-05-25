@@ -10,6 +10,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <vector>
 
 #include "handlers/CgiHandler.hpp"
 #include "handlers/FileHandler.hpp"
