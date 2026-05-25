@@ -32,6 +32,10 @@ bool StaticRouter::process_route(const HttpRequest& req,
     return false;
   }
 
+  if (!_validate_payload_size(req, ctx, res)) {
+    return false;
+  }
+
   _translate_path(req, ctx, out_physical_path);
 
   return true;
@@ -49,8 +53,7 @@ bool StaticRouter::_check_null_context(const ServerConfig* server,
   return true;
 }
 
-bool StaticRouter::_validate_method(const HttpRequest& req,
-                                    const Context* ctx,
+bool StaticRouter::_validate_method(const HttpRequest& req, const Context* ctx,
                                     HttpResponse* res) const {
   const std::string& method = req.get_method();
   const std::vector<std::string>& allowed_methods = ctx->get_allowed_methods();
@@ -79,8 +82,23 @@ bool StaticRouter::_validate_method(const HttpRequest& req,
   return true;
 }
 
-void StaticRouter::_translate_path(const HttpRequest& req,
-                                   const Context* ctx,
+bool StaticRouter::_validate_payload_size(const HttpRequest& req,
+                                          const Context* ctx,
+                                          HttpResponse* res) const {
+  size_t max_size = ctx->get_client_max_body_size();
+
+  // 0 is interpreted as unlimited body size
+  if (max_size > 0 && req.get_body().length() > max_size) {
+    if (res) {
+      res->generate_error_response(413);
+    }
+    return false;
+  }
+
+  return true;
+}
+
+void StaticRouter::_translate_path(const HttpRequest& req, const Context* ctx,
                                    std::string* out_physical_path) const {
   if (!out_physical_path) {
     return;

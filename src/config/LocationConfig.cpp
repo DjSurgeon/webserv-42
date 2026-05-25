@@ -25,13 +25,21 @@ LocationConfig& LocationConfig::operator=(const LocationConfig& other) {
 
 LocationConfig::~LocationConfig() {}
 
-const std::string& LocationConfig::get_path() const { return _path; }
+const std::string& LocationConfig::get_path() const {
+  return _path;
+}
 
-const std::string& LocationConfig::get_cgi_path() const { return _cgi_path; }
+const std::string& LocationConfig::get_cgi_path() const {
+  return _cgi_path;
+}
 
-const std::string& LocationConfig::get_redirect() const { return _redirect; }
+const std::string& LocationConfig::get_redirect() const {
+  return _redirect;
+}
 
-void LocationConfig::set_path(const std::string& path) { _path = path; }
+void LocationConfig::set_path(const std::string& path) {
+  _path = path;
+}
 
 void LocationConfig::set_cgi_path(const std::string& cgi_path) {
   _cgi_path = cgi_path;

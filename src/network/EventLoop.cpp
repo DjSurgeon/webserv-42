@@ -222,24 +222,27 @@ void EventLoop::_handle_client_data(int fd) {
       i++;
       if (state == STATE_COMPLETE) {
         std::cout << "EventLoop: Request completed from client " << fd << "\n";
-        
+
         const HttpRequest& req = parser_it->second->get_request();
         HttpResponse res;
-        
+
         // Find matched ServerConfig (Virtual Hosting based on Host header)
         int parent_server_fd = _client_to_server[fd];
-        const std::vector<ServerConfig>& configs = _server_configs[parent_server_fd];
-        const ServerConfig* matched_server = &configs[0]; // Default to first
+        const std::vector<ServerConfig>& configs =
+            _server_configs[parent_server_fd];
+        const ServerConfig* matched_server = &configs[0];  // Default to first
 
-        std::map<std::string, std::string>::const_iterator host_it = req.get_headers().find("host");
+        std::map<std::string, std::string>::const_iterator host_it =
+            req.get_headers().find("host");
         if (host_it != req.get_headers().end()) {
           std::string host_value = host_it->second;
           size_t colon_pos = host_value.find(':');
           if (colon_pos != std::string::npos) {
-            host_value = host_value.substr(0, colon_pos); // Strip port
+            host_value = host_value.substr(0, colon_pos);  // Strip port
           }
           for (size_t k = 0; k < configs.size(); ++k) {
-            const std::vector<std::string>& names = configs[k].get_server_names();
+            const std::vector<std::string>& names =
+                configs[k].get_server_names();
             bool matched = false;
             for (size_t n = 0; n < names.size(); ++n) {
               if (names[n] == host_value) {
@@ -252,18 +255,23 @@ void EventLoop::_handle_client_data(int fd) {
           }
         }
 
-        const LocationConfig* matched_loc = matched_server->find_location(req.get_uri());
+        const LocationConfig* matched_loc =
+            matched_server->find_location(req.get_uri());
         std::string physical_path;
         StaticRouter router;
-        
-        bool route_ok = router.process_route(req, matched_server, matched_loc, &res, &physical_path);
-        
+
+        bool route_ok = router.process_route(req, matched_server, matched_loc,
+                                             &res, &physical_path);
+
         if (route_ok) {
-          std::cout << "EventLoop: Resolved physical path: " << physical_path << std::endl;
+          std::cout << "EventLoop: Resolved physical path: " << physical_path
+                    << std::endl;
           res.set_status(200, "OK");
-          res.set_body("Path resolved successfully to: " + physical_path + "\n");
+          res.set_body("Path resolved successfully to: " + physical_path +
+                       "\n");
           std::stringstream ss;
-          ss << res.to_string().length() - res.to_string().find("\r\n\r\n") - 4; // Hacky way for MVP
+          ss << res.to_string().length() - res.to_string().find("\r\n\r\n") -
+                    4;  // Hacky way for MVP
           res.add_header("Content-Length", ss.str());
         }
 

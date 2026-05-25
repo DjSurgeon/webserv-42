@@ -77,7 +77,8 @@ void Context::add_error_page(int code, const std::string& uri) {
   _error_pages[code] = uri;
 }
 
-void Context::set_allowed_methods(const std::vector<std::string>& allowed_methods) {
+void Context::set_allowed_methods(
+    const std::vector<std::string>& allowed_methods) {
   _allowed_methods = allowed_methods;
 }
 

@@ -23,10 +23,12 @@ class StaticRouter {
                      std::string* out_physical_path) const;
 
  private:
-  bool _check_null_context(const ServerConfig* server, const LocationConfig* loc,
-                           HttpResponse* res) const;
+  bool _check_null_context(const ServerConfig* server,
+                           const LocationConfig* loc, HttpResponse* res) const;
   bool _validate_method(const HttpRequest& req, const Context* ctx,
                         HttpResponse* res) const;
+  bool _validate_payload_size(const HttpRequest& req, const Context* ctx,
+                              HttpResponse* res) const;
   void _translate_path(const HttpRequest& req, const Context* ctx,
                        std::string* out_physical_path) const;
 };
