@@ -658,3 +658,29 @@ Para soportar la estructura y herencia de bloques estilo NGINX (donde una ruta `
 - Una vez aisladas las cabeceras del CGI, iteramos línea a línea limpiando espacios superfluos (`trimming`) y extraemos todas las claves para inyectarlas vía `res.add_header()`.
 - **Intercepción Estratégica:** Las directivas CGI (pseudo-headers) como `Status` (ej. `Status: 201 Created`) no se envían al cliente. Fueron interceptadas mediante comparación *case-insensitive*, fraccionadas con `std::stringstream`, y pasadas directamente a `res.set_status()` para garantizar una *Status-Line* perfecta en el protocolo HTTP/1.1 nativo.
 - Se forzó un cálculo matemático del `Content-Length` sobre la longitud exacta de la string residual (cuerpo extraído del CGI) para sobreescribirlo siempre, asegurando que el *Socket TCP* no bloquee conexiones de tipo *Keep-Alive* por discrepancias de longitud generadas por un mal CGI.
+
+---
+
+## 📅 Día 10: Integración del Motor de Enrutamiento y Ciclo de Vida TCP (Fin del Sprint)
+
+### 🎯 Objetivos del Día
+1. Conectar `HttpRequest` con `ServerConfig` (Virtual Hosting) utilizando un `StaticRouter` para resolver el destino de la petición.
+2. Añadir una capa de *Firewall* (Métodos no permitidos, Límite de Tamaño de Body).
+3. Eliminar extensiones CGI hardcodeadas usando la nueva directiva dinámica `cgi_ext`.
+4. Delegar la respuesta final a `FileHandler` o `CgiHandler` y habilitar *HTTP Pipelining* (reutilización del Socket).
+
+### 🛡️ Fase 1: Enrutamiento Dinámico y Firewall (StaticRouter)
+- **Virtual Hosting:** Integrado el escaneo del header `Host` para emparejar la petición entrante con su respectivo `ServerConfig` dentro del `EventLoop`.
+- **Cortafuegos Lógico:** El `StaticRouter` ahora verifica el método antes de tocar archivos. Genera 405 (Method Not Allowed) o 413 (Payload Too Large) interceptando inmediatamente y optimizando la latencia.
+- **Auto-Resolución del Index:** Integrado un chequeo `stat` para directorios dentro de `_translate_path`. Si la URI apunta a una carpeta, el router itera la directiva `index_files` inyectando un `/` seguro. Si existe, lo entrega directamente.
+
+### 🌐 Fase 2: Ejecución de Handlers Sin Hardcodeo
+- Se expandió `LocationConfig` y `ConfigParser` para leer `cgi_ext .php .py`.
+- **Bifurcación Limpia:** Tras la resolución, el `EventLoop` chequea si la extensión coincide con la directiva dinámica.
+  - Si es CGI: delega la ruta resuelta a `CgiHandler::execute_script`.
+  - Si no es CGI: extrae el método. Delega GET a `FileHandler::serve_file` (o autoindex) y DELETE a `delete_file`. Cortafuegos en 405 para POST estáticos.
+
+### 🔌 Fase 3: Garbage Collector TCP y HTTP Pipelining
+- **Serialización Definitiva:** La respuesta `res.to_string()` empaquetada se encola directamente al `write_buffer` asíncrono del cliente.
+- **Pipelining Habilitado:** Se ha reemplazado el cierre forzado con `parser->reset()`, manteniendo el *socket* abierto para múltiples peticiones secuenciales.
+- **Gestión de Cierres Segura:** Detectamos `Connection: close` o `HTTP/1.0` en la petición entrante para levantar un flag interno en el cliente. Una vez el buffer de escritura se vacía, `_handle_client_write` invoca a `removeSocket(fd)` eliminando por fin el descriptor y la memoria RAM, eliminando por completo cualquier posibilidad de *Memory Leaks* a largo plazo.

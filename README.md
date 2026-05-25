@@ -30,6 +30,12 @@ The project has successfully completed its core infrastructure foundation across
    - **Anti-Deadlock Storage**: Safe offloading of massive POST request payloads via `tmpfile` buffer allocations to bypass POSIX kernel pipe-locking capacity constraints.
    - **RFC 3875 Strict Parser**: Implements an NGINX-style rigorous header separation routine (`\r\n\r\n` boundary checks) that aggressively sanitizes untrusted CGI output. Intercepts script pseudo-headers (like `Status`) directly into the HTTP core pipeline instead of erroneously leaking them into payloads, and safely injects an exact byte-calculated `Content-Length`. Any non-compliant execution immediately triggers a safe `502 Bad Gateway` containment boundary.
 
+6. **Routing & Event Multiplexing:**
+   - `StaticRouter` acting as an intelligent path translation engine and security firewall (validating HTTP methods and enforcing `client_max_body_size`).
+   - `EventLoop` routing dynamic/static requests via `cgi_ext` dynamic extension resolution, removing all hardcoded logic.
+   - Intelligent `index` auto-resolution via POSIX `stat()` preventing internal routing loops and transparently feeding `FileHandler`.
+   - Robust HTTP/1.1 TCP Lifecycle Management: Full Keep-Alive and Pipelining support via `RequestParser::reset()`, including graceful connection closure (`Connection: close` or HTTP/1.0 fallback) preventing File Descriptor leakage under heavy load.
+
 ---
 
 ## 💻 Instructions

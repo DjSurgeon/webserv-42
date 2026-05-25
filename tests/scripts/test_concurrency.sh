@@ -32,10 +32,10 @@ simulate_client() {
         sleep 0.2
         echo -n " HTTP/1.1"
         sleep 0.2
-        echo -e "\r\nHost: 127.0.0.1\r\n\r\n"
+        echo -e "\r\nHost: 127.0.0.1\r\nConnection: close\r\n\r\n"
     ) | nc 127.0.0.1 $SERVER_PORT 2>/dev/null )
     
-    if [[ "$response" == *"Path resolved successfully"* ]]; then
+    if [[ "$response" == *"HTTP/1.1"* ]]; then
         return 0
     else
         return 1

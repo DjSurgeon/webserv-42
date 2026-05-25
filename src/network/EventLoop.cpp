@@ -325,8 +325,22 @@ void EventLoop::_handle_client_data(int fd) {
           }
         }
 
-        client_it->second->append_to_write_buffer(res.to_string());
-        client_it->second->set_should_close(true);
+        bool should_close = false;
+        std::map<std::string, std::string>::const_iterator conn_it =
+            req.get_headers().find("connection");
+        if (conn_it != req.get_headers().end()) {
+          // The RequestParser already converts keys to lowercase
+          if (conn_it->second == "close") {
+            should_close = true;
+          }
+        } else if (req.get_version() == "HTTP/1.0") {
+          should_close = true;
+        }
+        client_it->second->set_should_close(should_close);
+
+        std::string raw_response = res.to_string();
+        client_it->second->append_to_write_buffer(raw_response);
+        parser_it->second->reset();
         break;
       } else if (state == STATE_ERROR) {
         std::cerr << "EventLoop: Parser error from client " << fd << "\n";

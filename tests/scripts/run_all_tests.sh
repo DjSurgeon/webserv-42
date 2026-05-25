@@ -44,8 +44,8 @@ run_test "test_parser_version" "src/http/HttpRequest.cpp src/http/RequestParser.
 run_test "test_parser_header_key" "src/http/HttpRequest.cpp src/http/RequestParser.cpp" "tests/http/test_parser_header_key.cpp"
 run_test "test_parser_header_value" "src/http/HttpRequest.cpp src/http/RequestParser.cpp" "tests/http/test_parser_header_value.cpp"
 run_test "test_parser_body" "src/http/HttpRequest.cpp src/http/RequestParser.cpp" "tests/http/test_parser_body.cpp"
-run_test "test_parser_stress" "src/config/Context.cpp src/config/LocationConfig.cpp src/config/ServerConfig.cpp src/network/ClientSocket.cpp src/http/HttpRequest.cpp src/http/HttpResponse.cpp src/http/RequestParser.cpp src/network/EventLoop.cpp src/handlers/StaticRouter.cpp src/handlers/CgiHandler.cpp tests/integration/test_globals.cpp" "tests/integration/test_parser_stress.cpp"
-run_test "test_integration" "src/config/Context.cpp src/config/LocationConfig.cpp src/config/ServerConfig.cpp src/network/ClientSocket.cpp src/http/HttpRequest.cpp src/http/HttpResponse.cpp src/http/RequestParser.cpp src/network/EventLoop.cpp src/handlers/StaticRouter.cpp src/handlers/CgiHandler.cpp tests/integration/test_globals.cpp" "tests/integration/test_integration.cpp"
+run_test "test_parser_stress" "src/config/Context.cpp src/config/LocationConfig.cpp src/config/ServerConfig.cpp src/network/ClientSocket.cpp src/http/HttpRequest.cpp src/http/HttpResponse.cpp src/http/RequestParser.cpp src/network/EventLoop.cpp src/handlers/StaticRouter.cpp src/handlers/CgiHandler.cpp src/handlers/FileHandler.cpp tests/integration/test_globals.cpp" "tests/integration/test_parser_stress.cpp"
+run_test "test_integration" "src/config/Context.cpp src/config/LocationConfig.cpp src/config/ServerConfig.cpp src/network/ClientSocket.cpp src/http/HttpRequest.cpp src/http/HttpResponse.cpp src/http/RequestParser.cpp src/network/EventLoop.cpp src/handlers/StaticRouter.cpp src/handlers/CgiHandler.cpp src/handlers/FileHandler.cpp tests/integration/test_globals.cpp" "tests/integration/test_integration.cpp"
 
 echo -e "=== RUNNING SHELL SCRIPT TESTS ===\n"
 echo "Running test_concurrency.sh..."
