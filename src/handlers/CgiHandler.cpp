@@ -52,7 +52,7 @@ bool CgiHandler::execute_script(const std::string& script_path,
 
   // 1. Establish POSIX pipe for IPC (CGI to Server)
   if (!_initialize_stdout_pipe(stdout_pipe)) {
-    if (res) res->generate_error_response(500);
+    if (res) res->generate_error_response(500, loc);
     return true;  // Handled
   }
 
@@ -62,7 +62,7 @@ bool CgiHandler::execute_script(const std::string& script_path,
     if (!tmp_file) {
       close(stdout_pipe[0]);
       close(stdout_pipe[1]);
-      if (res) res->generate_error_response(500);
+      if (res) res->generate_error_response(500, loc);
       return true;  // Handled
     }
   }
@@ -189,7 +189,7 @@ bool CgiHandler::_execute_fork(const std::string& script_path,
     if (tmp_file != NULL) {
       fclose(tmp_file);
     }
-    if (res) res->generate_error_response(500);
+    if (res) res->generate_error_response(500, loc);
     return true;  // Handled
   } else if (pid == 0) {
     // Child Process

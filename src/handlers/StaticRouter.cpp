@@ -22,8 +22,8 @@ StaticRouter::~StaticRouter() {}
 bool StaticRouter::process_route(const HttpRequest& req,
                                  const ServerConfig* server,
                                  const LocationConfig* loc, HttpResponse* res,
-                                 std::string* out_physical_path) const {
-  if (!_check_null_context(server, loc, res)) {
+                                 std::string* out_physical_path, const Context* active_ctx) const {
+  if (!_check_null_context(server, loc, res, active_ctx)) {
     return false;
   }
 
@@ -45,10 +45,10 @@ bool StaticRouter::process_route(const HttpRequest& req,
 
 bool StaticRouter::_check_null_context(const ServerConfig* server,
                                        const LocationConfig* loc,
-                                       HttpResponse* res) const {
+                                       HttpResponse* res, const Context* ctx) const {
   if (loc == NULL && server == NULL) {
     if (res) {
-      res->generate_error_response(404);
+      res->generate_error_response(404, ctx);
     }
     return false;
   }
@@ -76,7 +76,7 @@ bool StaticRouter::_validate_method(const HttpRequest& req, const Context* ctx,
 
   if (!method_allowed) {
     if (res) {
-      res->generate_error_response(405);
+      res->generate_error_response(405, ctx);
     }
     return false;
   }
@@ -92,7 +92,7 @@ bool StaticRouter::_validate_payload_size(const HttpRequest& req,
   // 0 is interpreted as unlimited body size
   if (max_size > 0 && req.get_body().length() > max_size) {
     if (res) {
-      res->generate_error_response(413);
+      res->generate_error_response(413, ctx);
     }
     return false;
   }

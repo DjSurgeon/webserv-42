@@ -20,11 +20,11 @@ class StaticRouter {
   // Core Routing Method
   bool process_route(const HttpRequest& req, const ServerConfig* server,
                      const LocationConfig* loc, HttpResponse* res,
-                     std::string* out_physical_path) const;
+                     std::string* out_physical_path, const Context* ctx) const;
 
  private:
   bool _check_null_context(const ServerConfig* server,
-                           const LocationConfig* loc, HttpResponse* res) const;
+                           const LocationConfig* loc, HttpResponse* res, const Context* ctx) const;
   bool _validate_method(const HttpRequest& req, const Context* ctx,
                         HttpResponse* res) const;
   bool _validate_payload_size(const HttpRequest& req, const Context* ctx,

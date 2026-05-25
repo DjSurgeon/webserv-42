@@ -5,6 +5,8 @@
 #include <map>
 #include <string>
 
+class Context;
+
 class HttpResponse {
  public:
   // Orthodox Canonical Form
@@ -22,7 +24,7 @@ class HttpResponse {
   std::string to_string() const;
 
   // Error Generation
-  void generate_error_response(int code);
+  void generate_error_response(int code, const Context* ctx = NULL);
 
  private:
   int _status_code;

@@ -261,11 +261,26 @@ void EventLoop::_handle_client_data(int fd) {
 
         const LocationConfig* matched_loc =
             matched_server->find_location(req.get_uri());
-        std::string physical_path;
-        StaticRouter router;
 
-        bool route_ok = router.process_route(req, matched_server, matched_loc,
-                                             &res, &physical_path);
+        const Context* active_ctx = matched_loc
+                                        ? static_cast<const Context*>(matched_loc)
+                                        : static_cast<const Context*>(matched_server);
+
+        if (matched_loc && !matched_loc->get_redirect().empty()) {
+          res.set_status(301, "Moved Permanently");
+          res.add_header("Location", matched_loc->get_redirect());
+          std::string body = "<html><body><h1>301 Moved Permanently</h1></body></html>";
+          res.set_body(body);
+          std::stringstream ss;
+          ss << body.length();
+          res.add_header("Content-Type", "text/html");
+          res.add_header("Content-Length", ss.str());
+        } else {
+          std::string physical_path;
+          StaticRouter router;
+
+          bool route_ok = router.process_route(req, matched_server, matched_loc,
+                                              &res, &physical_path, active_ctx);
 
         if (route_ok) {
           std::cout << "EventLoop: Resolved physical path: " << physical_path
@@ -311,17 +326,17 @@ void EventLoop::_handle_client_data(int fd) {
                                 : static_cast<const Context*>(matched_server);
                 if (active_ctx->get_autoindex()) {
                   file_handler.generate_autoindex(physical_path, req.get_uri(),
-                                                  &res);
+                                                  &res, active_ctx);
                 } else {
-                  file_handler.serve_file(physical_path, &res);
+                  file_handler.serve_file(physical_path, &res, active_ctx);
                 }
               } else {
-                file_handler.serve_file(physical_path, &res);
+                file_handler.serve_file(physical_path, &res, active_ctx);
               }
             } else if (method == "DELETE") {
-              file_handler.delete_file(physical_path, &res);
+              file_handler.delete_file(physical_path, &res, active_ctx);
             } else {
-              res.generate_error_response(405);
+              res.generate_error_response(405, active_ctx);
             }
           }
         }

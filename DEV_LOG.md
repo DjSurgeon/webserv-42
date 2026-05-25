@@ -684,3 +684,21 @@ Para soportar la estructura y herencia de bloques estilo NGINX (donde una ruta `
 - **Serialización Definitiva:** La respuesta `res.to_string()` empaquetada se encola directamente al `write_buffer` asíncrono del cliente.
 - **Pipelining Habilitado:** Se ha reemplazado el cierre forzado con `parser->reset()`, manteniendo el *socket* abierto para múltiples peticiones secuenciales.
 - **Gestión de Cierres Segura:** Detectamos `Connection: close` o `HTTP/1.0` en la petición entrante para levantar un flag interno en el cliente. Una vez el buffer de escritura se vacía, `_handle_client_write` invoca a `removeSocket(fd)` eliminando por fin el descriptor y la memoria RAM, eliminando por completo cualquier posibilidad de *Memory Leaks* a largo plazo.
+
+---
+
+## 📅 Día 11: HTTP Jumps (Redirects) y Custom Error Pages (Evaluación Final)
+
+### 🎯 Objetivos del Día
+1. Soportar la directiva `error_page` permitiendo páginas HTML visuales personalizadas según el contexto.
+2. Implementar `redirect` para saltos HTTP 301/302.
+3. Asegurar la inyección segura del `Context` a lo largo de toda la cadena de responsabilidades.
+
+### 🔀 Fase 1: Inyección de Contexto (Context-Aware Handlers)
+- **Problema:** `HttpResponse::generate_error_response` y `FileHandler` no tenían visibilidad de las directivas declaradas en el archivo `.conf`.
+- **Solución:** Se modificó la firma de todas las funciones que pueden arrojar un error HTTP (ej. `serve_file`, `_validate_file_access`, `generate_error_response`) para recibir un puntero `const Context* ctx`.
+- **Ejecución de Error:** Cuando se invoca `generate_error_response`, si el contexto contiene una ruta para ese código de error (`error_pages`), el servidor ensambla la ruta física real (`root` + `err_uri`) y la lee del disco en modo binario usando `std::ifstream`, saltando el fallback hardcodeado.
+
+### ⏭️ Fase 2: Cortocircuito de Redirección (301)
+- **Implementación en EventLoop:** Se añadió una validación en tiempo constante $O(1)$ tras resolver la ruta (`matched_loc`).
+- **El Cortocircuito:** Si el location block contiene una directiva `redirect`, el router (`StaticRouter`) y los Handlers se puentean por completo. El `EventLoop` ensambla directamente un status `301 Moved Permanently` con la cabecera mágica `Location` apuntando al nuevo sitio, optimizando el rendimiento frente a peticiones obsoletas.
