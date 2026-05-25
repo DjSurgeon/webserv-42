@@ -547,3 +547,140 @@ Para soportar la estructura y herencia de bloques estilo NGINX (donde una ruta `
 ### 🧪 Fase 3: Pruebas y Validación
 - El código superó exitosamente el analizador `cpplint` cumpliendo al pie de la letra las `CODING_STANDARDS.md` (C++98 y Google Style).
 - Pruebas locales confirmaron 0 memory leaks y la correcta copia profunda de atributos de clase a través del árbol de herencia, dejándolo todo a punto para comenzar el analizador sintáctico del archivo de configuración.
+
+---
+
+## 📅 Día 6: Analizador Sintáctico de Configuración (ConfigParser)
+
+### 🎯 Objetivos del Día
+1. Desarrollar un analizador sintáctico (Parser) estricto y seguro para leer, limpiar y estructurar archivos `.conf` estilo NGINX.
+2. Implementar un pipeline de sanitización para ignorar comentarios y espacios superfluos.
+3. Construir una Máquina de Estados basada en Análisis Sintáctico Descendente Recursivo (*Recursive Descent Parser*) para gestionar jerarquías (bloques `server` y `location`).
+
+### 🏗️ Fase 1: Esqueleto y Pipeline de Lectura I/O
+- Se creó la clase `ConfigParser` con Forma Canónica Ortodoxa.
+- **I/O Defensivo**: En el constructor, se inicializa el `std::ifstream`. Si el archivo no existe o no tiene permisos, se lanza un `std::runtime_error` para prevenir que el servidor arranque en un estado ciego.
+- **Lectura Cruda**: Uso de `std::getline` para extraer todas las líneas del archivo directamente a la memoria (`_raw_lines`). El FD del archivo se cierra de inmediato gracias al RAII.
+
+### 🧹 Fase 2: Saneamiento y Tokenización
+- **`remove_comments`**: Función para recortar caracteres desde el primer `#` hasta el final de la línea mediante `std::string::erase()`.
+- **`trim_whitespace`**: Función para purgar todos los espacios iniciales y finales (`" \t\r\n\v\f"`) y evitar la creación de líneas vacías, salvaguardando la memoria RAM.
+- **`tokenize`**: En lugar de usar `stringstream` o expresiones regulares limitadas, se programó un escáner `O(N)` que procesa cada línea carácter a carácter. Aisla de manera asíncrona tokens especiales (`{`, `}`, `;`) permitiendo analizar sintaxis muy densa (ej. `server{listen 8080;}`).
+
+### 🧠 Fase 3: Análisis Sintáctico Descendente Recursivo
+- Para evitar que la función principal de análisis creciera exponencialmente con ifs anidados ("God Object"), se implementó una arquitectura de *Recursive Descent Parser*.
+- **Submáquinas**: `_parse_server_block` y `_parse_location_block` reciben los tokens planos y un índice por referencia (`size_t& i`).
+- **Herencia Automática**: Al detectar un bloque `location`, se clonan los parámetros de contexto (raíz, índices, páginas de error, etc.) directamente del servidor padre (`ServerConfig`), simulando la cascada estricta de configuración de NGINX.
+- **Control de Estados (Stacking)**: La jerarquía y finalización de los bloques anidados se maneja nativamente por la pila de llamadas (Call Stack) de C++, inyectando copias inmutables a los contenedores finales cuando los bloques se cierran correctamente con `}`. Se lanza un error fatal ante bloques no cerrados o directivas en la raíz.
+
+### 🔄 Extra: Refactorización en `StaticRouter`
+- Para mantener coherencia con la Guía de Estilo de Google y acatar las directrices del linter (`clang-tidy`), se actualizaron los parámetros de salida de `StaticRouter::process_route` a punteros (`HttpResponse* res`, `std::string* out_physical_path`). Esto mejora la legibilidad en las llamadas, haciéndo explícitas las mutaciones, y añade dos capas adicionales de protección anti-nullptr.
+
+---
+
+## 📅 Día 7: Refactorización Estructural del Parser y Estandarización de Tests
+
+### 🎯 Objetivos del Día
+1. Erradicar el anti-patrón "Arrow Code" (exceso de indentación) en el parser de configuración dividiendo los métodos monolíticos en funciones atómicas.
+2. Resolver falsos positivos del motor de autocompletado del IDE configurando correctamente los *include paths*.
+3. Elevar las pruebas del proyecto a ciudadanos de primera clase, estandarizando su escritura bajo el patrón AAA y documentando una Matriz de Cobertura visual.
+
+### 🏗️ Fase 1: Desmantelando "God Objects" en ConfigParser
+- **El Problema**: Los métodos `_parse_server_block` y `_parse_location_block` habían crecido hasta convertirse en "God Objects", albergando múltiples bloques `if-else` y bucles anidados para parsear cada directiva. Esto disparó la complejidad ciclomática, haciendo la lectura y depuración casi imposibles.
+- **La Solución**: Se aplicó una refactorización estricta de *Extract Method*:
+  - Para los servidores: La lógica se delegó a `_handle_location_directive`, `_handle_listen_directive` y `_handle_server_name_directive`.
+  - Para las rutas (locations): La lógica se delegó a `_handle_allowed_methods_directive`, `_handle_cgi_path_directive` y `_handle_redirect_directive`.
+- **El Resultado**: Ambos bloques principales ahora son bucles `while` completamente declarativos que leen un token y despachan a la función atómica correspondiente en tiempo $O(1)$. El código es limpio, mantenible y respeta el principio de responsabilidad única (Single Responsibility Principle).
+
+### 🔧 Fase 2: Resolución de Falsos Positivos (IntelliSense)
+- Se detectó que VS Code lanzaba errores visuales espurios como *"Use of undeclared identifier 'ConfigParser'"* a pesar de que el código compilaba perfectamente con `make`.
+- **Fix**: Se generó el archivo `.vscode/c_cpp_properties.json` inyectando `${workspaceFolder}/src` en el `includePath`. Esto alinea el comportamiento del linter C++ con nuestro flag de compilación `-Isrc`, silenciando las falsas alarmas y permitiendo programar sin ruido visual.
+
+### 🧪 Fase 3: Pruebas como Ciudadanos de Primera Clase
+- A medida que Webserv crece, un conjunto de scripts sueltos no es suficiente para mantener la estabilidad del equipo. Se ha estructurado un departamento virtual de Quality Assurance (QA).
+- **El Estándar (AAA)**: Se estableció oficialmente el patrón de diseño de pruebas **Arrange, Act, Assert** documentado en `tests/README.md`. Toda nueva prueba debe seguir visualmente estas 3 fases con comentarios para evitar el temido "código espagueti de pruebas".
+- **La Matriz**: Se creó `tests/TEST_CASES.md`, una matriz de cobertura visual tabular. Permite identificar de un vistazo qué "Edge Cases" están cubiertos por aserciones concretas sin necesidad de leer el código fuente C++.
+- **Limpieza**: La antigua guía de pruebas manuales (`docs/TESTING_GUIDE.md`) se fusionó limpiamente en el nuevo ecosistema de `tests/`, garantizando una Única Fuente de Verdad (Single Source of Truth).
+
+---
+
+## 📅 Día 8: Motor de Lectura Binaria y Explorador de Directorios (FileHandler)
+
+### 🎯 Objetivos del Día
+1. Implementar la clase `FileHandler` encargada de procesar rutas físicas y servir el contenido de los archivos con precisión.
+2. Construir una arquitectura robusta contra ataques y corrupción mediante llamadas POSIX atómicas y volcados de memoria en modo binario.
+3. Generar un sistema dinámico (Autoindex) que permita navegar visualmente por las carpetas del servidor cuando así se requiera.
+
+### 🧱 Fase 1: Arquitectura y Saneamiento del MIME
+- **Esqueleto**: Se creó `FileHandler.hpp/cpp` respetando la Forma Canónica Ortodoxa e integrándose perfectamente con `Makefile` y `HttpResponse`.
+- **Mapeo Declarativo**: Para deducir el `Content-Type` de los archivos, se implementó la función estática auxiliar `_get_mime_type`. Para evitar el anti-patrón "Arrow Code" (bloques masivos de `if / else if`), se utilizó un arreglo de estructuras (`MimeMap`) que recorre y asigna dinámicamente las extensiones, facilitando futuras ampliaciones del proyecto. Se incluye por defecto un fallback seguro a `application/octet-stream`.
+
+### 🛡️ Fase 2: I/O Estricto y Auditoría de Permisos (`serve_file`)
+- Se extrajo toda la lógica de seguridad y permisos en una función auxiliar atómica (`_validate_file_access`) cumpliendo con el SRP (Single Responsibility Principle).
+- Se implementó la librería `sys/stat.h` y `unistd.h` para auditar el acceso atómicamente:
+  - ¿Existe el archivo y podemos leerlo? (`access` con `F_OK` y `R_OK`). Si falla -> `404 Not Found` o `403 Forbidden`.
+  - ¿Es un directorio cuando esperábamos un archivo? (`S_ISDIR`). Si lo es -> `403 Forbidden` (Medida defensiva estilo NGINX).
+  - ¿Es un archivo regular? (`S_ISREG`). Si no -> `500 Internal Server Error`.
+- **Volcado Ultrarrápido**: Pasadas las auditorías, el fichero se abre con el flag defensivo `std::ios::binary` para evitar corrupciones de imágenes (ej. PNG o JPG) bajo conversiones de línea. En vez de procesar byte por byte de manera ineficiente, el buffer bruto se empuja velozmente (`file.rdbuf()`) a un string mediante `std::ostringstream`, el cual se acopla inmediatamente al Body de la respuesta HTTP con un estatus `200 OK`.
+
+### 🗂️ Fase 3: Renderizado Dinámico de Directorios (`generate_autoindex`)
+- Se introdujo compatibilidad POSIX para exploración de directorios nativos en C usando `<dirent.h>`.
+- **SRP (Responsabilidad Única)**: Se separó la lógica de lectura/ensamblado en `_build_autoindex_html`. Si `opendir` arroja NULL (falta de permisos), se delega hacia un HTML seguro de error 403.
+- Si el directorio se lee con éxito, el bucle de `readdir` se salta los nodos oscuros (`.` y `..`), previene rutas defectuosas inyectando `safe_uri` (eliminando dobles *slashes* accidentales), y empaqueta un listado `<ul>` estricto en HTML, cerrando limpiamente con `closedir` para eliminar el riesgo de *File Descriptor Leaks*.
+
+### 🗑️ Fase 4: Destrucción Segura de Archivos (Método DELETE)
+- Se implementó la directiva completa del método HTTP DELETE mediante la función `delete_file()`.
+- **SRP y Muros de Seguridad**: Al igual que con la lectura, la validación se extrajo al helper privado `_validate_delete_access()`. Se implementaron tres capas de seguridad antes de permitir cualquier borrado:
+  1. `stat()`: Verifica que el objetivo realmente exista físicamente (Fallo -> 404 Not Found).
+  2. `S_ISDIR`: Previene borrar carpetas enteras de forma recursiva (Fallo -> 403 Forbidden).
+  3. `access(path, W_OK)`: Confirma que Webserv tiene permisos de escritura sobre el archivo (Fallo -> 403 Forbidden).
+- **Ejecución y Contingencia**: Se empleó la llamada del Kernel `unlink()` para desvincular el archivo. Se programó una protección contra "Race Conditions" (si `unlink` falla inesperadamente devolviendo `-1`, el servidor responde con 500 Internal Server Error).
+- **RFC Compliant**: Si el borrado es exitoso, la respuesta se construye estrictamente según el estándar HTTP/1.1 para DELETE, inyectando un **204 No Content**, sin cuerpo HTML y sin cabeceras `Content-Type` o `Content-Length`.
+
+---
+
+## 📅 Día 9: Motor CGI (Common Gateway Interface), Procesamiento de Cabeceras y Modo Estricto
+
+### 🎯 Objetivos del Día
+1. Implementar la lógica de procesamiento asíncrono de la salida generada por un script CGI (`parse_cgi_output`).
+2. Aislar las cabeceras emitidas por el CGI respecto al payload final (cuerpo HTTP).
+3. Asegurar la inyección estricta y transparente de meta-variables, estados HTTP y `Content-Length` en el objeto final `HttpResponse`.
+
+### 🏗️ Fase 1: Entorno de Ejecución (Environment)
+- Se desarrolló el mapeo dinámico de cabeceras entrantes a metavariables estándar del formato CGI (`HTTP_ACCEPT_LANGUAGE`, etc.), transformando a mayúsculas y reemplazando guiones por guiones bajos.
+- Se previno el temido *deadlock* de tuberías (pipes) en el sistema creando archivos temporales físicos para inyectar grandes *payloads* POST hacia los scripts vía su `STDIN`, liberando las colas TCP.
+
+### 🧹 Fase 2: Parseo y Separación (Boundary Detection)
+- El RFC 3875 exige que las cabeceras CGI y el cuerpo estén separados por una línea vacía. Se programó una búsqueda robusta del delimitador estándar `\r\n\r\n` y, como fallback de seguridad, el UNIX clásico `\n\n`.
+- **Modo Estricto NGINX:** Si el *script* CGI crashea o no emite una cabecera delimitadora, el parseador no vuelca ciegamente la basura como cuerpo de respuesta. La clase asume que la salida está malformada y detona inmediatamente un error `502 Bad Gateway`, aislando al usuario final del fallo interno del script.
+
+### 🧠 Fase 3: Intercepción de Status y Cálculo Dinámico
+- Una vez aisladas las cabeceras del CGI, iteramos línea a línea limpiando espacios superfluos (`trimming`) y extraemos todas las claves para inyectarlas vía `res.add_header()`.
+- **Intercepción Estratégica:** Las directivas CGI (pseudo-headers) como `Status` (ej. `Status: 201 Created`) no se envían al cliente. Fueron interceptadas mediante comparación *case-insensitive*, fraccionadas con `std::stringstream`, y pasadas directamente a `res.set_status()` para garantizar una *Status-Line* perfecta en el protocolo HTTP/1.1 nativo.
+- Se forzó un cálculo matemático del `Content-Length` sobre la longitud exacta de la string residual (cuerpo extraído del CGI) para sobreescribirlo siempre, asegurando que el *Socket TCP* no bloquee conexiones de tipo *Keep-Alive* por discrepancias de longitud generadas por un mal CGI.
+
+---
+
+## 📅 Día 10: Integración del Motor de Enrutamiento y Ciclo de Vida TCP (Fin del Sprint)
+
+### 🎯 Objetivos del Día
+1. Conectar `HttpRequest` con `ServerConfig` (Virtual Hosting) utilizando un `StaticRouter` para resolver el destino de la petición.
+2. Añadir una capa de *Firewall* (Métodos no permitidos, Límite de Tamaño de Body).
+3. Eliminar extensiones CGI hardcodeadas usando la nueva directiva dinámica `cgi_ext`.
+4. Delegar la respuesta final a `FileHandler` o `CgiHandler` y habilitar *HTTP Pipelining* (reutilización del Socket).
+
+### 🛡️ Fase 1: Enrutamiento Dinámico y Firewall (StaticRouter)
+- **Virtual Hosting:** Integrado el escaneo del header `Host` para emparejar la petición entrante con su respectivo `ServerConfig` dentro del `EventLoop`.
+- **Cortafuegos Lógico:** El `StaticRouter` ahora verifica el método antes de tocar archivos. Genera 405 (Method Not Allowed) o 413 (Payload Too Large) interceptando inmediatamente y optimizando la latencia.
+- **Auto-Resolución del Index:** Integrado un chequeo `stat` para directorios dentro de `_translate_path`. Si la URI apunta a una carpeta, el router itera la directiva `index_files` inyectando un `/` seguro. Si existe, lo entrega directamente.
+
+### 🌐 Fase 2: Ejecución de Handlers Sin Hardcodeo
+- Se expandió `LocationConfig` y `ConfigParser` para leer `cgi_ext .php .py`.
+- **Bifurcación Limpia:** Tras la resolución, el `EventLoop` chequea si la extensión coincide con la directiva dinámica.
+  - Si es CGI: delega la ruta resuelta a `CgiHandler::execute_script`.
+  - Si no es CGI: extrae el método. Delega GET a `FileHandler::serve_file` (o autoindex) y DELETE a `delete_file`. Cortafuegos en 405 para POST estáticos.
+
+### 🔌 Fase 3: Garbage Collector TCP y HTTP Pipelining
+- **Serialización Definitiva:** La respuesta `res.to_string()` empaquetada se encola directamente al `write_buffer` asíncrono del cliente.
+- **Pipelining Habilitado:** Se ha reemplazado el cierre forzado con `parser->reset()`, manteniendo el *socket* abierto para múltiples peticiones secuenciales.
+- **Gestión de Cierres Segura:** Detectamos `Connection: close` o `HTTP/1.0` en la petición entrante para levantar un flag interno en el cliente. Una vez el buffer de escritura se vacía, `_handle_client_write` invoca a `removeSocket(fd)` eliminando por fin el descriptor y la memoria RAM, eliminando por completo cualquier posibilidad de *Memory Leaks* a largo plazo.

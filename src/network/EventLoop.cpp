@@ -2,12 +2,19 @@
 #include "network/EventLoop.hpp"
 
 #include <sys/socket.h>
+#include <sys/stat.h>
 #include <unistd.h>
 
 #include <iostream>
 #include <map>
+#include <sstream>
 #include <stdexcept>
 #include <string>
+#include <vector>
+
+#include "handlers/CgiHandler.hpp"
+#include "handlers/FileHandler.hpp"
+#include "handlers/StaticRouter.hpp"
 
 /**
  * @brief Default constructor for EventLoop.
@@ -67,13 +74,15 @@ EventLoop::~EventLoop() {
  *
  * @param fd The file descriptor of the server socket.
  */
-void EventLoop::addServerSocket(int fd) {
+void EventLoop::addServerSocket(int fd,
+                                const std::vector<ServerConfig>& configs) {
   pollfd pfd;
   pfd.fd = fd;
   pfd.events = POLLIN;
   pfd.revents = 0;
   _pollfds.push_back(pfd);
   _server_fds.push_back(fd);
+  _server_configs[fd] = configs;
 }
 
 /**
@@ -118,6 +127,7 @@ void EventLoop::removeSocket(int fd) {
            sit != _server_fds.end(); ++sit) {
         if (*sit == fd) {
           _server_fds.erase(sit);
+          _server_configs.erase(fd);
           return;
         }
       }
@@ -133,6 +143,7 @@ void EventLoop::removeSocket(int fd) {
         delete pit->second;
         _parsers.erase(pit);
       }
+      _client_to_server.erase(fd);
 
       return;
     }
@@ -174,6 +185,7 @@ void EventLoop::_handle_new_connection(int server_fd) {
       ClientSocket* new_client = new ClientSocket(client_fd);
       _clients[client_fd] = new_client;
       _parsers[client_fd] = new RequestParser();
+      _client_to_server[client_fd] = server_fd;
       addClientSocket(client_fd);
     } catch (const std::exception& e) {
       std::cerr << "EventLoop: Failed to accept client: " << e.what() << "\n";
@@ -214,12 +226,122 @@ void EventLoop::_handle_client_data(int fd) {
       i++;
       if (state == STATE_COMPLETE) {
         std::cout << "EventLoop: Request completed from client " << fd << "\n";
-        client_it->second->append_to_write_buffer(
-            "HTTP/1.1 200 OK\r\n"
-            "Content-Length: 13\r\n"
-            "Connection: close\r\n"
-            "\r\n"
-            "Hello, World!");
+
+        const HttpRequest& req = parser_it->second->get_request();
+        HttpResponse res;
+
+        // Find matched ServerConfig (Virtual Hosting based on Host header)
+        int parent_server_fd = _client_to_server[fd];
+        const std::vector<ServerConfig>& configs =
+            _server_configs[parent_server_fd];
+        const ServerConfig* matched_server = &configs[0];  // Default to first
+
+        std::map<std::string, std::string>::const_iterator host_it =
+            req.get_headers().find("host");
+        if (host_it != req.get_headers().end()) {
+          std::string host_value = host_it->second;
+          size_t colon_pos = host_value.find(':');
+          if (colon_pos != std::string::npos) {
+            host_value = host_value.substr(0, colon_pos);  // Strip port
+          }
+          for (size_t k = 0; k < configs.size(); ++k) {
+            const std::vector<std::string>& names =
+                configs[k].get_server_names();
+            bool matched = false;
+            for (size_t n = 0; n < names.size(); ++n) {
+              if (names[n] == host_value) {
+                matched_server = &configs[k];
+                matched = true;
+                break;
+              }
+            }
+            if (matched) break;
+          }
+        }
+
+        const LocationConfig* matched_loc =
+            matched_server->find_location(req.get_uri());
+        std::string physical_path;
+        StaticRouter router;
+
+        bool route_ok = router.process_route(req, matched_server, matched_loc,
+                                             &res, &physical_path);
+
+        if (route_ok) {
+          std::cout << "EventLoop: Resolved physical path: " << physical_path
+                    << std::endl;
+
+          bool is_cgi = false;
+          if (matched_loc) {
+            if (!matched_loc->get_cgi_path().empty()) {
+              is_cgi = true;
+            } else {
+              std::string ext = "";
+              size_t dot_pos = physical_path.find_last_of('.');
+              if (dot_pos != std::string::npos) {
+                ext = physical_path.substr(dot_pos);
+              }
+              const std::vector<std::string>& cgi_exts =
+                  matched_loc->get_cgi_extensions();
+              for (size_t k = 0; k < cgi_exts.size(); ++k) {
+                if (ext == cgi_exts[k]) {
+                  is_cgi = true;
+                  break;
+                }
+              }
+            }
+          }
+
+          if (is_cgi) {
+            CgiHandler cgi;
+            // For now, execute_script runs synchronously and might not read the
+            // pipe depending on the current CgiHandler implementation, but it
+            // triggers fork/exec.
+            cgi.execute_script(physical_path, req, matched_loc, &res);
+          } else {
+            FileHandler file_handler;
+            const std::string& method = req.get_method();
+
+            if (method == "GET") {
+              struct stat st;
+              if (stat(physical_path.c_str(), &st) == 0 &&
+                  S_ISDIR(st.st_mode)) {
+                const Context* active_ctx =
+                    matched_loc ? static_cast<const Context*>(matched_loc)
+                                : static_cast<const Context*>(matched_server);
+                if (active_ctx->get_autoindex()) {
+                  file_handler.generate_autoindex(physical_path, req.get_uri(),
+                                                  &res);
+                } else {
+                  file_handler.serve_file(physical_path, &res);
+                }
+              } else {
+                file_handler.serve_file(physical_path, &res);
+              }
+            } else if (method == "DELETE") {
+              file_handler.delete_file(physical_path, &res);
+            } else {
+              res.generate_error_response(405);
+            }
+          }
+        }
+
+        bool should_close = false;
+        std::map<std::string, std::string>::const_iterator conn_it =
+            req.get_headers().find("connection");
+        if (conn_it != req.get_headers().end()) {
+          // The RequestParser already converts keys to lowercase
+          if (conn_it->second == "close") {
+            should_close = true;
+          }
+        } else if (req.get_version() == "HTTP/1.0") {
+          should_close = true;
+        }
+        client_it->second->set_should_close(should_close);
+
+        std::string raw_response = res.to_string();
+        client_it->second->append_to_write_buffer(raw_response);
+        parser_it->second->reset();
         break;
       } else if (state == STATE_ERROR) {
         std::cerr << "EventLoop: Parser error from client " << fd << "\n";
@@ -227,6 +349,7 @@ void EventLoop::_handle_client_data(int fd) {
             "HTTP/1.1 400 Bad Request\r\n"
             "Connection: close\r\n"
             "\r\n");
+        client_it->second->set_should_close(true);
         break;
       }
     }
@@ -257,6 +380,12 @@ void EventLoop::_handle_client_write(int fd) {
     if (sent > 0) {
       it->second->consume_write_buffer(sent);
     }
+  }
+
+  // Check if we should close the connection after sending all data
+  if (it->second->get_write_buffer().empty() &&
+      it->second->get_should_close()) {
+    removeSocket(fd);
   }
 }
 

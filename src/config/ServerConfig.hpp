@@ -21,6 +21,7 @@ class ServerConfig : public Context {
   const std::string& get_host() const;
   const std::vector<std::string>& get_server_names() const;
   const std::vector<LocationConfig>& get_locations() const;
+  const LocationConfig* find_location(const std::string& uri) const;
 
   // Setters
   void set_port(int port);

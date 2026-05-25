@@ -31,6 +31,10 @@ SRCS		= $(SRC_DIR)/main.cpp \
 			  $(SRC_DIR)/config/Context.cpp \
 			  $(SRC_DIR)/config/LocationConfig.cpp \
 			  $(SRC_DIR)/config/ServerConfig.cpp \
+			  $(SRC_DIR)/config/ConfigParser.cpp \
+			  $(SRC_DIR)/handlers/StaticRouter.cpp \
+			  $(SRC_DIR)/handlers/FileHandler.cpp \
+			  $(SRC_DIR)/handlers/CgiHandler.cpp \
 			  $(SRC_DIR)/http/HttpRequest.cpp \
 			  $(SRC_DIR)/http/HttpResponse.cpp \
 			  $(SRC_DIR)/http/RequestParser.cpp \
@@ -43,6 +47,10 @@ OBJS		= $(SRCS:$(SRC_DIR)/%.cpp=$(OBJ_DIR)/%.o)
 HDRS		= $(SRC_DIR)/config/Context.hpp \
 			  $(SRC_DIR)/config/LocationConfig.hpp \
 			  $(SRC_DIR)/config/ServerConfig.hpp \
+			  $(SRC_DIR)/config/ConfigParser.hpp \
+			  $(SRC_DIR)/handlers/StaticRouter.hpp \
+			  $(SRC_DIR)/handlers/FileHandler.hpp \
+			  $(SRC_DIR)/handlers/CgiHandler.hpp \
 			  $(SRC_DIR)/http/HttpRequest.hpp \
 			  $(SRC_DIR)/http/HttpResponse.hpp \
 			  $(SRC_DIR)/http/RequestParser.hpp \
@@ -61,14 +69,19 @@ BIN_DIR		= bin
 LIB_SRCS	= $(SRC_DIR)/config/Context.cpp \
 			  $(SRC_DIR)/config/LocationConfig.cpp \
 			  $(SRC_DIR)/config/ServerConfig.cpp \
+			  $(SRC_DIR)/config/ConfigParser.cpp \
+			  $(SRC_DIR)/handlers/StaticRouter.cpp \
+			  $(SRC_DIR)/handlers/FileHandler.cpp \
+			  $(SRC_DIR)/handlers/CgiHandler.cpp \
 			  $(SRC_DIR)/http/HttpRequest.cpp \
 			  $(SRC_DIR)/http/HttpResponse.cpp \
 			  $(SRC_DIR)/http/RequestParser.cpp \
 			  $(SRC_DIR)/network/ListeningSocket.cpp \
 			  $(SRC_DIR)/network/ClientSocket.cpp \
-			  $(SRC_DIR)/network/EventLoop.cpp
+			  $(SRC_DIR)/network/EventLoop.cpp \
+			  $(TEST_DIR)/integration/test_globals.cpp
 
-TEST_SRCS	= $(wildcard $(TEST_DIR)/*.cpp)
+TEST_SRCS	= $(filter-out $(TEST_DIR)/integration/test_globals.cpp $(TEST_DIR)/integration/stress_client.cpp, $(wildcard $(TEST_DIR)/*/*.cpp))
 TEST_NAMES	= $(notdir $(TEST_SRCS:.cpp=))
 TEST_BINS	= $(addprefix $(BIN_DIR)/, $(TEST_NAMES))
 
@@ -97,9 +110,9 @@ all: $(NAME)
 $(NAME): $(OBJS)
 	@$(CXX) $(CXXFLAGS) $(INCLUDES) $(OBJS) -o $(NAME)
 	@echo "$(BOLD)$(GREEN)"
-	@echo "  ╔══════════════════════════════════════════╗"
+	@echo "  ╔═════════════════════════════════════════════╗"
 	@echo "  ║      ✅  $(NAME) compiled successfully     ║"
-	@echo "  ╚══════════════════════════════════════════╝"
+	@echo "  ╚═════════════════════════════════════════════╝"
 	@echo "$(RESET)"
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp $(HDRS)
@@ -128,7 +141,7 @@ re: fclean all
 
 stress: $(BIN_DIR)/stress_client
 
-$(BIN_DIR)/stress_client: $(TEST_DIR)/stress_client.cpp
+$(BIN_DIR)/stress_client: $(TEST_DIR)/integration/stress_client.cpp
 	@mkdir -p $(BIN_DIR)
 	@echo "  $(CYAN)$(BOLD)⚙$(RESET)  $(DIM)Compiling stress client$(RESET) $<"
 	@$(CXX) $(CXXFLAGS) $(INCLUDES) $< -o $@
@@ -166,13 +179,17 @@ test: $(TEST_BINS)
 		echo ""; \
 	fi
 
-$(BIN_DIR)/%: $(TEST_DIR)/%.cpp $(LIB_SRCS) $(HDRS)
+$(BIN_DIR)/%: $(TEST_DIR)/*/*.cpp $(LIB_SRCS) $(HDRS)
 	@mkdir -p $(BIN_DIR)
-	@echo "  $(CYAN)$(BOLD)⚙$(RESET)  $(DIM)Compiling test$(RESET) $<"
-	@$(CXX) $(CXXFLAGS) $(INCLUDES) $(LIB_SRCS) $< -o $@
+	@# Encontramos el archivo fuente correcto para el binario
+	@SRC_FILE=$$(find $(TEST_DIR) -name "$*.cpp" | head -n 1); \
+	echo "  $(CYAN)$(BOLD)⚙$(RESET)  $(DIM)Compiling test$(RESET) $$SRC_FILE"; \
+	$(CXX) $(CXXFLAGS) $(INCLUDES) $(LIB_SRCS) $$SRC_FILE -o $@
 
 # ──────────────────────────────────────────────────────────────────────────── #
 #                                 PHONY                                        #
 # ──────────────────────────────────────────────────────────────────────────── #
 
-.PHONY: all clean fclean re test
+.PHONY: all clean fclean re test stress
+debug:
+	@echo $(TEST_BINS)
