@@ -40,6 +40,8 @@ class ConfigParser {
                                          size_t* i, LocationConfig* location);
   void _handle_cgi_path_directive(const std::vector<std::string>& tokens,
                                   size_t* i, LocationConfig* location);
+  void _handle_cgi_ext_directive(const std::vector<std::string>& tokens,
+                                 size_t* i, LocationConfig* location);
   void _handle_redirect_directive(const std::vector<std::string>& tokens,
                                   size_t* i, LocationConfig* location);
 

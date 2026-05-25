@@ -190,6 +190,20 @@ void ConfigParser::_handle_cgi_path_directive(
   (*i)++;
 }
 
+void ConfigParser::_handle_cgi_ext_directive(
+    const std::vector<std::string>& tokens, size_t* i,
+    LocationConfig* location) {
+  (*i)++;
+  while (*i < tokens.size() && tokens[*i] != ";") {
+    location->add_cgi_extension(tokens[*i]);
+    (*i)++;
+  }
+  if (*i >= tokens.size() || tokens[*i] != ";") {
+    throw std::runtime_error("Syntax error: missing ';' after 'cgi_ext'");
+  }
+  (*i)++;
+}
+
 void ConfigParser::_handle_redirect_directive(
     const std::vector<std::string>& tokens, size_t* i,
     LocationConfig* location) {
@@ -230,6 +244,8 @@ void ConfigParser::_parse_location_block(const std::vector<std::string>& tokens,
       _handle_allowed_methods_directive(tokens, i, location);
     } else if (directive == "cgi_path") {
       _handle_cgi_path_directive(tokens, i, location);
+    } else if (directive == "cgi_ext") {
+      _handle_cgi_ext_directive(tokens, i, location);
     } else if (directive == "return" || directive == "redirect") {
       _handle_redirect_directive(tokens, i, location);
     } else if (_parse_context_directives(tokens, i, location)) {

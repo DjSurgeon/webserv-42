@@ -10,6 +10,7 @@
 #include <stdexcept>
 #include <string>
 
+#include "handlers/CgiHandler.hpp"
 #include "handlers/StaticRouter.hpp"
 
 /**
@@ -266,13 +267,43 @@ void EventLoop::_handle_client_data(int fd) {
         if (route_ok) {
           std::cout << "EventLoop: Resolved physical path: " << physical_path
                     << std::endl;
-          res.set_status(200, "OK");
-          res.set_body("Path resolved successfully to: " + physical_path +
-                       "\n");
-          std::stringstream ss;
-          ss << res.to_string().length() - res.to_string().find("\r\n\r\n") -
-                    4;  // Hacky way for MVP
-          res.add_header("Content-Length", ss.str());
+
+          bool is_cgi = false;
+          if (matched_loc) {
+            if (!matched_loc->get_cgi_path().empty()) {
+              is_cgi = true;
+            } else {
+              std::string ext = "";
+              size_t dot_pos = physical_path.find_last_of('.');
+              if (dot_pos != std::string::npos) {
+                ext = physical_path.substr(dot_pos);
+              }
+              const std::vector<std::string>& cgi_exts =
+                  matched_loc->get_cgi_extensions();
+              for (size_t k = 0; k < cgi_exts.size(); ++k) {
+                if (ext == cgi_exts[k]) {
+                  is_cgi = true;
+                  break;
+                }
+              }
+            }
+          }
+
+          if (is_cgi) {
+            CgiHandler cgi;
+            // For now, execute_script runs synchronously and might not read the
+            // pipe depending on the current CgiHandler implementation, but it
+            // triggers fork/exec.
+            cgi.execute_script(physical_path, req, matched_loc, &res);
+          } else {
+            res.set_status(200, "OK");
+            res.set_body("Path resolved successfully to: " + physical_path +
+                         "\n");
+            std::stringstream ss;
+            ss << res.to_string().length() - res.to_string().find("\r\n\r\n") -
+                      4;  // Hacky way for MVP
+            res.add_header("Content-Length", ss.str());
+          }
         }
 
         client_it->second->append_to_write_buffer(res.to_string());
