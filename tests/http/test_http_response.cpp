@@ -146,8 +146,8 @@ void test_http_response_cookies() {
   std::string s = res.to_string();
 
   // Assertions
-  bool check1 =
-      (s.find("Set-Cookie: session=42; Path=/; HttpOnly\r\n") != std::string::npos);
+  bool check1 = (s.find("Set-Cookie: session=42; Path=/; HttpOnly\r\n") !=
+                 std::string::npos);
   bool check2 = (s.find("Set-Cookie: theme=dark\r\n") != std::string::npos);
 
   // Verification of coexistence (both should be there)
