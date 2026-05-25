@@ -25,6 +25,7 @@ class HttpRequest {
   const std::string& get_version() const;
   const std::string& get_body() const;
   const std::map<std::string, std::string>& get_headers() const;
+  const std::map<std::string, std::string>& get_cookies() const;
 
   // Setters/mutators for the parser
   void set_method(const std::string& method);
@@ -42,6 +43,9 @@ class HttpRequest {
   std::string _version;
   std::string _body;
   std::map<std::string, std::string> _headers;
+  std::map<std::string, std::string> _cookies;
+
+  void _parse_cookies_string(const std::string& raw_cookies);
 };
 
 #endif  // SRC_HTTP_HTTPREQUEST_HPP_

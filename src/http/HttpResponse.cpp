@@ -5,6 +5,7 @@
 #include <map>
 #include <sstream>
 #include <string>
+#include <vector>
 
 #include "config/Context.hpp"
 
@@ -33,6 +34,7 @@ HttpResponse::HttpResponse(const HttpResponse& other)
     : _status_code(other._status_code),
       _reason_phrase(other._reason_phrase),
       _headers(other._headers),
+      _cookies(other._cookies),
       _body(other._body) {}
 
 HttpResponse& HttpResponse::operator=(const HttpResponse& other) {
@@ -40,6 +42,7 @@ HttpResponse& HttpResponse::operator=(const HttpResponse& other) {
     _status_code = other._status_code;
     _reason_phrase = other._reason_phrase;
     _headers = other._headers;
+    _cookies = other._cookies;
     _body = other._body;
   }
   return *this;
@@ -57,6 +60,15 @@ void HttpResponse::add_header(const std::string& key,
   _headers[key] = value;
 }
 
+void HttpResponse::add_cookie(const std::string& name, const std::string& value,
+                              const std::string& options) {
+  std::string cookie_str = name + "=" + value;
+  if (!options.empty()) {
+    cookie_str += "; " + options;
+  }
+  _cookies.push_back(cookie_str);
+}
+
 void HttpResponse::set_body(const std::string& body) {
   _body = body;
 }
@@ -69,6 +81,10 @@ std::string HttpResponse::to_string() const {
   std::map<std::string, std::string>::const_iterator it;
   for (it = _headers.begin(); it != _headers.end(); ++it) {
     ss << it->first << ": " << it->second << "\r\n";
+  }
+
+  for (size_t i = 0; i < _cookies.size(); ++i) {
+    ss << "Set-Cookie: " << _cookies[i] << "\r\n";
   }
 
   ss << "\r\n";

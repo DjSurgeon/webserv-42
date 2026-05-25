@@ -4,6 +4,7 @@
 
 #include <map>
 #include <string>
+#include <vector>
 
 class Context;
 
@@ -18,6 +19,8 @@ class HttpResponse {
   // Setters
   void set_status(int code, const std::string& phrase);
   void add_header(const std::string& key, const std::string& value);
+  void add_cookie(const std::string& name, const std::string& value,
+                  const std::string& options = "");
   void set_body(const std::string& body);
 
   // Serialization
@@ -30,6 +33,7 @@ class HttpResponse {
   int _status_code;
   std::string _reason_phrase;
   std::map<std::string, std::string> _headers;
+  std::vector<std::string> _cookies;
   std::string _body;
 
   // Helpers

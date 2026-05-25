@@ -36,6 +36,7 @@ run_test "test_config_parser" "src/config/Context.cpp src/config/LocationConfig.
 run_test "test_file_handler" "src/config/Context.cpp src/handlers/FileHandler.cpp src/http/HttpResponse.cpp" "tests/handlers/test_file_handler.cpp"
 run_test "test_static_router" "src/config/Context.cpp src/config/LocationConfig.cpp src/config/ServerConfig.cpp src/handlers/StaticRouter.cpp src/http/HttpRequest.cpp src/http/HttpResponse.cpp" "tests/handlers/test_static_router.cpp"
 run_test "test_http_request" "src/http/HttpRequest.cpp" "tests/http/test_http_request.cpp"
+run_test "test_http_cookies" "src/http/HttpRequest.cpp" "tests/http/test_http_cookies.cpp"
 run_test "test_http_response" "src/config/Context.cpp src/http/HttpResponse.cpp" "tests/http/test_http_response.cpp"
 run_test "test_parser_skeleton" "src/http/HttpRequest.cpp src/http/RequestParser.cpp" "tests/http/test_parser_skeleton.cpp"
 run_test "test_parser_method" "src/http/HttpRequest.cpp src/http/RequestParser.cpp" "tests/http/test_parser_method.cpp"

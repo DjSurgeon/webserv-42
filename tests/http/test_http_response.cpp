@@ -134,6 +134,26 @@ void test_stress() {
   print_result("test_stress", true);
 }
 
+void test_http_response_cookies() {
+  std::cout << "[Test] Verifying Set-Cookie serialization..." << std::endl;
+  HttpResponse res;
+
+  // 1. Single cookie with options
+  res.add_cookie("session", "42", "Path=/; HttpOnly");
+  // 2. Single cookie with default options
+  res.add_cookie("theme", "dark");
+
+  std::string s = res.to_string();
+
+  // Assertions
+  bool check1 =
+      (s.find("Set-Cookie: session=42; Path=/; HttpOnly\r\n") != std::string::npos);
+  bool check2 = (s.find("Set-Cookie: theme=dark\r\n") != std::string::npos);
+
+  // Verification of coexistence (both should be there)
+  print_result("test_http_response_cookies", check1 && check2);
+}
+
 int main() {
   std::cout << "=== STARTING HTTP RESPONSE TESTS ===\n" << std::endl;
 
@@ -144,6 +164,8 @@ int main() {
   test_serialization();
   std::cout << std::endl;
   test_error_generation();
+  std::cout << std::endl;
+  test_http_response_cookies();
   std::cout << std::endl;
   test_edge_cases();
   std::cout << std::endl;
