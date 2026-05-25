@@ -2,6 +2,7 @@
 #include <csignal>
 #include <iostream>
 #include <map>
+#include <string>
 #include <vector>
 
 #include "config/ConfigParser.hpp"

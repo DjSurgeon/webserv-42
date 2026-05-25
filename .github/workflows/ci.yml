@@ -78,7 +78,7 @@ jobs:
             --show-leak-kinds=all \
             --track-fds=yes \
             --error-exitcode=1 \
-            ./webserv config/default.conf &
+            ./webserv conf/default.conf &
           SERVER_PID=$!
           sleep 5
           kill -SIGTERM $SERVER_PID
@@ -92,7 +92,7 @@ jobs:
           valgrind \
             --leak-check=full \
             --error-exitcode=1 \
-            ./webserv config/default.conf &
+            ./webserv conf/default.conf &
           SERVER_PID=$!
           sleep 2
           curl -I http://localhost:8080/
