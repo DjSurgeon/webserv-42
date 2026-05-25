@@ -36,6 +36,9 @@ The project has successfully completed its core infrastructure foundation across
    - **Context-Aware Error Propagation:** Native support for injecting Context pointers down the stack, enabling handlers to serve completely personalized visual error pages (`error_page` directive) per isolated location.
    - Robust HTTP/1.1 TCP Lifecycle Management: Full Keep-Alive and Pipelining support via `RequestParser::reset()`, including graceful connection closure preventing File Descriptor leakage under heavy load. The infrastructure achieves a proven flawless status under strict `valgrind` tracing (0 memory leaks).
 
+7. **Advanced Bonus Features:**
+   - **Native Cookie Management:** Extends the baseline HTTP/1.1 protocol handling to securely parse, trim, and extract browser-sent `Cookie` payloads into queryable C++ Maps during request digestion. It simultaneously features an asynchronous, multi-header emission engine allowing secure injection of independent `Set-Cookie` directives bypassing `std::map` key-collision boundaries.
+
 ---
 
 ## 💻 Instructions

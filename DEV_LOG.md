@@ -731,3 +731,22 @@ Para soportar la estructura y herencia de bloques estilo NGINX (donde una ruta `
   ==25250== ERROR SUMMARY: 0 errors from 0 contexts
   ```
 - **Conclusión del Desarrollo:** La arquitectura basada íntegramente en directrices **RAII** e inspirada en **NGINX** culmina de forma exitosa. Se alcanzó la meta técnica exigida por la red 42 mediante la aplicación impecable del C++98.
+
+---
+
+## 📅 Día 13: Funciones Bonus (Soporte Nativo de Cookies)
+
+### 🎯 Objetivos del Día
+1. Expandir Webserv para cumplir con los requisitos *Bonus* del subject de 42, proporcionando gestión avanzada de estado.
+2. Implementar la extracción asíncrona y estructurada de la cabecera `Cookie` del lado del cliente.
+3. Facilitar la inyección nativa de múltiples cabeceras `Set-Cookie` hacia el cliente, puenteando las limitaciones de los mapas (`std::map`) de C++.
+
+### 🍪 Fase 1: Extracción Estructurada de Cookies (Entrantes)
+- Se inyectó en `HttpRequest` un contenedor `std::map<std::string, std::string> _cookies`.
+- **Parseo Dinámico:** Cuando `HttpRequest::add_header` intercepta la clave genérica `"cookie"`, delega el valor a un nuevo sub-parser privado `_parse_cookies_string`.
+- **RFC Compliant Trimming:** El parser fracciona la cadena asíncronamente iterando sobre el delimitador `;`, separando `clave=valor`. Se implementó la función auxiliar `trim_spaces_cookie` que purga los espacios o tabulaciones colindantes. Esto transforma cadenas sucias de red como `user=serjimen ;   theme=dark` directamente en pares limpios dentro del contenedor, accesibles inmediatamente vía `get_cookies()`.
+
+### 🍪 Fase 2: Inyección Multi-Cabecera (Salientes)
+- **El Problema Estándar:** El estándar HTTP permite enviar múltiples directivas de `Set-Cookie`. Si insertamos esto en el mapa de cabeceras (`_headers["Set-Cookie"]`), al ser C++98, cada nueva cookie sobrescribiría a la anterior.
+- **La Solución (Vector Aislado):** Se instanció un `std::vector<std::string> _cookies` en `HttpResponse` respaldado por un nuevo método API `add_cookie(name, value, options)`.
+- **Serialización Exacta:** Al momento de llamar a `to_string()`, Webserv itera secuencialmente sobre este vector y adjunta `Set-Cookie: name=value; options\r\n` justo antes del doble CRLF (`\r\n\r\n`), garantizando que los clientes web reciban tantas *cookies* como el servidor desee inyectar sin solapar llaves.
