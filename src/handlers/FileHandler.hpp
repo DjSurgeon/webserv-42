@@ -4,8 +4,8 @@
 
 #include <string>
 
-#include "http/HttpResponse.hpp"
 #include "config/Context.hpp"
+#include "http/HttpResponse.hpp"
 
 class FileHandler {
  public:
@@ -15,8 +15,10 @@ class FileHandler {
   FileHandler& operator=(const FileHandler& other);
   ~FileHandler();
 
-  bool serve_file(const std::string& physical_path, HttpResponse* res, const Context* ctx = NULL);
-  bool delete_file(const std::string& physical_path, HttpResponse* res, const Context* ctx = NULL);
+  bool serve_file(const std::string& physical_path, HttpResponse* res,
+                  const Context* ctx = NULL);
+  bool delete_file(const std::string& physical_path, HttpResponse* res,
+                   const Context* ctx = NULL);
   void generate_autoindex(const std::string& dir_path, const std::string& uri,
                           HttpResponse* res, const Context* ctx = NULL);
 
@@ -28,8 +30,10 @@ class FileHandler {
     const char* type;
   };
 
-  bool _validate_file_access(const std::string& path, HttpResponse* res, const Context* ctx);
-  bool _validate_delete_access(const std::string& path, HttpResponse* res, const Context* ctx);
+  bool _validate_file_access(const std::string& path, HttpResponse* res,
+                             const Context* ctx);
+  bool _validate_delete_access(const std::string& path, HttpResponse* res,
+                               const Context* ctx);
   std::string _get_mime_type(const std::string& path);
   std::string _build_autoindex_html(const std::string& dir_path,
                                     const std::string& uri);

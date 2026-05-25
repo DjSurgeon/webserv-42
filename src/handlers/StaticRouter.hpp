@@ -24,7 +24,8 @@ class StaticRouter {
 
  private:
   bool _check_null_context(const ServerConfig* server,
-                           const LocationConfig* loc, HttpResponse* res, const Context* ctx) const;
+                           const LocationConfig* loc, HttpResponse* res,
+                           const Context* ctx) const;
   bool _validate_method(const HttpRequest& req, const Context* ctx,
                         HttpResponse* res) const;
   bool _validate_payload_size(const HttpRequest& req, const Context* ctx,

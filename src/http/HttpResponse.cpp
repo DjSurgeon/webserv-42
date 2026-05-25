@@ -1,10 +1,10 @@
 // Copyright 2026 serjimen vja-nie dlesieur
 #include "http/HttpResponse.hpp"
 
+#include <fstream>
 #include <map>
 #include <sstream>
 #include <string>
-#include <fstream>
 
 #include "config/Context.hpp"
 
@@ -113,7 +113,7 @@ void HttpResponse::generate_error_response(int code, const Context* ctx) {
         buffer << file.rdbuf();
         std::string body = buffer.str();
         set_body(body);
-        
+
         std::stringstream ss;
         ss << body.length();
         add_header("Content-Type", "text/html");

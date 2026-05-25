@@ -97,15 +97,38 @@ void ConfigParser::_handle_listen_directive(
     throw std::runtime_error("Syntax error: incomplete 'listen' directive");
   }
   std::string listen_val = tokens[*i];
-  // Basic parse: check if there's a colon
+  std::string host = "127.0.0.1";
+  std::string port_str;
+
   size_t colon_pos = listen_val.find(':');
   if (colon_pos != std::string::npos) {
-    server->set_host(listen_val.substr(0, colon_pos));
-    server->set_port(std::atoi(listen_val.substr(colon_pos + 1).c_str()));
+    host = listen_val.substr(0, colon_pos);
+    port_str = listen_val.substr(colon_pos + 1);
   } else {
-    // Assume it's just a port for now
-    server->set_port(std::atoi(listen_val.c_str()));
+    port_str = listen_val;
   }
+
+  // Validate port string
+  if (port_str.empty()) {
+    throw std::runtime_error(
+        "Syntax error: port missing in 'listen' directive");
+  }
+  for (size_t j = 0; j < port_str.length(); ++j) {
+    if (!std::isdigit(static_cast<unsigned char>(port_str[j]))) {
+      throw std::runtime_error("Syntax error: invalid port '" + port_str +
+                               "' (must be digits)");
+    }
+  }
+
+  long port_val = std::strtol(port_str.c_str(), NULL, 10);  // NOLINT
+  if (port_val < 1 || port_val > 65535) {
+    throw std::runtime_error("Syntax error: port '" + port_str +
+                             "' out of range (1-65535)");
+  }
+
+  server->set_host(host);
+  server->set_port(static_cast<int>(port_val));
+
   (*i)++;
   if (*i >= tokens.size() || tokens[*i] != ";") {
     throw std::runtime_error("Syntax error: missing ';' after 'listen'");

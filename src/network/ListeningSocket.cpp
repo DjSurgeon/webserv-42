@@ -47,6 +47,10 @@ void ListeningSocket::init(int port) {
     throw std::runtime_error("ListeningSocket: Already initialized");
   }
 
+  if (port < 1 || port > 65535) {
+    throw std::runtime_error("ListeningSocket: Invalid port range");
+  }
+
   _fd = socket(AF_INET, SOCK_STREAM, 0);
   if (_fd == -1) {
     throw std::runtime_error("ListeningSocket: socket() failed");

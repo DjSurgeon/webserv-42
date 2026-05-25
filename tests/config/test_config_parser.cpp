@@ -102,11 +102,14 @@ void test_block_parsing_errors() {
                  "Directive at root level"};
   TestCase c4 = {"tests/assets/test_invalid_missing_location_path.conf",
                  "Missing location path"};
+  TestCase c5 = {"conf/edge_cases/invalid_port.conf",
+                 "Invalid port (out of range)"};
 
   cases.push_back(c1);
   cases.push_back(c2);
   cases.push_back(c3);
   cases.push_back(c4);
+  cases.push_back(c5);
 
   bool all_caught = true;
   for (size_t i = 0; i < cases.size(); ++i) {

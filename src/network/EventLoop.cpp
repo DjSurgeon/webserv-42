@@ -262,14 +262,15 @@ void EventLoop::_handle_client_data(int fd) {
         const LocationConfig* matched_loc =
             matched_server->find_location(req.get_uri());
 
-        const Context* active_ctx = matched_loc
-                                        ? static_cast<const Context*>(matched_loc)
-                                        : static_cast<const Context*>(matched_server);
+        const Context* active_ctx =
+            matched_loc ? static_cast<const Context*>(matched_loc)
+                        : static_cast<const Context*>(matched_server);
 
         if (matched_loc && !matched_loc->get_redirect().empty()) {
           res.set_status(301, "Moved Permanently");
           res.add_header("Location", matched_loc->get_redirect());
-          std::string body = "<html><body><h1>301 Moved Permanently</h1></body></html>";
+          std::string body =
+              "<html><body><h1>301 Moved Permanently</h1></body></html>";
           res.set_body(body);
           std::stringstream ss;
           ss << body.length();
@@ -279,64 +280,60 @@ void EventLoop::_handle_client_data(int fd) {
           std::string physical_path;
           StaticRouter router;
 
-          bool route_ok = router.process_route(req, matched_server, matched_loc,
-                                              &res, &physical_path, active_ctx);
+          bool route_ok =
+              router.process_route(req, matched_server, matched_loc, &res,
+                                   &physical_path, active_ctx);
 
-        if (route_ok) {
-          std::cout << "EventLoop: Resolved physical path: " << physical_path
-                    << std::endl;
+          if (route_ok) {
+            std::cout << "EventLoop: Resolved physical path: " << physical_path
+                      << std::endl;
 
-          bool is_cgi = false;
-          if (matched_loc) {
-            if (!matched_loc->get_cgi_path().empty()) {
-              is_cgi = true;
-            } else {
-              std::string ext = "";
-              size_t dot_pos = physical_path.find_last_of('.');
-              if (dot_pos != std::string::npos) {
-                ext = physical_path.substr(dot_pos);
-              }
-              const std::vector<std::string>& cgi_exts =
-                  matched_loc->get_cgi_extensions();
-              for (size_t k = 0; k < cgi_exts.size(); ++k) {
-                if (ext == cgi_exts[k]) {
-                  is_cgi = true;
-                  break;
+            bool is_cgi = false;
+            if (matched_loc) {
+              if (!matched_loc->get_cgi_path().empty()) {
+                is_cgi = true;
+              } else {
+                std::string ext = "";
+                size_t dot_pos = physical_path.find_last_of('.');
+                if (dot_pos != std::string::npos) {
+                  ext = physical_path.substr(dot_pos);
+                }
+                const std::vector<std::string>& cgi_exts =
+                    matched_loc->get_cgi_extensions();
+                for (size_t k = 0; k < cgi_exts.size(); ++k) {
+                  if (ext == cgi_exts[k]) {
+                    is_cgi = true;
+                    break;
+                  }
                 }
               }
             }
-          }
 
-          if (is_cgi) {
-            CgiHandler cgi;
-            // For now, execute_script runs synchronously and might not read the
-            // pipe depending on the current CgiHandler implementation, but it
-            // triggers fork/exec.
-            cgi.execute_script(physical_path, req, matched_loc, &res);
-          } else {
-            FileHandler file_handler;
-            const std::string& method = req.get_method();
-
-            if (method == "GET") {
-              struct stat st;
-              if (stat(physical_path.c_str(), &st) == 0 &&
-                  S_ISDIR(st.st_mode)) {
-                const Context* active_ctx =
-                    matched_loc ? static_cast<const Context*>(matched_loc)
-                                : static_cast<const Context*>(matched_server);
-                if (active_ctx->get_autoindex()) {
-                  file_handler.generate_autoindex(physical_path, req.get_uri(),
-                                                  &res, active_ctx);
-                } else {
-                  file_handler.serve_file(physical_path, &res, active_ctx);
-                }
-              } else {
-                file_handler.serve_file(physical_path, &res, active_ctx);
-              }
-            } else if (method == "DELETE") {
-              file_handler.delete_file(physical_path, &res, active_ctx);
+            if (is_cgi) {
+              CgiHandler cgi;
+              cgi.execute_script(physical_path, req, matched_loc, &res);
             } else {
-              res.generate_error_response(405, active_ctx);
+              FileHandler file_handler;
+              const std::string& method = req.get_method();
+
+              if (method == "GET") {
+                struct stat st;
+                if (stat(physical_path.c_str(), &st) == 0 &&
+                    S_ISDIR(st.st_mode)) {
+                  if (active_ctx->get_autoindex()) {
+                    file_handler.generate_autoindex(physical_path,
+                                                    req.get_uri(), &res);
+                  } else {
+                    file_handler.serve_file(physical_path, &res);
+                  }
+                } else {
+                  file_handler.serve_file(physical_path, &res);
+                }
+              } else if (method == "DELETE") {
+                file_handler.delete_file(physical_path, &res);
+              } else {
+                res.generate_error_response(405);
+              }
             }
           }
         }

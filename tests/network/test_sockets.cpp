@@ -61,14 +61,15 @@ void test_invalid_port() {
             << std::endl;
   ListeningSocket ls;
   try {
-    // htons will overflow, but bind should still fail or behave predictably
     ls.init(999999);
+    print_result("test_invalid_port", false);
+  } catch (const std::runtime_error& e) {
+    std::cout << "Caught expected exception: " << e.what() << std::endl;
+    std::string msg = e.what();
     print_result("test_invalid_port",
-                 true);  // bind might succeed with truncated port, but we check
-                         // if it crashes
-  } catch (const std::exception& e) {
-    std::cout << "Caught exception: " << e.what() << std::endl;
-    print_result("test_invalid_port", true);
+                 msg == "ListeningSocket: Invalid port range");
+  } catch (...) {
+    print_result("test_invalid_port", false);
   }
 }
 

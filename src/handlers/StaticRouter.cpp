@@ -22,7 +22,8 @@ StaticRouter::~StaticRouter() {}
 bool StaticRouter::process_route(const HttpRequest& req,
                                  const ServerConfig* server,
                                  const LocationConfig* loc, HttpResponse* res,
-                                 std::string* out_physical_path, const Context* active_ctx) const {
+                                 std::string* out_physical_path,
+                                 const Context* active_ctx) const {
   if (!_check_null_context(server, loc, res, active_ctx)) {
     return false;
   }
@@ -45,7 +46,8 @@ bool StaticRouter::process_route(const HttpRequest& req,
 
 bool StaticRouter::_check_null_context(const ServerConfig* server,
                                        const LocationConfig* loc,
-                                       HttpResponse* res, const Context* ctx) const {
+                                       HttpResponse* res,
+                                       const Context* ctx) const {
   if (loc == NULL && server == NULL) {
     if (res) {
       res->generate_error_response(404, ctx);

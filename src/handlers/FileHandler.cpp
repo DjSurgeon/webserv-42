@@ -87,8 +87,8 @@ bool FileHandler::delete_file(const std::string& physical_path,
 }
 
 void FileHandler::generate_autoindex(const std::string& dir_path,
-                                     const std::string& uri,
-                                     HttpResponse* res, const Context* ctx) {
+                                     const std::string& uri, HttpResponse* res,
+                                     const Context* ctx) {
   if (!res) {
     return;
   }
@@ -184,7 +184,8 @@ bool FileHandler::_validate_file_access(const std::string& path,
 }
 
 bool FileHandler::_validate_delete_access(const std::string& path,
-                                          HttpResponse* res, const Context* ctx) {
+                                          HttpResponse* res,
+                                          const Context* ctx) {
   struct stat st;
 
   // Check if file exists physically before doing anything destructive
