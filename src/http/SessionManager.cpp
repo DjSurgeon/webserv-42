@@ -2,6 +2,8 @@
 #include "http/SessionManager.hpp"
 
 #include <cstdlib>
+#include <map>
+#include <string>
 #include <vector>
 
 SessionManager& SessionManager::get_instance() {

@@ -1,6 +1,8 @@
 // Copyright 2026 serjimen vja-nie dlesieur
 #include <fstream>
+#include <map>
 #include <sstream>
+#include <string>
 
 #include "config/Context.hpp"
 #include "http/HttpRequest.hpp"
