@@ -20,7 +20,7 @@ run_test() {
     local test_file=$3
 
     echo "Compiling ${test_name}..."
-    c++ -Wall -Wextra -Werror -std=c++98 -Isrc ${sources} ${test_file} -o bin/${test_name}
+    c++ -Wall -Wextra -Werror -std=c++98 -Iinclude -Isrc ${sources} ${test_file} -o bin/${test_name}
 
     echo "Running ${test_name}..."
     ./bin/${test_name}

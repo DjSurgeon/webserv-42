@@ -18,7 +18,8 @@ NAME		= webserv
 
 CXX			= c++
 CXXFLAGS	= -Wall -Wextra -Werror -std=c++98
-INCLUDES	= -Isrc
+INCLUDES	= -Iinclude
+INC_DIR		= include
 
 # ──────────────────────────────────────────────────────────────────────────── #
 #                                 SOURCES                                      #
@@ -47,20 +48,20 @@ SRCS		= $(SRC_DIR)/main.cpp \
 
 OBJS		= $(SRCS:$(SRC_DIR)/%.cpp=$(OBJ_DIR)/%.o)
 
-HDRS		= $(SRC_DIR)/config/Context.hpp \
-			  $(SRC_DIR)/config/LocationConfig.hpp \
-			  $(SRC_DIR)/config/ServerConfig.hpp \
-			  $(SRC_DIR)/config/ConfigParser.hpp \
-			  $(SRC_DIR)/handlers/StaticRouter.hpp \
-			  $(SRC_DIR)/handlers/FileHandler.hpp \
-			  $(SRC_DIR)/handlers/CgiHandler.hpp \
-			  $(SRC_DIR)/http/HttpRequest.hpp \
-			  $(SRC_DIR)/http/HttpResponse.hpp \
-			  $(SRC_DIR)/http/RequestParser.hpp \
-			  $(SRC_DIR)/http/SessionManager.hpp \
-			  $(SRC_DIR)/network/ListeningSocket.hpp \
-			  $(SRC_DIR)/network/ClientSocket.hpp \
-			  $(SRC_DIR)/network/EventLoop.hpp
+HDRS		= $(INC_DIR)/config/Context.hpp \
+			  $(INC_DIR)/config/LocationConfig.hpp \
+			  $(INC_DIR)/config/ServerConfig.hpp \
+			  $(INC_DIR)/config/ConfigParser.hpp \
+			  $(INC_DIR)/handlers/StaticRouter.hpp \
+			  $(INC_DIR)/handlers/FileHandler.hpp \
+			  $(INC_DIR)/handlers/CgiHandler.hpp \
+			  $(INC_DIR)/http/HttpRequest.hpp \
+			  $(INC_DIR)/http/HttpResponse.hpp \
+			  $(INC_DIR)/http/RequestParser.hpp \
+			  $(INC_DIR)/http/SessionManager.hpp \
+			  $(INC_DIR)/network/ListeningSocket.hpp \
+			  $(INC_DIR)/network/ClientSocket.hpp \
+			  $(INC_DIR)/network/EventLoop.hpp
 
 # ──────────────────────────────────────────────────────────────────────────── #
 #                                  TESTS                                       #
