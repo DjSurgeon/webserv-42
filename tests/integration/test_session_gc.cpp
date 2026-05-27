@@ -50,7 +50,7 @@ void test_event_loop_gc_trigger() {
   EventLoop loop;
 
   // Set cleanup interval to 1 second
-  loop.set_session_cleanup_interval(1);
+  loop.setSessionCleanupInterval(1);
 
   // Create a session that expires in 1 second
   std::string session_id = sm.create_session("loop_expire_me", 1);

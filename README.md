@@ -5,7 +5,12 @@ This project is a fully functional, asynchronous, and non-blocking HTTP/1.1 Web 
 
 ### Current Architectural Status
 The project has successfully completed its core infrastructure foundation across the following layers:
-1. **Network Infrastructure (Sockets Layer):**
+
+1. **Canonical C++ Layout & SRP Refactoring:**
+   - **Industry Standard Structure**: The project strictly separates public interfaces (`include/`) from private implementations (`src/`), ensuring strong encapsulation, clean semantic `#include` directives, and zero compilation warnings.
+   - **Partial Implementations**: Monolithic source files (like `HttpResponse.cpp`) were shattered into focused, specialized sub-modules (e.g., `HttpResponse_error.cpp`). Functions were rigorously decoupled following the **Single Responsibility Principle (SRP)**, drastically reducing cognitive load and easing long-term maintainability.
+
+2. **Network Infrastructure (Sockets Layer):**
    - `ListeningSocket`: A pure RAII engine that safely manages server setup lifecycle (`socket`, `setsockopt`, `bind`, `listen`) preventing kernel descriptor leaks.
    - `ClientSocket`: Manages incoming active connections, automatically enforcing `O_NONBLOCK` settings at birth. It utilizes a zero-copy performance layout where reading modules consume data directly via constant string references (`const std::string&`), mitigating unnecessary heap allocations.
 

@@ -750,3 +750,31 @@ Para soportar la estructura y herencia de bloques estilo NGINX (donde una ruta `
 - **El Problema Estándar:** El estándar HTTP permite enviar múltiples directivas de `Set-Cookie`. Si insertamos esto en el mapa de cabeceras (`_headers["Set-Cookie"]`), al ser C++98, cada nueva cookie sobrescribiría a la anterior.
 - **La Solución (Vector Aislado):** Se instanció un `std::vector<std::string> _cookies` en `HttpResponse` respaldado por un nuevo método API `add_cookie(name, value, options)`.
 - **Serialización Exacta:** Al momento de llamar a `to_string()`, Webserv itera secuencialmente sobre este vector y adjunta `Set-Cookie: name=value; options\r\n` justo antes del doble CRLF (`\r\n\r\n`), garantizando que los clientes web reciban tantas *cookies* como el servidor desee inyectar sin solapar llaves.
+
+---
+
+## 📅 Día 14: Arquitectura Profesional, SRP y Refactorización Estructural
+
+### 🎯 Objetivos del Día
+1. Trocear implementaciones monolíticas masivas (ej. `HttpResponse.cpp`) utilizando la técnica de "Implementaciones Múltiples" en C++ sin romper el encapsulamiento de sus cabeceras base.
+2. Refactorizar el motor de generación de errores HTTP (`generate_error_response`) para acatar estrictamente el **Principio de Responsabilidad Única (SRP)**.
+3. Migrar todo el árbol del proyecto a la Estructura Canónica de Directorios estándar de la industria, aislando por completo las interfaces (`include/`) de las implementaciones (`src/`).
+
+### 🏗️ Fase 1: Implementaciones Parciales y División de `HttpResponse`
+- **El Problema:** El archivo `HttpResponse.cpp` agrupaba tanto la lógica core de serialización como las extensas rutinas de renderizado de errores HTML y parseo físico del `Context`.
+- **La Solución:** Se aplicó el patrón de extensiones parciales creando el archivo `src/http/HttpResponse_error.cpp`. 
+- Se delegó allí toda la lógica de error, lo cual permite al compilador/linker de C++ unir la misma clase a través de múltiples archivos. Esto mantiene un único `HttpResponse.hpp` limpio y documentado (con estilo Doxygen minimalista a nivel de clase), mientras que el código de implementación queda fragmentado y legible.
+
+### 🧹 Fase 2: Aplicación del Principio SRP (Single Responsibility Principle)
+- La función `generate_error_response` era un "God Method" que mezclaba extracción de cookies, acceso físico a archivos e inyección de cabeceras.
+- **Refactorización:** Se diseñaron e implementaron tres funciones privadas auxiliares en `HttpResponse`:
+  1. `_extract_username`: Se encarga exclusivamente de parsear el session_id y consultar el SessionManager.
+  2. `_try_serve_custom_error_page`: Gestiona puramente la búsqueda, apertura binaria y lectura del HTML personalizado desde el `Context`.
+  3. `_finalize_html_response`: Encapsula de forma estricta la configuración final del cuerpo, `Content-Type` y longitud.
+- Ahora, `generate_error_response` es simplemente una función orquestadora de alto nivel, lo cual la hace ridículamente fácil de leer y testear.
+
+### 🏛️ Fase 3: The Canonical C++ Layout
+- Para elevar el proyecto a los estándares de producción, se erradicó la mezcla de archivos `.hpp` y `.cpp` que poblaban `src/`.
+- Se creó el árbol completo en `include/` (`config`, `handlers`, `http`, `network`).
+- Todos los archivos de cabecera fueron migrados a esta nueva fortaleza.
+- **Actualización del `Makefile`:** Se añadió el flag `INCLUDES = -Iinclude` y se actualizó la variable de cabeceras `HDRS`. Dado que el código C++ ya utilizaba importaciones semánticas (`#include "http/HttpRequest.hpp"`), el código fuente no necesitó alteración interna, demostrando el poder de los includes absolutos y un diseño de software previsor.

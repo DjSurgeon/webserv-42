@@ -41,10 +41,16 @@ SRCS		= $(SRC_DIR)/main.cpp \
 			  $(SRC_DIR)/http/HttpResponse.cpp \
 			  $(SRC_DIR)/http/HttpResponse_error.cpp \
 			  $(SRC_DIR)/http/RequestParser.cpp \
+			  $(SRC_DIR)/http/RequestParser_request_line.cpp \
+			  $(SRC_DIR)/http/RequestParser_headers.cpp \
+			  $(SRC_DIR)/http/RequestParser_body.cpp \
 			  $(SRC_DIR)/http/SessionManager.cpp \
 			  $(SRC_DIR)/network/ListeningSocket.cpp \
 			  $(SRC_DIR)/network/ClientSocket.cpp \
-			  $(SRC_DIR)/network/EventLoop.cpp
+			  $(SRC_DIR)/network/EventLoop.cpp \
+			  $(SRC_DIR)/network/EventLoop_sockets.cpp \
+			  $(SRC_DIR)/network/EventLoop_read.cpp \
+			  $(SRC_DIR)/network/EventLoop_write.cpp
 
 OBJS		= $(SRCS:$(SRC_DIR)/%.cpp=$(OBJ_DIR)/%.o)
 
@@ -83,10 +89,16 @@ LIB_SRCS	= $(SRC_DIR)/config/Context.cpp \
 			  $(SRC_DIR)/http/HttpResponse.cpp \
 			  $(SRC_DIR)/http/HttpResponse_error.cpp \
 			  $(SRC_DIR)/http/RequestParser.cpp \
+			  $(SRC_DIR)/http/RequestParser_request_line.cpp \
+			  $(SRC_DIR)/http/RequestParser_headers.cpp \
+			  $(SRC_DIR)/http/RequestParser_body.cpp \
 			  $(SRC_DIR)/http/SessionManager.cpp \
 			  $(SRC_DIR)/network/ListeningSocket.cpp \
 			  $(SRC_DIR)/network/ClientSocket.cpp \
 			  $(SRC_DIR)/network/EventLoop.cpp \
+			  $(SRC_DIR)/network/EventLoop_sockets.cpp \
+			  $(SRC_DIR)/network/EventLoop_read.cpp \
+			  $(SRC_DIR)/network/EventLoop_write.cpp \
 			  $(TEST_DIR)/integration/test_globals.cpp
 
 TEST_SRCS	= $(filter-out $(TEST_DIR)/integration/test_globals.cpp $(TEST_DIR)/integration/stress_client.cpp, $(wildcard $(TEST_DIR)/*/*.cpp))
