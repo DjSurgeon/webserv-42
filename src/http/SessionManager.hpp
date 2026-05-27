@@ -16,7 +16,7 @@ class SessionManager {
   // Singleton Pattern: global access point
   static SessionManager& get_instance();
 
-  std::string create_session(const std::string& username);
+  std::string create_session(const std::string& username, time_t ttl = 3600);
   SessionData* get_session(const std::string& session_id);
   void destroy_session(const std::string& session_id);
   void clear_expired_sessions();

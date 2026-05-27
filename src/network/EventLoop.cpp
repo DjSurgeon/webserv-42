@@ -15,11 +15,13 @@
 #include "handlers/CgiHandler.hpp"
 #include "handlers/FileHandler.hpp"
 #include "handlers/StaticRouter.hpp"
+#include "http/SessionManager.hpp"
 
 /**
  * @brief Default constructor for EventLoop.
  */
-EventLoop::EventLoop() {}
+EventLoop::EventLoop()
+    : _last_session_cleanup(std::time(NULL)), _session_cleanup_interval(5) {}
 
 /**
  * @brief Copy constructor for EventLoop.
@@ -27,7 +29,10 @@ EventLoop::EventLoop() {}
  * @param other The EventLoop object to copy from.
  */
 EventLoop::EventLoop(const EventLoop& other)
-    : _pollfds(other._pollfds), _server_fds(other._server_fds) {
+    : _pollfds(other._pollfds),
+      _server_fds(other._server_fds),
+      _last_session_cleanup(other._last_session_cleanup),
+      _session_cleanup_interval(other._session_cleanup_interval) {
   // Clients are NOT deep copied because they manage unique file descriptors
   // and copying them violates the RAII strict ownership rules (double-free).
 }
@@ -42,6 +47,8 @@ EventLoop& EventLoop::operator=(const EventLoop& other) {
   if (this != &other) {
     _pollfds = other._pollfds;
     _server_fds = other._server_fds;
+    _last_session_cleanup = other._last_session_cleanup;
+    _session_cleanup_interval = other._session_cleanup_interval;
     // Clients are NOT deep copied for the same RAII reasons.
   }
   return *this;
@@ -401,6 +408,10 @@ void EventLoop::_handle_client_write(int fd) {
   }
 }
 
+void EventLoop::set_session_cleanup_interval(time_t interval) {
+  _session_cleanup_interval = interval;
+}
+
 /**
  * @brief Main infinite loop for polling events.
  *
@@ -409,6 +420,12 @@ void EventLoop::_handle_client_write(int fd) {
  */
 void EventLoop::run() {
   while (g_running) {
+    time_t now = std::time(NULL);
+    if (now - _last_session_cleanup >= _session_cleanup_interval) {
+      SessionManager::get_instance().clear_expired_sessions();
+      _last_session_cleanup = now;
+    }
+
     if (_pollfds.empty()) {
       continue;
     }

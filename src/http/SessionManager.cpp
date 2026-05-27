@@ -32,7 +32,8 @@ std::string SessionManager::_generate_random_id() const {
   return id;
 }
 
-std::string SessionManager::create_session(const std::string& username) {
+std::string SessionManager::create_session(const std::string& username,
+                                           time_t ttl) {
   // Purge old sessions first to prevent memory bloat over time
   clear_expired_sessions();
 
@@ -45,13 +46,12 @@ std::string SessionManager::create_session(const std::string& username) {
 
   SessionData data;
   data.username = username;
-  data.expires_at = std::time(NULL) + 3600;  // Expires in 1 hour
+  data.expires_at = std::time(NULL) + ttl;
 
   _active_sessions[session_id] = data;
 
   return session_id;
 }
-
 SessionData* SessionManager::get_session(const std::string& session_id) {
   std::map<std::string, SessionData>::iterator it =
       _active_sessions.find(session_id);

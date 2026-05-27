@@ -5,6 +5,7 @@
 #include <sys/poll.h>
 
 #include <csignal>
+#include <ctime>
 #include <map>
 #include <vector>
 
@@ -24,6 +25,7 @@ class EventLoop {
   void addServerSocket(int fd, const std::vector<ServerConfig>& configs);
   void addClientSocket(int fd);
   void removeSocket(int fd);
+  void set_session_cleanup_interval(time_t interval);
   void run();
 
  private:
@@ -35,6 +37,9 @@ class EventLoop {
   std::map<int, int> _client_to_server;
 
   static const int POLL_TIMEOUT = 1000;
+
+  time_t _last_session_cleanup;
+  time_t _session_cleanup_interval;
 
   bool _isServerSocket(int fd) const;
   void _handle_new_connection(int server_fd);
