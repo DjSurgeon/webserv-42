@@ -69,6 +69,10 @@ void HttpResponse::add_cookie(const std::string& name, const std::string& value,
   _cookies.push_back(cookie_str);
 }
 
+void HttpResponse::add_cookie(const std::string& raw_cookie) {
+  _cookies.push_back(raw_cookie);
+}
+
 void HttpResponse::set_body(const std::string& body) {
   _body = body;
 }

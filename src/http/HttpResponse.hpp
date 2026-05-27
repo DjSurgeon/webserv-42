@@ -21,6 +21,7 @@ class HttpResponse {
   void add_header(const std::string& key, const std::string& value);
   void add_cookie(const std::string& name, const std::string& value,
                   const std::string& options = "");
+  void add_cookie(const std::string& raw_cookie);
   void set_body(const std::string& body);
 
   // Serialization

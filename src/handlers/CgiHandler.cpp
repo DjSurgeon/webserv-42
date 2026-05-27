@@ -140,6 +140,8 @@ bool CgiHandler::parse_cgi_output(const std::string& raw_output,
           phrase = "";
         }
         res->set_status(code, phrase);
+      } else if (lower_key == "set-cookie") {
+        res->add_cookie(value);
       } else {
         res->add_header(key, value);
       }

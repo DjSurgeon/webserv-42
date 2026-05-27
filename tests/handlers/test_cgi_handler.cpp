@@ -278,6 +278,32 @@ void test_cgi_output_parsing() {
     print_result("  -> Malformed (502 Check)", true);
   }
 
+  // Case E: Multiple Cookies from CGI
+  {
+    HttpResponse res;
+    std::string raw =
+        "Content-Type: text/html\nSet-Cookie: user=serjimen\nSet-Cookie: "
+        "pref=dark\n\n<h1>Cookies!</h1>";
+    handler.parse_cgi_output(raw, &res);
+    std::string res_str = res.to_string();
+    assert(res_str.find("Set-Cookie: user=serjimen") != std::string::npos);
+    assert(res_str.find("Set-Cookie: pref=dark") != std::string::npos);
+    print_result("  -> Multiple Cookies from CGI", true);
+  }
+
+  // Case F: Complex Cookies with Options
+  {
+    HttpResponse res;
+    std::string raw =
+        "Set-Cookie: session=xyz; Path=/; HttpOnly; Secure; "
+        "SameSite=Strict\n\nBody";
+    handler.parse_cgi_output(raw, &res);
+    std::string res_str = res.to_string();
+    assert(res_str.find("Set-Cookie: session=xyz; Path=/; HttpOnly; Secure; "
+                        "SameSite=Strict") != std::string::npos);
+    print_result("  -> Complex Cookies with Options", true);
+  }
+
   print_result("test_cgi_output_parsing", true);
 }
 

@@ -143,15 +143,20 @@ void test_http_response_cookies() {
   // 2. Single cookie with default options
   res.add_cookie("theme", "dark");
 
+  // 3. Raw cookie string (overload)
+  res.add_cookie("lang=en-US; Domain=example.com");
+
   std::string s = res.to_string();
 
   // Assertions
   bool check1 = (s.find("Set-Cookie: session=42; Path=/; HttpOnly\r\n") !=
                  std::string::npos);
   bool check2 = (s.find("Set-Cookie: theme=dark\r\n") != std::string::npos);
+  bool check3 = (s.find("Set-Cookie: lang=en-US; Domain=example.com\r\n") !=
+                 std::string::npos);
 
-  // Verification of coexistence (both should be there)
-  print_result("test_http_response_cookies", check1 && check2);
+  // Verification of coexistence (all should be there)
+  print_result("test_http_response_cookies", check1 && check2 && check3);
 }
 
 int main() {
