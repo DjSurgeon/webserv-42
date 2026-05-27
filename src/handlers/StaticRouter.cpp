@@ -147,18 +147,19 @@ void StaticRouter::_translate_path(const HttpRequest& req, const Context* ctx,
     for (size_t i = 0; i < langs.size(); ++i) {
       std::string lang_path = *out_physical_path + "." + langs[i].lang;
       struct stat lang_st;
-      
+
       // Try exact match (e.g. index.html.es-ES or index.html.en)
       if (stat(lang_path.c_str(), &lang_st) == 0 && S_ISREG(lang_st.st_mode)) {
         *out_physical_path = lang_path;
         break;
       }
-      
+
       // Try short match (e.g. es-ES -> es)
       if (langs[i].lang.length() > 2 && langs[i].lang[2] == '-') {
         std::string short_lang = langs[i].lang.substr(0, 2);
         std::string short_lang_path = *out_physical_path + "." + short_lang;
-        if (stat(short_lang_path.c_str(), &lang_st) == 0 && S_ISREG(lang_st.st_mode)) {
+        if (stat(short_lang_path.c_str(), &lang_st) == 0 &&
+            S_ISREG(lang_st.st_mode)) {
           *out_physical_path = short_lang_path;
           break;
         }

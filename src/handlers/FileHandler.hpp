@@ -5,8 +5,8 @@
 #include <string>
 
 #include "config/Context.hpp"
-#include "http/HttpResponse.hpp"
 #include "http/HttpRequest.hpp"
+#include "http/HttpResponse.hpp"
 
 class FileHandler {
  public:

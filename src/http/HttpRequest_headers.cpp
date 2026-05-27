@@ -1,6 +1,4 @@
 // Copyright 2026 serjimen vja-nie dlesieur
-#include "http/HttpRequest.hpp"
-
 #include <algorithm>
 #include <cctype>
 #include <map>
@@ -8,20 +6,23 @@
 #include <string>
 #include <vector>
 
+#include "http/HttpRequest.hpp"
+
 /**
  * @brief Helper used to sort LanguageWeights by their 'q' factor descending.
- * 
+ *
  * @param a First language weight.
  * @param b Second language weight.
  * @return true if 'a' has a higher quality factor than 'b'.
  */
-static bool compare_language_weight(const LanguageWeight& a, const LanguageWeight& b) {
+static bool compare_language_weight(const LanguageWeight& a,
+                                    const LanguageWeight& b) {
   return a.q > b.q;
 }
 
 /**
  * @brief Removes leading and trailing whitespaces and tabs from a string.
- * 
+ *
  * @param str The original string.
  * @return std::string The trimmed string.
  */
@@ -39,7 +40,7 @@ static std::string trim_spaces(const std::string& str) {
 
 /**
  * @brief Converts a string to lowercase.
- * 
+ *
  * @param str The original string.
  * @return std::string The lowercase string.
  */
@@ -52,16 +53,18 @@ static std::string to_lower(const std::string& str) {
 }
 
 /**
- * @brief Parses the Accept-Language header into a sorted vector of LanguageWeight structs.
- * 
+ * @brief Parses the Accept-Language header into a sorted vector of
+ * LanguageWeight structs.
+ *
  * Extracts languages and their respective 'q' values, sorting them from highest
  * to lowest priority. If no 'q' value is specified, it defaults to 1.0.
- * 
+ *
  * @return std::vector<LanguageWeight> Sorted vector of accepted languages.
  */
 std::vector<LanguageWeight> HttpRequest::get_accepted_languages() const {
   std::vector<LanguageWeight> languages;
-  std::map<std::string, std::string>::const_iterator it = _headers.find("accept-language");
+  std::map<std::string, std::string>::const_iterator it =
+      _headers.find("accept-language");
   if (it == _headers.end()) {
     return languages;
   }
@@ -103,9 +106,10 @@ std::vector<LanguageWeight> HttpRequest::get_accepted_languages() const {
 
 /**
  * @brief Parses a raw Cookie string and extracts individual key-value pairs.
- * 
- * Populates the internal _cookies map, handling multiple cookies separated by ';'.
- * 
+ *
+ * Populates the internal _cookies map, handling multiple cookies separated by
+ * ';'.
+ *
  * @param raw_cookies The raw string from the Cookie header.
  */
 void HttpRequest::_parse_cookies_string(const std::string& raw_cookies) {
@@ -129,8 +133,9 @@ void HttpRequest::_parse_cookies_string(const std::string& raw_cookies) {
 }
 
 /**
- * @brief Adds a header to the request. Automatically parses cookies if the key is 'Cookie'.
- * 
+ * @brief Adds a header to the request. Automatically parses cookies if the key
+ * is 'Cookie'.
+ *
  * @param key The header name.
  * @param value The header value.
  */
@@ -144,7 +149,7 @@ void HttpRequest::add_header(const std::string& key, const std::string& value) {
 
 /**
  * @brief Explicitly adds a cookie to the request's internal map.
- * 
+ *
  * @param key The cookie name.
  * @param value The cookie value.
  */

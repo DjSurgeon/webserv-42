@@ -188,8 +188,7 @@ bool FileHandler::_validate_file_access(const std::string& path,
 }
 
 bool FileHandler::_validate_delete_access(const std::string& path,
-                                          HttpResponse* res,
-                                          const Context* ctx,
+                                          HttpResponse* res, const Context* ctx,
                                           const HttpRequest* req) {
   struct stat st;
 

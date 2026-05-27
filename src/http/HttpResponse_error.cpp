@@ -1,15 +1,15 @@
 // Copyright 2026 serjimen vja-nie dlesieur
-#include "http/HttpResponse.hpp"
-
 #include <fstream>
 #include <sstream>
 
 #include "config/Context.hpp"
 #include "http/HttpRequest.hpp"
+#include "http/HttpResponse.hpp"
 #include "http/SessionManager.hpp"
 
 /**
- * @brief Helper utility to get the standard HTTP reason phrase for a given code.
+ * @brief Helper utility to get the standard HTTP reason phrase for a given
+ * code.
  *
  * @param code The HTTP status code.
  * @return The corresponding reason phrase string.
@@ -36,7 +36,8 @@ static std::string get_reason_phrase(int code) {
 std::string HttpResponse::_extract_username(const HttpRequest* req) const {
   if (!req) return "";
   const std::map<std::string, std::string>& cookies = req->get_cookies();
-  std::map<std::string, std::string>::const_iterator it = cookies.find("session_id");
+  std::map<std::string, std::string>::const_iterator it =
+      cookies.find("session_id");
   if (it != cookies.end()) {
     SessionData* sdata = SessionManager::get_instance().get_session(it->second);
     if (sdata) {
@@ -93,7 +94,8 @@ std::string HttpResponse::_get_default_error_html(
   std::stringstream ss;
   ss << "<html><body><h1>" << code << " " << phrase << "</h1>";
   if (!username.empty()) {
-    ss << "<p>Lo sentimos, <b>" << username << "</b>, este recurso no existe en el servidor.</p>";
+    ss << "<p>Lo sentimos, <b>" << username
+       << "</b>, este recurso no existe en el servidor.</p>";
   }
   ss << "</body></html>";
   return ss.str();
