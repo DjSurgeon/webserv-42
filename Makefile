@@ -36,7 +36,9 @@ SRCS		= $(SRC_DIR)/main.cpp \
 			  $(SRC_DIR)/handlers/FileHandler.cpp \
 			  $(SRC_DIR)/handlers/CgiHandler.cpp \
 			  $(SRC_DIR)/http/HttpRequest.cpp \
+			  $(SRC_DIR)/http/HttpRequest_headers.cpp \
 			  $(SRC_DIR)/http/HttpResponse.cpp \
+			  $(SRC_DIR)/http/HttpResponse_error.cpp \
 			  $(SRC_DIR)/http/RequestParser.cpp \
 			  $(SRC_DIR)/http/SessionManager.cpp \
 			  $(SRC_DIR)/network/ListeningSocket.cpp \
@@ -76,7 +78,9 @@ LIB_SRCS	= $(SRC_DIR)/config/Context.cpp \
 			  $(SRC_DIR)/handlers/FileHandler.cpp \
 			  $(SRC_DIR)/handlers/CgiHandler.cpp \
 			  $(SRC_DIR)/http/HttpRequest.cpp \
+			  $(SRC_DIR)/http/HttpRequest_headers.cpp \
 			  $(SRC_DIR)/http/HttpResponse.cpp \
+			  $(SRC_DIR)/http/HttpResponse_error.cpp \
 			  $(SRC_DIR)/http/RequestParser.cpp \
 			  $(SRC_DIR)/http/SessionManager.cpp \
 			  $(SRC_DIR)/network/ListeningSocket.cpp \

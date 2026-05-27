@@ -25,7 +25,6 @@ class HttpRequest {
   HttpRequest();
   ~HttpRequest();
 
-  // Getters returning const references
   const std::string& get_method() const;
   const std::string& get_uri() const;
   const std::string& get_version() const;
@@ -34,7 +33,6 @@ class HttpRequest {
   const std::map<std::string, std::string>& get_cookies() const;
   std::vector<LanguageWeight> get_accepted_languages() const;
 
-  // Setters/mutators for the parser
   void set_method(const std::string& method);
   void set_uri(const std::string& uri);
   void set_version(const std::string& version);
@@ -42,7 +40,6 @@ class HttpRequest {
   void add_header(const std::string& key, const std::string& value);
   void add_cookie(const std::string& key, const std::string& value);
 
-  // Reset method
   void clear();
 
  private:

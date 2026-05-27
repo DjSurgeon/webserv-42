@@ -83,7 +83,9 @@ void test_destroy_session() {
 }
 
 void test_high_concurrency_scaling() {
-  std::cout << "[Test] Verifying O(log N) lookup under massive 10,000 session load..." << std::endl;
+  std::cout
+      << "[Test] Verifying O(log N) lookup under massive 10,000 session load..."
+      << std::endl;
   SessionManager& sm = SessionManager::get_instance();
   std::vector<std::string> ids;
   bool pass = true;
@@ -103,7 +105,7 @@ void test_high_concurrency_scaling() {
   for (int i = 0; i < 10000; i++) {
     sm.destroy_session(ids[i]);
   }
-  
+
   if (sm.get_session(ids[5000]) != NULL) pass = false;
 
   print_result("test_high_concurrency_scaling", pass);
