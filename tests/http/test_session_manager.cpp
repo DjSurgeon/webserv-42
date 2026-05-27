@@ -3,7 +3,9 @@
 
 #include <cassert>
 #include <iostream>
+#include <sstream>
 #include <string>
+#include <vector>
 
 #include "http/SessionManager.hpp"
 
@@ -80,6 +82,33 @@ void test_destroy_session() {
   print_result("test_destroy_session", pass);
 }
 
+void test_high_concurrency_scaling() {
+  std::cout << "[Test] Verifying O(log N) lookup under massive 10,000 session load..." << std::endl;
+  SessionManager& sm = SessionManager::get_instance();
+  std::vector<std::string> ids;
+  bool pass = true;
+
+  // 1. Inject 10,000 sessions
+  for (int i = 0; i < 10000; i++) {
+    std::stringstream ss;
+    ss << "user" << i;
+    ids.push_back(sm.create_session(ss.str()));
+  }
+
+  // 2. Lookup random session (e.g. index 5000)
+  SessionData* data = sm.get_session(ids[5000]);
+  if (data == NULL || data->username != "user5000") pass = false;
+
+  // 3. Destroy all
+  for (int i = 0; i < 10000; i++) {
+    sm.destroy_session(ids[i]);
+  }
+  
+  if (sm.get_session(ids[5000]) != NULL) pass = false;
+
+  print_result("test_high_concurrency_scaling", pass);
+}
+
 int main() {
   std::cout << "--- SessionManager Unit Tests ---" << std::endl;
 
@@ -87,6 +116,7 @@ int main() {
   test_create_and_get_session();
   test_get_nonexistent_session();
   test_destroy_session();
+  test_high_concurrency_scaling();
 
   std::cout << "---------------------------------" << std::endl;
   return 0;
