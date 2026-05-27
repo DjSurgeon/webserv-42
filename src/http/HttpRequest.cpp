@@ -4,6 +4,9 @@
 #include <cctype>
 #include <map>
 #include <string>
+#include <vector>
+#include <algorithm>
+#include <sstream>
 
 HttpRequest::HttpRequest() {}
 
@@ -31,6 +34,65 @@ const std::map<std::string, std::string>& HttpRequest::get_headers() const {
 
 const std::map<std::string, std::string>& HttpRequest::get_cookies() const {
   return _cookies;
+}
+
+static bool compare_language_weight(const LanguageWeight& a, const LanguageWeight& b) {
+  return a.q > b.q;
+}
+
+std::vector<LanguageWeight> HttpRequest::get_accepted_languages() const {
+  std::vector<LanguageWeight> languages;
+  std::map<std::string, std::string>::const_iterator it = _headers.find("accept-language");
+  if (it == _headers.end()) {
+    return languages;
+  }
+
+  std::string raw = it->second;
+  size_t start = 0;
+  while (start < raw.length()) {
+    size_t end = raw.find(',', start);
+    if (end == std::string::npos) {
+      end = raw.length();
+    }
+    std::string chunk = raw.substr(start, end - start);
+    
+    // Trim
+    size_t t_start = 0;
+    while (t_start < chunk.length() && (chunk[t_start] == ' ' || chunk[t_start] == '\t')) t_start++;
+    size_t t_end = chunk.length();
+    while (t_end > t_start && (chunk[t_end - 1] == ' ' || chunk[t_end - 1] == '\t')) t_end--;
+    chunk = chunk.substr(t_start, t_end - t_start);
+
+    if (!chunk.empty()) {
+      size_t semi_pos = chunk.find(';');
+      LanguageWeight lw;
+      if (semi_pos != std::string::npos) {
+        lw.lang = chunk.substr(0, semi_pos);
+        std::string q_part = chunk.substr(semi_pos + 1);
+        size_t q_pos = q_part.find("q=");
+        if (q_pos != std::string::npos) {
+          std::stringstream ss(q_part.substr(q_pos + 2));
+          ss >> lw.q;
+        } else {
+          lw.q = 1.0;
+        }
+      } else {
+        lw.lang = chunk;
+        lw.q = 1.0;
+      }
+      
+      // Trim lang
+      t_end = lw.lang.length();
+      while (t_end > 0 && (lw.lang[t_end - 1] == ' ' || lw.lang[t_end - 1] == '\t')) t_end--;
+      lw.lang = lw.lang.substr(0, t_end);
+
+      languages.push_back(lw);
+    }
+    start = end + 1;
+  }
+
+  std::stable_sort(languages.begin(), languages.end(), compare_language_weight);
+  return languages;
 }
 
 void HttpRequest::set_method(const std::string& method) {
@@ -95,6 +157,10 @@ void HttpRequest::add_header(const std::string& key, const std::string& value) {
   if (lower_key == "cookie") {
     _parse_cookies_string(value);
   }
+}
+
+void HttpRequest::add_cookie(const std::string& key, const std::string& value) {
+  _cookies[key] = value;
 }
 
 void HttpRequest::clear() {

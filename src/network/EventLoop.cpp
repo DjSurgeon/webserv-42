@@ -329,17 +329,17 @@ void EventLoop::_handle_client_data(int fd) {
                     S_ISDIR(st.st_mode)) {
                   if (active_ctx->get_autoindex()) {
                     file_handler.generate_autoindex(physical_path,
-                                                    req.get_uri(), &res);
+                                                    req.get_uri(), &res, active_ctx, &req);
                   } else {
-                    file_handler.serve_file(physical_path, &res);
+                    file_handler.serve_file(physical_path, &res, active_ctx, &req);
                   }
                 } else {
-                  file_handler.serve_file(physical_path, &res);
+                  file_handler.serve_file(physical_path, &res, active_ctx, &req);
                 }
               } else if (method == "DELETE") {
-                file_handler.delete_file(physical_path, &res);
+                file_handler.delete_file(physical_path, &res, active_ctx, &req);
               } else {
-                res.generate_error_response(405);
+                res.generate_error_response(405, active_ctx, &req);
               }
             }
           }

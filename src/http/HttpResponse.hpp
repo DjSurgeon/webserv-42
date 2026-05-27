@@ -7,6 +7,7 @@
 #include <vector>
 
 class Context;
+class HttpRequest;
 
 class HttpResponse {
  public:
@@ -28,7 +29,8 @@ class HttpResponse {
   std::string to_string() const;
 
   // Error Generation
-  void generate_error_response(int code, const Context* ctx = NULL);
+  void generate_error_response(int code, const Context* ctx = NULL,
+                               const HttpRequest* req = NULL);
 
  private:
   int _status_code;
@@ -38,8 +40,8 @@ class HttpResponse {
   std::string _body;
 
   // Helpers
-  std::string _get_default_error_html(int code,
-                                      const std::string& phrase) const;
+  std::string _get_default_error_html(int code, const std::string& phrase,
+                                      const std::string& username) const;
 };
 
 #endif  // SRC_HTTP_HTTPRESPONSE_HPP_

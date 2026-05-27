@@ -50,7 +50,7 @@ bool StaticRouter::_check_null_context(const ServerConfig* server,
                                        const Context* ctx) const {
   if (loc == NULL && server == NULL) {
     if (res) {
-      res->generate_error_response(404, ctx);
+      res->generate_error_response(404, ctx, NULL);
     }
     return false;
   }
@@ -78,7 +78,7 @@ bool StaticRouter::_validate_method(const HttpRequest& req, const Context* ctx,
 
   if (!method_allowed) {
     if (res) {
-      res->generate_error_response(405, ctx);
+      res->generate_error_response(405, ctx, &req);
     }
     return false;
   }
@@ -94,7 +94,7 @@ bool StaticRouter::_validate_payload_size(const HttpRequest& req,
   // 0 is interpreted as unlimited body size
   if (max_size > 0 && req.get_body().length() > max_size) {
     if (res) {
-      res->generate_error_response(413, ctx);
+      res->generate_error_response(413, ctx, &req);
     }
     return false;
   }
@@ -136,6 +136,32 @@ void StaticRouter::_translate_path(const HttpRequest& req, const Context* ctx,
       if (stat(test_path.c_str(), &idx_st) == 0 && S_ISREG(idx_st.st_mode)) {
         *out_physical_path = test_path;
         break;
+      }
+    }
+  }
+
+  // Internationalization (i18n) Check
+  if (out_physical_path->length() >= 5 &&
+      out_physical_path->substr(out_physical_path->length() - 5) == ".html") {
+    std::vector<LanguageWeight> langs = req.get_accepted_languages();
+    for (size_t i = 0; i < langs.size(); ++i) {
+      std::string lang_path = *out_physical_path + "." + langs[i].lang;
+      struct stat lang_st;
+      
+      // Try exact match (e.g. index.html.es-ES or index.html.en)
+      if (stat(lang_path.c_str(), &lang_st) == 0 && S_ISREG(lang_st.st_mode)) {
+        *out_physical_path = lang_path;
+        break;
+      }
+      
+      // Try short match (e.g. es-ES -> es)
+      if (langs[i].lang.length() > 2 && langs[i].lang[2] == '-') {
+        std::string short_lang = langs[i].lang.substr(0, 2);
+        std::string short_lang_path = *out_physical_path + "." + short_lang;
+        if (stat(short_lang_path.c_str(), &lang_st) == 0 && S_ISREG(lang_st.st_mode)) {
+          *out_physical_path = short_lang_path;
+          break;
+        }
       }
     }
   }

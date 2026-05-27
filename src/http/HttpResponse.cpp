@@ -8,6 +8,8 @@
 #include <vector>
 
 #include "config/Context.hpp"
+#include "http/HttpRequest.hpp"
+#include "http/SessionManager.hpp"
 
 static std::string get_reason_phrase(int code) {
   switch (code) {
@@ -98,13 +100,18 @@ std::string HttpResponse::to_string() const {
 }
 
 std::string HttpResponse::_get_default_error_html(
-    int code, const std::string& phrase) const {
+    int code, const std::string& phrase, const std::string& username) const {
   std::stringstream ss;
-  ss << "<html><body><h1>" << code << " " << phrase << "</h1></body></html>";
+  ss << "<html><body><h1>" << code << " " << phrase << "</h1>";
+  if (!username.empty()) {
+    ss << "<p>Lo sentimos, <b>" << username << "</b>, este recurso no existe en el servidor.</p>";
+  }
+  ss << "</body></html>";
   return ss.str();
 }
 
-void HttpResponse::generate_error_response(int code, const Context* ctx) {
+void HttpResponse::generate_error_response(int code, const Context* ctx,
+                                           const HttpRequest* req) {
   std::string phrase = get_reason_phrase(code);
 
   if (phrase == "Internal Server Error" && code != 500) {
@@ -112,6 +119,18 @@ void HttpResponse::generate_error_response(int code, const Context* ctx) {
   }
 
   set_status(code, phrase);
+
+  std::string username = "";
+  if (req) {
+    const std::map<std::string, std::string>& cookies = req->get_cookies();
+    std::map<std::string, std::string>::const_iterator it = cookies.find("session_id");
+    if (it != cookies.end()) {
+      SessionData* sdata = SessionManager::get_instance().get_session(it->second);
+      if (sdata) {
+        username = sdata->username;
+      }
+    }
+  }
 
   if (ctx) {
     const std::map<int, std::string>& err_pages = ctx->get_error_pages();
@@ -143,7 +162,7 @@ void HttpResponse::generate_error_response(int code, const Context* ctx) {
     }
   }
 
-  std::string body = _get_default_error_html(code, phrase);
+  std::string body = _get_default_error_html(code, phrase, username);
   set_body(body);
 
   std::stringstream ss;

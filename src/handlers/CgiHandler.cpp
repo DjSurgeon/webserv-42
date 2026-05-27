@@ -20,6 +20,7 @@
 #include <vector>
 
 #include "http/HttpResponse.hpp"
+#include "http/SessionManager.hpp"
 
 // -----------------------------------------------------------------------------
 // Orthodox Canonical Form
@@ -142,6 +143,10 @@ bool CgiHandler::parse_cgi_output(const std::string& raw_output,
         res->set_status(code, phrase);
       } else if (lower_key == "set-cookie") {
         res->add_cookie(value);
+      } else if (lower_key == "x-create-session") {
+        std::string new_session =
+            SessionManager::get_instance().create_session(value);
+        res->add_cookie("session_id", new_session, "Path=/");
       } else {
         res->add_header(key, value);
       }
@@ -316,6 +321,18 @@ std::vector<std::string> CgiHandler::_build_env_vector(
   _add_core_variables(&env, req);
   _add_query_string(&env, req.get_uri());
   _add_custom_headers(&env, req.get_headers());
+
+  // Authentication Bridge
+  const std::map<std::string, std::string>& cookies = req.get_cookies();
+  std::map<std::string, std::string>::const_iterator cookie_it =
+      cookies.find("session_id");
+  if (cookie_it != cookies.end()) {
+    SessionData* sdata =
+        SessionManager::get_instance().get_session(cookie_it->second);
+    if (sdata != NULL) {
+      env.push_back("AUTH_USER=" + sdata->username);
+    }
+  }
 
   return env;
 }

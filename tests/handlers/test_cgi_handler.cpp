@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "handlers/CgiHandler.hpp"
+#include "http/SessionManager.hpp"
 
 // ANSI Color codes for pretty output
 #define RED "\033[31m"
@@ -71,6 +72,20 @@ void test_cgi_env_generation() {
   // 3. ASSERT
   assert(has_env(env, "QUERY_STRING="));
   print_result("test_cgi_env_no_query_string", true);
+
+  // 1. ARRANGE (Case with AUTH_USER injection)
+  {
+    std::string sid =
+        SessionManager::get_instance().create_session("admin_user");
+    req.add_cookie("session_id", sid);
+
+    // 2. ACT
+    env = handler._build_env_vector(req, NULL);
+
+    // 3. ASSERT
+    assert(has_env(env, "AUTH_USER=admin_user"));
+    print_result("test_cgi_auth_user_injection", true);
+  }
 }
 
 void test_cgi_env_allocation() {
@@ -302,6 +317,31 @@ void test_cgi_output_parsing() {
     assert(res_str.find("Set-Cookie: session=xyz; Path=/; HttpOnly; Secure; "
                         "SameSite=Strict") != std::string::npos);
     print_result("  -> Complex Cookies with Options", true);
+  }
+
+  // Case G: Magic Directive X-Create-Session
+  {
+    HttpResponse res;
+    std::string raw = "X-Create-Session: magic_user\n\nDone";
+    handler.parse_cgi_output(raw, &res);
+    std::string res_str = res.to_string();
+
+    // 1. Verify Set-Cookie header was generated
+    size_t cookie_pos = res_str.find("Set-Cookie: session_id=");
+    assert(cookie_pos != std::string::npos);
+
+    // 2. Extract session ID from response string
+    size_t start = cookie_pos + std::string("Set-Cookie: session_id=").length();
+    size_t end = res_str.find(';', start);
+    if (end == std::string::npos) end = res_str.find("\r\n", start);
+    std::string sid = res_str.substr(start, end - start);
+
+    // 3. Verify session exists in RAM for that user
+    SessionData* data = SessionManager::get_instance().get_session(sid);
+    assert(data != NULL);
+    assert(data->username == "magic_user");
+
+    print_result("  -> Magic Directive X-Create-Session", true);
   }
 
   print_result("test_cgi_output_parsing", true);

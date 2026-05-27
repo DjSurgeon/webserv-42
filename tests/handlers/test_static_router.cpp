@@ -176,6 +176,43 @@ void test_path_traversal_attack() {
   }
 }
 
+void test_i18n_content_negotiation() {
+  std::cout << "[Test] Verifying i18n content negotiation..." << std::endl;
+  StaticRouter router;
+  LocationConfig loc;
+  loc.set_root("www/eval/html");
+
+  // Case 1: Spanish preference
+  {
+    HttpRequest req;
+    req.set_method("GET");
+    req.set_uri("/index.html");
+    req.add_header("Accept-Language", "es-ES, es;q=0.9, en;q=0.8");
+    HttpResponse res;
+    std::string path;
+    router.process_route(req, NULL, &loc, &res, &path, NULL);
+    bool pass = (path == "www/eval/html/index.html.es");
+    if (!pass) std::cerr << "Expected index.html.es, got " << path << std::endl;
+    print_result("  -> Spanish preference", pass);
+  }
+
+  // Case 2: English preference
+  {
+    HttpRequest req;
+    req.set_method("GET");
+    req.set_uri("/index.html");
+    req.add_header("Accept-Language", "en, es;q=0.5");
+    HttpResponse res;
+    std::string path;
+    router.process_route(req, NULL, &loc, &res, &path, NULL);
+    bool pass = (path == "www/eval/html/index.html.en");
+    if (!pass) std::cerr << "Expected index.html.en, got " << path << std::endl;
+    print_result("  -> English preference", pass);
+  }
+
+  print_result("test_i18n_content_negotiation", true);
+}
+
 int main() {
   std::cout << "=== STARTING STATIC ROUTER TESTS ===\n" << std::endl;
 
@@ -184,7 +221,10 @@ int main() {
   test_method_validation();
   std::cout << std::endl;
   test_path_translation();
+  std::cout << std::endl;
   test_path_traversal_attack();
+  std::cout << std::endl;
+  test_i18n_content_negotiation();
   std::cout << std::endl;
   test_stress();
 

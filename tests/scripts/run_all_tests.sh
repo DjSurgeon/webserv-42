@@ -39,7 +39,7 @@ run_test "test_http_request" "src/http/HttpRequest.cpp" "tests/http/test_http_re
 run_test "test_http_cookies" "src/http/HttpRequest.cpp" "tests/http/test_http_cookies.cpp"
 run_test "test_session_manager" "src/http/SessionManager.cpp" "tests/http/test_session_manager.cpp"
 run_test "test_session_gc" "src/config/Context.cpp src/config/LocationConfig.cpp src/config/ServerConfig.cpp src/network/ClientSocket.cpp src/http/HttpRequest.cpp src/http/HttpResponse.cpp src/http/RequestParser.cpp src/http/SessionManager.cpp src/network/EventLoop.cpp src/handlers/StaticRouter.cpp src/handlers/CgiHandler.cpp src/handlers/FileHandler.cpp tests/integration/test_globals.cpp" "tests/integration/test_session_gc.cpp"
-run_test "test_http_response" "src/config/Context.cpp src/http/HttpResponse.cpp" "tests/http/test_http_response.cpp"
+run_test "test_http_response" "src/config/Context.cpp src/http/HttpResponse.cpp src/http/HttpRequest.cpp src/http/SessionManager.cpp" "tests/http/test_http_response.cpp"
 run_test "test_parser_skeleton" "src/http/HttpRequest.cpp src/http/RequestParser.cpp" "tests/http/test_parser_skeleton.cpp"
 run_test "test_parser_method" "src/http/HttpRequest.cpp src/http/RequestParser.cpp" "tests/http/test_parser_method.cpp"
 run_test "test_parser_uri" "src/http/HttpRequest.cpp src/http/RequestParser.cpp" "tests/http/test_parser_uri.cpp"

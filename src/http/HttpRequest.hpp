@@ -4,6 +4,12 @@
 
 #include <map>
 #include <string>
+#include <vector>
+
+struct LanguageWeight {
+  std::string lang;
+  double q;
+};
 
 /**
  * @brief A passive data structure to store parsed HTTP elements.
@@ -26,6 +32,7 @@ class HttpRequest {
   const std::string& get_body() const;
   const std::map<std::string, std::string>& get_headers() const;
   const std::map<std::string, std::string>& get_cookies() const;
+  std::vector<LanguageWeight> get_accepted_languages() const;
 
   // Setters/mutators for the parser
   void set_method(const std::string& method);
@@ -33,6 +40,7 @@ class HttpRequest {
   void set_version(const std::string& version);
   void set_body(const std::string& body);
   void add_header(const std::string& key, const std::string& value);
+  void add_cookie(const std::string& key, const std::string& value);
 
   // Reset method
   void clear();
