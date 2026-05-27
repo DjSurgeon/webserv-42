@@ -38,6 +38,7 @@ SRCS		= $(SRC_DIR)/main.cpp \
 			  $(SRC_DIR)/http/HttpRequest.cpp \
 			  $(SRC_DIR)/http/HttpResponse.cpp \
 			  $(SRC_DIR)/http/RequestParser.cpp \
+			  $(SRC_DIR)/http/SessionManager.cpp \
 			  $(SRC_DIR)/network/ListeningSocket.cpp \
 			  $(SRC_DIR)/network/ClientSocket.cpp \
 			  $(SRC_DIR)/network/EventLoop.cpp
@@ -54,6 +55,7 @@ HDRS		= $(SRC_DIR)/config/Context.hpp \
 			  $(SRC_DIR)/http/HttpRequest.hpp \
 			  $(SRC_DIR)/http/HttpResponse.hpp \
 			  $(SRC_DIR)/http/RequestParser.hpp \
+			  $(SRC_DIR)/http/SessionManager.hpp \
 			  $(SRC_DIR)/network/ListeningSocket.hpp \
 			  $(SRC_DIR)/network/ClientSocket.hpp \
 			  $(SRC_DIR)/network/EventLoop.hpp
@@ -76,6 +78,7 @@ LIB_SRCS	= $(SRC_DIR)/config/Context.cpp \
 			  $(SRC_DIR)/http/HttpRequest.cpp \
 			  $(SRC_DIR)/http/HttpResponse.cpp \
 			  $(SRC_DIR)/http/RequestParser.cpp \
+			  $(SRC_DIR)/http/SessionManager.cpp \
 			  $(SRC_DIR)/network/ListeningSocket.cpp \
 			  $(SRC_DIR)/network/ClientSocket.cpp \
 			  $(SRC_DIR)/network/EventLoop.cpp \
