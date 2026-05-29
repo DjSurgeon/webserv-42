@@ -9,7 +9,6 @@
 
 class ConfigParser {
  public:
-  // Orthodox Canonical Form
   ConfigParser();
   explicit ConfigParser(const std::string& filename);
   ConfigParser(const ConfigParser& other);

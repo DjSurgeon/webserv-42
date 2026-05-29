@@ -33,6 +33,10 @@ SRCS		= $(SRC_DIR)/main.cpp \
 			  $(SRC_DIR)/config/LocationConfig.cpp \
 			  $(SRC_DIR)/config/ServerConfig.cpp \
 			  $(SRC_DIR)/config/ConfigParser.cpp \
+			  $(SRC_DIR)/config/ConfigParser_utils.cpp \
+			  $(SRC_DIR)/config/ConfigParser_server.cpp \
+			  $(SRC_DIR)/config/ConfigParser_location.cpp \
+			  $(SRC_DIR)/config/ConfigParser_context.cpp \
 			  $(SRC_DIR)/handlers/StaticRouter.cpp \
 			  $(SRC_DIR)/handlers/FileHandler.cpp \
 			  $(SRC_DIR)/handlers/CgiHandler.cpp \
@@ -81,6 +85,10 @@ LIB_SRCS	= $(SRC_DIR)/config/Context.cpp \
 			  $(SRC_DIR)/config/LocationConfig.cpp \
 			  $(SRC_DIR)/config/ServerConfig.cpp \
 			  $(SRC_DIR)/config/ConfigParser.cpp \
+			  $(SRC_DIR)/config/ConfigParser_utils.cpp \
+			  $(SRC_DIR)/config/ConfigParser_server.cpp \
+			  $(SRC_DIR)/config/ConfigParser_location.cpp \
+			  $(SRC_DIR)/config/ConfigParser_context.cpp \
 			  $(SRC_DIR)/handlers/StaticRouter.cpp \
 			  $(SRC_DIR)/handlers/FileHandler.cpp \
 			  $(SRC_DIR)/handlers/CgiHandler.cpp \

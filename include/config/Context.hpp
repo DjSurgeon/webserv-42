@@ -1,6 +1,6 @@
 // Copyright 2026 serjimen vja-nie dlesieur
-#ifndef SRC_CONFIG_CONTEXT_HPP_
-#define SRC_CONFIG_CONTEXT_HPP_
+#ifndef INCLUDE_CONFIG_CONTEXT_HPP_
+#define INCLUDE_CONFIG_CONTEXT_HPP_
 
 #include <cstddef>
 #include <map>
@@ -43,4 +43,4 @@ class Context {
   bool _autoindex;
 };
 
-#endif  // SRC_CONFIG_CONTEXT_HPP_
+#endif  // INCLUDE_CONFIG_CONTEXT_HPP_
