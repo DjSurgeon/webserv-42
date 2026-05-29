@@ -42,7 +42,7 @@ int main(int argc, char** argv) {
 
     std::map<int, std::vector<ServerConfig> > servers_by_port;
     for (size_t i = 0; i < servers.size(); ++i) {
-      servers_by_port[servers[i].get_port()].push_back(servers[i]);
+      servers_by_port[servers[i].getPort()].push_back(servers[i]);
     }
 
     EventLoop loop;

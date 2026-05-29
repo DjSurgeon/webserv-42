@@ -87,7 +87,7 @@ void ConfigParser::_handleLocationDirective(
   loc.setAutoindex(server->getAutoindex());
 
   _parseLocationBlock(tokens, i, &loc);
-  server->add_location(loc);
+  server->addLocation(loc);
 }
 
 void ConfigParser::_handleListenDirective(
@@ -126,8 +126,8 @@ void ConfigParser::_handleListenDirective(
                              "' out of range (1-65535)");
   }
 
-  server->set_host(host);
-  server->set_port(static_cast<int>(portVal));
+  server->setHost(host);
+  server->setPort(static_cast<int>(portVal));
 
   (*i)++;
   if (*i >= tokens.size() || tokens[*i] != ";") {
@@ -140,7 +140,7 @@ void ConfigParser::_handleServerNameDirective(
     const std::vector<std::string>& tokens, size_t* i, ServerConfig* server) {
   (*i)++;
   while (*i < tokens.size() && tokens[*i] != ";") {
-    server->add_server_name(tokens[*i]);
+    server->addServerName(tokens[*i]);
     (*i)++;
   }
   if (*i >= tokens.size() || tokens[*i] != ";") {

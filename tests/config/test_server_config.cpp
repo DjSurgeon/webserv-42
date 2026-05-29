@@ -26,10 +26,10 @@ void test_initial_state() {
   ServerConfig srv;
 
   bool pass = true;
-  if (srv.get_port() != 8080) pass = false;
-  if (srv.get_host() != "127.0.0.1") pass = false;
-  if (!srv.get_server_names().empty()) pass = false;
-  if (!srv.get_locations().empty()) pass = false;
+  if (srv.getPort() != 8080) pass = false;
+  if (srv.getHost() != "127.0.0.1") pass = false;
+  if (!srv.getServerNames().empty()) pass = false;
+  if (!srv.getLocations().empty()) pass = false;
 
   // Check inherited Context defaults
   if (!srv.getRoot().empty()) pass = false;
@@ -41,25 +41,25 @@ void test_setters_and_getters() {
   std::cout << "[Test] Verifying setters and getters..." << std::endl;
   ServerConfig srv;
 
-  srv.set_port(443);
-  srv.set_host("0.0.0.0");
-  srv.add_server_name("example.com");
-  srv.add_server_name("www.example.com");
+  srv.setPort(443);
+  srv.setHost("0.0.0.0");
+  srv.addServerName("example.com");
+  srv.addServerName("www.example.com");
 
   LocationConfig loc;
   loc.setPath("/");
-  srv.add_location(loc);
+  srv.addLocation(loc);
 
   bool pass = true;
-  if (srv.get_port() != 443) pass = false;
-  if (srv.get_host() != "0.0.0.0") pass = false;
+  if (srv.getPort() != 443) pass = false;
+  if (srv.getHost() != "0.0.0.0") pass = false;
 
-  const std::vector<std::string>& names = srv.get_server_names();
+  const std::vector<std::string>& names = srv.getServerNames();
   if (names.size() != 2 || names[0] != "example.com" ||
       names[1] != "www.example.com")
     pass = false;
 
-  const std::vector<LocationConfig>& locs = srv.get_locations();
+  const std::vector<LocationConfig>& locs = srv.getLocations();
   if (locs.size() != 1 || locs[0].getPath() != "/") pass = false;
 
   print_result("test_setters_and_getters", pass);
@@ -70,36 +70,36 @@ void test_canonical_form() {
                "objects)..."
             << std::endl;
   ServerConfig srv1;
-  srv1.set_port(80);
-  srv1.add_server_name("orig");
+  srv1.setPort(80);
+  srv1.addServerName("orig");
 
   LocationConfig loc;
   loc.setPath("/api");
-  srv1.add_location(loc);
+  srv1.addLocation(loc);
   srv1.setRoot("/orig/root");
 
   // Copy constructor
   ServerConfig srv2(srv1);
   bool copy_pass =
-      (srv2.get_port() == 80 && srv2.get_server_names().size() == 1 &&
-       srv2.get_locations().size() == 1 &&
-       srv2.get_locations()[0].getPath() == "/api" &&
+      (srv2.getPort() == 80 && srv2.getServerNames().size() == 1 &&
+       srv2.getLocations().size() == 1 &&
+       srv2.getLocations()[0].getPath() == "/api" &&
        srv2.getRoot() == "/orig/root");
 
   // Assignment
   ServerConfig srv3;
   srv3 = srv1;
   bool assign_pass =
-      (srv3.get_port() == 80 && srv3.get_server_names().size() == 1 &&
-       srv3.get_locations().size() == 1 &&
-       srv3.get_locations()[0].getPath() == "/api");
+      (srv3.getPort() == 80 && srv3.getServerNames().size() == 1 &&
+       srv3.getLocations().size() == 1 &&
+       srv3.getLocations()[0].getPath() == "/api");
 
   // Verify deep copy of locations
   loc.setPath("/changed");
-  srv1.set_locations(std::vector<LocationConfig>());
-  srv1.add_location(loc);
+  srv1.setLocations(std::vector<LocationConfig>());
+  srv1.addLocation(loc);
 
-  bool deep_pass = (srv2.get_locations()[0].getPath() == "/api");
+  bool deep_pass = (srv2.getLocations()[0].getPath() == "/api");
 
   print_result("test_canonical_form", copy_pass && assign_pass && deep_pass);
 }
@@ -114,11 +114,11 @@ void test_edge_cases() {
     std::stringstream ss;
     ss << "/path-" << i;
     loc.setPath(ss.str());
-    srv.add_location(loc);
+    srv.addLocation(loc);
   }
 
-  bool massive_pass = (srv.get_locations().size() == 500 &&
-                       srv.get_locations().back().getPath() == "/path-499");
+  bool massive_pass = (srv.getLocations().size() == 500 &&
+                       srv.getLocations().back().getPath() == "/path-499");
 
   print_result("test_edge_cases", massive_pass);
 }
@@ -127,19 +127,19 @@ void test_stress() {
   std::cout << "[Test] Stress test: 30,000 deep instantiations..." << std::endl;
   for (int i = 0; i < 30000; ++i) {
     ServerConfig srv;
-    srv.set_port(i % 65535);
+    srv.setPort(i % 65535);
 
     for (int j = 0; j < 5; ++j) {
       LocationConfig loc;
       loc.setPath("/loc");
-      srv.add_location(loc);
+      srv.addLocation(loc);
     }
 
     ServerConfig copy(srv);
     ServerConfig assign;
     assign = copy;
 
-    if (assign.get_locations().size() != 5) {
+    if (assign.getLocations().size() != 5) {
       print_result("test_stress", false);
       return;
     }
@@ -155,46 +155,46 @@ void test_longest_prefix_match() {
   // Setup locations
   LocationConfig loc_root;
   loc_root.setPath("/");
-  srv.add_location(loc_root);
+  srv.addLocation(loc_root);
 
   LocationConfig loc_api;
   loc_api.setPath("/api");
-  srv.add_location(loc_api);
+  srv.addLocation(loc_api);
 
   LocationConfig loc_users;
   loc_users.setPath("/api/users");
-  srv.add_location(loc_users);
+  srv.addLocation(loc_users);
 
   LocationConfig loc_images;
   loc_images.setPath("/images/");
-  srv.add_location(loc_images);
+  srv.addLocation(loc_images);
 
   bool pass = true;
 
   // 1. Exact Match
-  const LocationConfig* res = srv.find_location("/api");
+  const LocationConfig* res = srv.findLocation("/api");
   if (!res || res->getPath() != "/api") pass = false;
 
   // 2. Prefix Match
-  res = srv.find_location("/api/docs");
+  res = srv.findLocation("/api/docs");
   if (!res || res->getPath() != "/api") pass = false;
 
   // 3. Longest Prefix Wins
-  res = srv.find_location("/api/users/profile");
+  res = srv.findLocation("/api/users/profile");
   if (!res || res->getPath() != "/api/users") pass = false;
 
   // 4. Strict Boundary Check (Failure Case)
   // "/api_v2" starts with "/api" but is not a subpath.
   // Should match root "/" or NULL.
-  res = srv.find_location("/api_v2");
+  res = srv.findLocation("/api_v2");
   if (!res || res->getPath() != "/") pass = false;
 
   // 5. Trailing Slash Handling
-  res = srv.find_location("/images/logo.png");
+  res = srv.findLocation("/images/logo.png");
   if (!res || res->getPath() != "/images/") pass = false;
 
   // 6. Root Fallback
-  res = srv.find_location("/something_else");
+  res = srv.findLocation("/something_else");
   if (!res || res->getPath() != "/") pass = false;
 
   print_result("test_longest_prefix_match", pass);

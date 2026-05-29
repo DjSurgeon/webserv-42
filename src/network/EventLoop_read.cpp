@@ -38,7 +38,7 @@ const ServerConfig* EventLoop::_resolveServerConfig(
   }
 
   for (size_t k = 0; k < configs.size(); ++k) {
-    const std::vector<std::string>& names = configs[k].get_server_names();
+    const std::vector<std::string>& names = configs[k].getServerNames();
     bool matched = false;
     for (size_t n = 0; n < names.size(); ++n) {
       if (names[n] == host_value) {
@@ -128,7 +128,7 @@ void EventLoop::_dispatchRequest(const HttpRequest& req,
   }
 
   const LocationConfig* matched_loc =
-      matched_server->find_location(req.get_uri());
+      matched_server->findLocation(req.get_uri());
   const Context* active_ctx = matched_loc
                                   ? static_cast<const Context*>(matched_loc)
                                   : static_cast<const Context*>(matched_server);

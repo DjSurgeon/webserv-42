@@ -71,10 +71,10 @@ void test_block_parsing_valid() {
     // server{location/api{}}"
     bool pass = (servers.size() == 2);
     if (pass) {
-      if (servers[0].get_locations().size() != 1) pass = false;
-      if (servers[0].get_locations()[0].getPath() != "/") pass = false;
-      if (servers[1].get_locations().size() != 1) pass = false;
-      if (servers[1].get_locations()[0].getPath() != "/api") pass = false;
+      if (servers[0].getLocations().size() != 1) pass = false;
+      if (servers[0].getLocations()[0].getPath() != "/") pass = false;
+      if (servers[1].getLocations().size() != 1) pass = false;
+      if (servers[1].getLocations()[0].getPath() != "/api") pass = false;
     }
 
     print_result("test_block_parsing_valid", pass);

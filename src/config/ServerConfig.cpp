@@ -10,7 +10,7 @@ ServerConfig::ServerConfig(const ServerConfig& other)
     : Context(other),
       _port(other._port),
       _host(other._host),
-      _server_names(other._server_names),
+      _serverNames(other._serverNames),
       _locations(other._locations) {}
 
 ServerConfig& ServerConfig::operator=(const ServerConfig& other) {
@@ -18,7 +18,7 @@ ServerConfig& ServerConfig::operator=(const ServerConfig& other) {
     Context::operator=(other);
     _port = other._port;
     _host = other._host;
-    _server_names = other._server_names;
+    _serverNames = other._serverNames;
     _locations = other._locations;
   }
   return *this;
@@ -26,49 +26,47 @@ ServerConfig& ServerConfig::operator=(const ServerConfig& other) {
 
 ServerConfig::~ServerConfig() {}
 
-int ServerConfig::get_port() const {
+int ServerConfig::getPort() const {
   return _port;
 }
 
-const std::string& ServerConfig::get_host() const {
+const std::string& ServerConfig::getHost() const {
   return _host;
 }
 
-const std::vector<std::string>& ServerConfig::get_server_names() const {
-  return _server_names;
+const std::vector<std::string>& ServerConfig::getServerNames() const {
+  return _serverNames;
 }
 
-const std::vector<LocationConfig>& ServerConfig::get_locations() const {
+const std::vector<LocationConfig>& ServerConfig::getLocations() const {
   return _locations;
 }
 
-void ServerConfig::set_port(int port) {
+void ServerConfig::setPort(int port) {
   _port = port;
 }
 
-void ServerConfig::set_host(const std::string& host) {
+void ServerConfig::setHost(const std::string& host) {
   _host = host;
 }
 
-void ServerConfig::set_server_names(
-    const std::vector<std::string>& server_names) {
-  _server_names = server_names;
+void ServerConfig::setServerNames(const std::vector<std::string>& serverNames) {
+  _serverNames = serverNames;
 }
 
-void ServerConfig::add_server_name(const std::string& server_name) {
-  _server_names.push_back(server_name);
+void ServerConfig::addServerName(const std::string& serverName) {
+  _serverNames.push_back(serverName);
 }
 
-void ServerConfig::set_locations(const std::vector<LocationConfig>& locations) {
+void ServerConfig::setLocations(const std::vector<LocationConfig>& locations) {
   _locations = locations;
 }
 
-void ServerConfig::add_location(const LocationConfig& loc) {
+void ServerConfig::addLocation(const LocationConfig& loc) {
   _locations.push_back(loc);
 }
 
-const LocationConfig* ServerConfig::find_location(
-    const std::string& uri) const {
+const LocationConfig* ServerConfig::findLocation(const std::string& uri) const {
   const LocationConfig* best_match = NULL;
   size_t max_match_length = 0;
 

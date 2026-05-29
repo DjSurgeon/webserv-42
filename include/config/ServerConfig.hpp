@@ -1,6 +1,6 @@
 // Copyright 2026 serjimen vja-nie dlesieur
-#ifndef SRC_CONFIG_SERVERCONFIG_HPP_
-#define SRC_CONFIG_SERVERCONFIG_HPP_
+#ifndef INCLUDE_CONFIG_SERVERCONFIG_HPP_
+#define INCLUDE_CONFIG_SERVERCONFIG_HPP_
 
 #include <string>
 #include <vector>
@@ -17,25 +17,25 @@ class ServerConfig : public Context {
   ~ServerConfig();
 
   // Getters
-  int get_port() const;
-  const std::string& get_host() const;
-  const std::vector<std::string>& get_server_names() const;
-  const std::vector<LocationConfig>& get_locations() const;
-  const LocationConfig* find_location(const std::string& uri) const;
+  int getPort() const;
+  const std::string& getHost() const;
+  const std::vector<std::string>& getServerNames() const;
+  const std::vector<LocationConfig>& getLocations() const;
+  const LocationConfig* findLocation(const std::string& uri) const;
 
   // Setters
-  void set_port(int port);
-  void set_host(const std::string& host);
-  void set_server_names(const std::vector<std::string>& server_names);
-  void add_server_name(const std::string& server_name);
-  void set_locations(const std::vector<LocationConfig>& locations);
-  void add_location(const LocationConfig& loc);
+  void setPort(int port);
+  void setHost(const std::string& host);
+  void setServerNames(const std::vector<std::string>& serverNames);
+  void addServerName(const std::string& serverName);
+  void setLocations(const std::vector<LocationConfig>& locations);
+  void addLocation(const LocationConfig& loc);
 
  private:
   int _port;
   std::string _host;
-  std::vector<std::string> _server_names;
+  std::vector<std::string> _serverNames;
   std::vector<LocationConfig> _locations;
 };
 
-#endif  // SRC_CONFIG_SERVERCONFIG_HPP_
+#endif  // INCLUDE_CONFIG_SERVERCONFIG_HPP_
