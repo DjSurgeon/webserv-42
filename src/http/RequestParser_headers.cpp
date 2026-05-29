@@ -1,7 +1,7 @@
 // Copyright 2026 serjimen vja-nie dlesieur
-#include "http/RequestParser.hpp"
-
 #include <string>
+
+#include "http/RequestParser.hpp"
 
 /**
  * @brief Helper utility to check if a character

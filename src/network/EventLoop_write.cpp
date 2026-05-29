@@ -1,7 +1,10 @@
 // Copyright 2026 serjimen vja-nie dlesieur
-#include "network/EventLoop.hpp"
-
 #include <sys/socket.h>
+
+#include <map>
+#include <string>
+
+#include "network/EventLoop.hpp"
 
 /**
  * @brief Handles readiness to write data to a client socket.

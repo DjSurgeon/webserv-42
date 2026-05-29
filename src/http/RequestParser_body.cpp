@@ -1,9 +1,9 @@
 // Copyright 2026 serjimen vja-nie dlesieur
-#include "http/RequestParser.hpp"
-
 #include <map>
 #include <sstream>
 #include <string>
+
+#include "http/RequestParser.hpp"
 
 /**
  * @brief Decides transition to STATE_BODY or

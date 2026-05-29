@@ -1,10 +1,12 @@
 // Copyright 2026 serjimen vja-nie dlesieur
-#include "network/EventLoop.hpp"
-
 #include <sys/socket.h>
 #include <unistd.h>
 
 #include <iostream>
+#include <map>
+#include <vector>
+
+#include "network/EventLoop.hpp"
 
 /**
  * @brief Adds a server socket to the monitoring vector.

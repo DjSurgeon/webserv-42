@@ -60,7 +60,7 @@ bool StaticRouter::_check_null_context(const ServerConfig* server,
 bool StaticRouter::_validate_method(const HttpRequest& req, const Context* ctx,
                                     HttpResponse* res) const {
   const std::string& method = req.get_method();
-  const std::vector<std::string>& allowed_methods = ctx->get_allowed_methods();
+  const std::vector<std::string>& allowed_methods = ctx->getAllowedMethods();
   bool method_allowed = false;
 
   if (allowed_methods.empty()) {
@@ -89,7 +89,7 @@ bool StaticRouter::_validate_method(const HttpRequest& req, const Context* ctx,
 bool StaticRouter::_validate_payload_size(const HttpRequest& req,
                                           const Context* ctx,
                                           HttpResponse* res) const {
-  size_t max_size = ctx->get_client_max_body_size();
+  size_t max_size = ctx->getClientMaxBodySize();
 
   // 0 is interpreted as unlimited body size
   if (max_size > 0 && req.get_body().length() > max_size) {
@@ -107,7 +107,7 @@ void StaticRouter::_translate_path(const HttpRequest& req, const Context* ctx,
   if (!out_physical_path) {
     return;
   }
-  const std::string& root = ctx->get_root();
+  const std::string& root = ctx->getRoot();
   const std::string& uri = req.get_uri();
 
   std::string clean_root = root;
@@ -125,7 +125,7 @@ void StaticRouter::_translate_path(const HttpRequest& req, const Context* ctx,
 
   struct stat st;
   if (stat(out_physical_path->c_str(), &st) == 0 && S_ISDIR(st.st_mode)) {
-    const std::vector<std::string>& index_files = ctx->get_index_files();
+    const std::vector<std::string>& index_files = ctx->getIndexFiles();
     for (size_t i = 0; i < index_files.size(); ++i) {
       std::string base_path = *out_physical_path;
       if (!base_path.empty() && base_path[base_path.length() - 1] != '/') {

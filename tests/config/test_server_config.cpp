@@ -32,7 +32,7 @@ void test_initial_state() {
   if (!srv.get_locations().empty()) pass = false;
 
   // Check inherited Context defaults
-  if (!srv.get_root().empty()) pass = false;
+  if (!srv.getRoot().empty()) pass = false;
 
   print_result("test_initial_state", pass);
 }
@@ -76,7 +76,7 @@ void test_canonical_form() {
   LocationConfig loc;
   loc.set_path("/api");
   srv1.add_location(loc);
-  srv1.set_root("/orig/root");
+  srv1.setRoot("/orig/root");
 
   // Copy constructor
   ServerConfig srv2(srv1);
@@ -84,7 +84,7 @@ void test_canonical_form() {
       (srv2.get_port() == 80 && srv2.get_server_names().size() == 1 &&
        srv2.get_locations().size() == 1 &&
        srv2.get_locations()[0].get_path() == "/api" &&
-       srv2.get_root() == "/orig/root");
+       srv2.getRoot() == "/orig/root");
 
   // Assignment
   ServerConfig srv3;

@@ -1,15 +1,17 @@
 // Copyright 2026 serjimen vja-nie dlesieur
-#include "network/EventLoop.hpp"
-
 #include <sys/socket.h>
 #include <sys/stat.h>
 
 #include <iostream>
+#include <map>
 #include <sstream>
+#include <string>
+#include <vector>
 
 #include "handlers/CgiHandler.hpp"
 #include "handlers/FileHandler.hpp"
 #include "handlers/StaticRouter.hpp"
+#include "network/EventLoop.hpp"
 
 const ServerConfig* EventLoop::_resolveServerConfig(
     int client_fd, const std::string& host_header) const {
@@ -52,7 +54,7 @@ const ServerConfig* EventLoop::_resolveServerConfig(
 }
 
 bool EventLoop::_handleRedirect(const LocationConfig* loc,
-                                 HttpResponse& res) const {
+                                HttpResponse& res) const {
   if (loc && !loc->get_redirect().empty()) {
     res.set_status(301, "Moved Permanently");
     res.add_header("Location", loc->get_redirect());
@@ -69,7 +71,7 @@ bool EventLoop::_handleRedirect(const LocationConfig* loc,
 }
 
 bool EventLoop::_isCgiRequest(const std::string& physical_path,
-                                const LocationConfig* loc) const {
+                              const LocationConfig* loc) const {
   if (!loc) return false;
 
   if (!loc->get_cgi_path().empty()) {
@@ -93,16 +95,16 @@ bool EventLoop::_isCgiRequest(const std::string& physical_path,
 }
 
 void EventLoop::_executeFileHandler(const HttpRequest& req,
-                                      const Context* active_ctx,
-                                      const std::string& physical_path,
-                                      HttpResponse& res) const {
+                                    const Context* active_ctx,
+                                    const std::string& physical_path,
+                                    HttpResponse& res) const {
   FileHandler file_handler;
   const std::string& method = req.get_method();
 
   if (method == "GET") {
     struct stat st;
     if (stat(physical_path.c_str(), &st) == 0 && S_ISDIR(st.st_mode)) {
-      if (active_ctx->get_autoindex()) {
+      if (active_ctx->getAutoindex()) {
         file_handler.generate_autoindex(physical_path, req.get_uri(), &res,
                                         active_ctx, &req);
       } else {
@@ -119,17 +121,17 @@ void EventLoop::_executeFileHandler(const HttpRequest& req,
 }
 
 void EventLoop::_dispatchRequest(const HttpRequest& req,
-                                  const ServerConfig* matched_server,
-                                  HttpResponse& res) {
+                                 const ServerConfig* matched_server,
+                                 HttpResponse& res) {
   if (!matched_server) {
     return;
   }
 
   const LocationConfig* matched_loc =
       matched_server->find_location(req.get_uri());
-  const Context* active_ctx =
-      matched_loc ? static_cast<const Context*>(matched_loc)
-                  : static_cast<const Context*>(matched_server);
+  const Context* active_ctx = matched_loc
+                                  ? static_cast<const Context*>(matched_loc)
+                                  : static_cast<const Context*>(matched_server);
 
   if (_handleRedirect(matched_loc, res)) {
     return;
@@ -143,7 +145,8 @@ void EventLoop::_dispatchRequest(const HttpRequest& req,
     return;
   }
 
-  std::cout << "EventLoop: Resolved physical path: " << physical_path << std::endl;
+  std::cout << "EventLoop: Resolved physical path: " << physical_path
+            << std::endl;
 
   if (_isCgiRequest(physical_path, matched_loc)) {
     CgiHandler cgi;

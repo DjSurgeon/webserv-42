@@ -40,7 +40,7 @@ void test_method_validation() {
   std::cout << "[Test] Verifying method validation..." << std::endl;
   StaticRouter router;
   LocationConfig loc;
-  loc.set_root("/var/www");
+  loc.setRoot("/var/www");
 
   // Test 1: Default GET allowed
   {
@@ -58,8 +58,8 @@ void test_method_validation() {
 
   // Test 2: Custom allowed methods
   {
-    loc.add_allowed_method("POST");
-    loc.add_allowed_method("DELETE");
+    loc.addAllowedMethod("POST");
+    loc.addAllowedMethod("DELETE");
 
     HttpRequest req;
     req.set_method("POST");
@@ -82,7 +82,7 @@ void test_path_translation() {
   // Test 1: Standard join
   {
     LocationConfig loc;
-    loc.set_root("/var/www");
+    loc.setRoot("/var/www");
     HttpRequest req;
     req.set_method("GET");
     req.set_uri("/index.html");
@@ -95,7 +95,7 @@ void test_path_translation() {
   // Test 2: Trailing slash in root
   {
     LocationConfig loc;
-    loc.set_root("/var/www/");
+    loc.setRoot("/var/www/");
     HttpRequest req;
     req.set_method("GET");
     req.set_uri("/index.html");
@@ -108,7 +108,7 @@ void test_path_translation() {
   // Test 3: No root
   {
     LocationConfig loc;
-    loc.set_root("");
+    loc.setRoot("");
     HttpRequest req;
     req.set_method("GET");
     req.set_uri("/css/style.css");
@@ -125,8 +125,8 @@ void test_stress() {
   std::cout << "[Test] Stress test: 100,000 routing operations..." << std::endl;
   StaticRouter router;
   LocationConfig loc;
-  loc.set_root("/very/long/path/to/some/deep/directory/structure");
-  loc.add_allowed_method("GET");
+  loc.setRoot("/very/long/path/to/some/deep/directory/structure");
+  loc.addAllowedMethod("GET");
 
   HttpRequest req;
   req.set_method("GET");
@@ -149,7 +149,7 @@ void test_path_traversal_attack() {
   // 1. ARRANGE
   StaticRouter router;
   LocationConfig loc;
-  loc.set_root("/var/www");
+  loc.setRoot("/var/www");
   HttpRequest req;
   req.set_method("GET");
   req.set_uri("/../../../../etc/passwd");
@@ -180,7 +180,7 @@ void test_i18n_content_negotiation() {
   std::cout << "[Test] Verifying i18n content negotiation..." << std::endl;
   StaticRouter router;
   LocationConfig loc;
-  loc.set_root("www/eval/html");
+  loc.setRoot("www/eval/html");
 
   // Case 1: Spanish preference
   {

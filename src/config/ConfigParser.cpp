@@ -80,11 +80,11 @@ void ConfigParser::_handleLocationDirective(
     const std::vector<std::string>& tokens, size_t* i, ServerConfig* server) {
   LocationConfig loc;
   // Inherit context defaults
-  loc.set_root(server->get_root());
-  loc.set_index_files(server->get_index_files());
-  loc.set_error_pages(server->get_error_pages());
-  loc.set_client_max_body_size(server->get_client_max_body_size());
-  loc.set_autoindex(server->get_autoindex());
+  loc.setRoot(server->getRoot());
+  loc.setIndexFiles(server->getIndexFiles());
+  loc.setErrorPages(server->getErrorPages());
+  loc.setClientMaxBodySize(server->getClientMaxBodySize());
+  loc.setAutoindex(server->getAutoindex());
 
   _parseLocationBlock(tokens, i, &loc);
   server->add_location(loc);
@@ -150,7 +150,7 @@ void ConfigParser::_handleServerNameDirective(
 }
 
 void ConfigParser::_parseServerBlock(const std::vector<std::string>& tokens,
-                                       size_t* i, ServerConfig* server) {
+                                     size_t* i, ServerConfig* server) {
   if (!i || !server) {
     return;
   }
@@ -188,7 +188,7 @@ void ConfigParser::_handleAllowedMethodsDirective(
     LocationConfig* location) {
   (*i)++;
   while (*i < tokens.size() && tokens[*i] != ";") {
-    location->add_allowed_method(tokens[*i]);
+    location->addAllowedMethod(tokens[*i]);
     (*i)++;
   }
   if (*i >= tokens.size() || tokens[*i] != ";") {
@@ -243,7 +243,7 @@ void ConfigParser::_handleRedirectDirective(
 }
 
 void ConfigParser::_parseLocationBlock(const std::vector<std::string>& tokens,
-                                         size_t* i, LocationConfig* location) {
+                                       size_t* i, LocationConfig* location) {
   if (!i || !location) {
     return;
   }
@@ -301,7 +301,7 @@ bool ConfigParser::_parseContextDirectives(
     if (tokens[*i + 2] != ";") {
       throw std::runtime_error("Syntax error: missing ';' after 'root' value");
     }
-    ctx->set_root(tokens[*i + 1]);
+    ctx->setRoot(tokens[*i + 1]);
     *i += 3;
     return true;
   }
@@ -309,7 +309,7 @@ bool ConfigParser::_parseContextDirectives(
   if (key == "index") {
     (*i)++;
     while (*i < tokens.size() && tokens[*i] != ";") {
-      ctx->add_index_file(tokens[*i]);
+      ctx->addIndexFile(tokens[*i]);
       (*i)++;
     }
     if (*i >= tokens.size() || tokens[*i] != ";") {
@@ -326,9 +326,9 @@ bool ConfigParser::_parseContextDirectives(
     }
     const std::string& val = tokens[*i + 1];
     if (val == "on")
-      ctx->set_autoindex(true);
+      ctx->setAutoindex(true);
     else if (val == "off")
-      ctx->set_autoindex(false);
+      ctx->setAutoindex(false);
     else
       throw std::runtime_error("Syntax error: autoindex must be 'on' or 'off'");
     *i += 3;
@@ -340,7 +340,7 @@ bool ConfigParser::_parseContextDirectives(
       throw std::runtime_error("Syntax error: invalid 'error_page' directive");
     }
     int code = std::atoi(tokens[*i + 1].c_str());
-    ctx->add_error_page(code, tokens[*i + 2]);
+    ctx->addErrorPage(code, tokens[*i + 2]);
     *i += 4;
     return true;
   }
@@ -365,7 +365,7 @@ bool ConfigParser::_parseContextDirectives(
     }
 
     size_t val = static_cast<size_t>(std::strtoul(value_str.c_str(), NULL, 10));
-    ctx->set_client_max_body_size(val);
+    ctx->setClientMaxBodySize(val);
     *i += 3;
     return true;
   }
@@ -456,7 +456,7 @@ void ConfigParser::parseDirective(Context* ctx, const std::string& line) {
     if (lineTokens.size() != 3) {
       throw std::runtime_error("Syntax error: invalid 'root' directive");
     }
-    ctx->set_root(lineTokens[1]);
+    ctx->setRoot(lineTokens[1]);
   } else if (key == "client_max_body_size") {
     if (lineTokens.size() != 3) {
       throw std::runtime_error(
@@ -471,6 +471,6 @@ void ConfigParser::parseDirective(Context* ctx, const std::string& line) {
       }
     }
     size_t val = static_cast<size_t>(std::strtoul(valueStr.c_str(), NULL, 10));
-    ctx->set_client_max_body_size(val);
+    ctx->setClientMaxBodySize(val);
   }
 }

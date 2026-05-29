@@ -16,30 +16,30 @@ class Context {
   virtual ~Context();
 
   // Getters
-  const std::string& get_root() const;
-  const std::vector<std::string>& get_index_files() const;
-  const std::map<int, std::string>& get_error_pages() const;
-  const std::vector<std::string>& get_allowed_methods() const;
-  size_t get_client_max_body_size() const;
-  bool get_autoindex() const;
+  const std::string& getRoot() const;
+  const std::vector<std::string>& getIndexFiles() const;
+  const std::map<int, std::string>& getErrorPages() const;
+  const std::vector<std::string>& getAllowedMethods() const;
+  size_t getClientMaxBodySize() const;
+  bool getAutoindex() const;
 
   // Setters
-  void set_root(const std::string& root);
-  void set_index_files(const std::vector<std::string>& index_files);
-  void add_index_file(const std::string& index_file);
-  void set_error_pages(const std::map<int, std::string>& error_pages);
-  void add_error_page(int code, const std::string& uri);
-  void set_allowed_methods(const std::vector<std::string>& allowed_methods);
-  void add_allowed_method(const std::string& allowed_method);
-  void set_client_max_body_size(size_t size);
-  void set_autoindex(bool autoindex);
+  void setRoot(const std::string& root);
+  void setIndexFiles(const std::vector<std::string>& indexFiles);
+  void addIndexFile(const std::string& indexFile);
+  void setErrorPages(const std::map<int, std::string>& errorPages);
+  void addErrorPage(int code, const std::string& uri);
+  void setAllowedMethods(const std::vector<std::string>& allowedMethods);
+  void addAllowedMethod(const std::string& allowedMethod);
+  void setClientMaxBodySize(size_t size);
+  void setAutoindex(bool autoindex);
 
  private:
   std::string _root;
-  std::vector<std::string> _index_files;
-  std::map<int, std::string> _error_pages;
-  std::vector<std::string> _allowed_methods;
-  size_t _client_max_body_size;
+  std::vector<std::string> _indexFiles;
+  std::map<int, std::string> _errorPages;
+  std::vector<std::string> _allowedMethods;
+  size_t _clientMaxBodySize;
   bool _autoindex;
 };
 

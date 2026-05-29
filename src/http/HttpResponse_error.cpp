@@ -59,11 +59,11 @@ void HttpResponse::_finalize_html_response(const std::string& body) {
 
 bool HttpResponse::_try_serve_custom_error_page(int code, const Context* ctx) {
   if (!ctx) return false;
-  const std::map<int, std::string>& err_pages = ctx->get_error_pages();
+  const std::map<int, std::string>& err_pages = ctx->getErrorPages();
   std::map<int, std::string>::const_iterator it = err_pages.find(code);
   if (it != err_pages.end()) {
     std::string err_uri = it->second;
-    std::string root = ctx->get_root();
+    std::string root = ctx->getRoot();
     if (!root.empty() && root[root.length() - 1] == '/') {
       root = root.substr(0, root.length() - 1);
     }
