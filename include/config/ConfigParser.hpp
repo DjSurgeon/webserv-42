@@ -1,6 +1,6 @@
 // Copyright 2026 serjimen vja-nie dlesieur
-#ifndef SRC_CONFIG_CONFIGPARSER_HPP_
-#define SRC_CONFIG_CONFIGPARSER_HPP_
+#ifndef INCLUDE_CONFIG_CONFIGPARSER_HPP_
+#define INCLUDE_CONFIG_CONFIGPARSER_HPP_
 
 #include <string>
 #include <vector>
@@ -16,42 +16,42 @@ class ConfigParser {
   ConfigParser& operator=(const ConfigParser& other);
   ~ConfigParser();
 
-  const std::vector<std::string>& get_raw_lines() const;
-  const std::vector<ServerConfig>& get_servers() const;
+  const std::vector<std::string>& getRawLines() const;
+  const std::vector<ServerConfig>& getServers() const;
 
  private:
-  std::vector<std::string> _raw_lines;
+  std::vector<std::string> _rawLines;
   std::vector<ServerConfig> _servers;
 
-  void parse_tokens();
-  std::vector<std::string> _flatten_tokens() const;
-  void _parse_server_block(const std::vector<std::string>& tokens, size_t* i,
-                           ServerConfig* server);
-  void _handle_location_directive(const std::vector<std::string>& tokens,
-                                  size_t* i, ServerConfig* server);
-  void _handle_listen_directive(const std::vector<std::string>& tokens,
+  void parseTokens();
+  std::vector<std::string> _flattenTokens() const;
+  void _parseServerBlock(const std::vector<std::string>& tokens, size_t* i,
+                         ServerConfig* server);
+  void _handleLocationDirective(const std::vector<std::string>& tokens,
                                 size_t* i, ServerConfig* server);
-  void _handle_server_name_directive(const std::vector<std::string>& tokens,
-                                     size_t* i, ServerConfig* server);
+  void _handleListenDirective(const std::vector<std::string>& tokens, size_t* i,
+                              ServerConfig* server);
+  void _handleServerNameDirective(const std::vector<std::string>& tokens,
+                                  size_t* i, ServerConfig* server);
 
-  void _parse_location_block(const std::vector<std::string>& tokens, size_t* i,
-                             LocationConfig* location);
-  void _handle_allowed_methods_directive(const std::vector<std::string>& tokens,
-                                         size_t* i, LocationConfig* location);
-  void _handle_cgi_path_directive(const std::vector<std::string>& tokens,
-                                  size_t* i, LocationConfig* location);
-  void _handle_cgi_ext_directive(const std::vector<std::string>& tokens,
-                                 size_t* i, LocationConfig* location);
-  void _handle_redirect_directive(const std::vector<std::string>& tokens,
-                                  size_t* i, LocationConfig* location);
+  void _parseLocationBlock(const std::vector<std::string>& tokens, size_t* i,
+                           LocationConfig* location);
+  void _handleAllowedMethodsDirective(const std::vector<std::string>& tokens,
+                                      size_t* i, LocationConfig* location);
+  void _handleCgiPathDirective(const std::vector<std::string>& tokens,
+                               size_t* i, LocationConfig* location);
+  void _handleCgiExtDirective(const std::vector<std::string>& tokens, size_t* i,
+                              LocationConfig* location);
+  void _handleRedirectDirective(const std::vector<std::string>& tokens,
+                                size_t* i, LocationConfig* location);
 
-  bool _parse_context_directives(const std::vector<std::string>& tokens,
-                                 size_t* i, Context* ctx);
+  bool _parseContextDirectives(const std::vector<std::string>& tokens,
+                               size_t* i, Context* ctx);
 
-  static void trim_whitespace(std::string* line);
-  static void remove_comments(std::string* line);
+  static void trimWhitespace(std::string* line);
+  static void removeComments(std::string* line);
   static std::vector<std::string> tokenize(const std::string& line);
-  void parse_directive(Context* ctx, const std::string& line);
+  void parseDirective(Context* ctx, const std::string& line);
 };
 
-#endif  // SRC_CONFIG_CONFIGPARSER_HPP_
+#endif  // INCLUDE_CONFIG_CONFIGPARSER_HPP_

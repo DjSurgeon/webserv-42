@@ -28,7 +28,7 @@ void test_file_loading() {
   std::cout << "[Test] Verifying file loading and line count..." << std::endl;
   try {
     ConfigParser parser("tests/assets/test_basic.conf");
-    bool count_pass = (parser.get_raw_lines().size() == 3);
+    bool count_pass = (parser.getRawLines().size() == 3);
     print_result("test_file_loading", count_pass);
   } catch (const std::exception& e) {
     std::cerr << "Unexpected exception: " << e.what() << std::endl;
@@ -51,7 +51,7 @@ void test_preprocessing_edge_cases() {
   std::cout << "[Test] Verifying preprocessing edge cases..." << std::endl;
   try {
     ConfigParser parser("tests/assets/test_edge_cases.conf");
-    const std::vector<std::string>& lines = parser.get_raw_lines();
+    const std::vector<std::string>& lines = parser.getRawLines();
     bool count_pass = (lines.size() == 6);
     print_result("test_preprocessing_edge_cases", count_pass);
   } catch (const std::exception& e) {
@@ -65,7 +65,7 @@ void test_block_parsing_valid() {
             << std::endl;
   try {
     ConfigParser parser("tests/assets/test_complex_valid.conf");
-    const std::vector<ServerConfig>& servers = parser.get_servers();
+    const std::vector<ServerConfig>& servers = parser.getServers();
 
     // test_complex_valid.conf: "server { location / { } }
     // server{location/api{}}"
@@ -138,7 +138,7 @@ void test_stress_parsing() {
 
   try {
     ConfigParser parser(filename);
-    bool pass = (parser.get_servers().size() == 1000);
+    bool pass = (parser.getServers().size() == 1000);
     print_result("test_stress_parsing", pass);
   } catch (const std::exception& e) {
     std::cerr << "Stress test failed: " << e.what() << std::endl;

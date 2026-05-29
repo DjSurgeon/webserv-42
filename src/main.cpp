@@ -34,7 +34,7 @@ int main(int argc, char** argv) {
     std::cout << "Loading configuration from: " << config_file << std::endl;
 
     ConfigParser parser(config_file);
-    const std::vector<ServerConfig>& servers = parser.get_servers();
+    const std::vector<ServerConfig>& servers = parser.getServers();
 
     if (servers.empty()) {
       throw std::runtime_error("No server blocks found in configuration.");

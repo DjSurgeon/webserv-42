@@ -20,22 +20,22 @@ ConfigParser::ConfigParser(const std::string& filename) {
 
   std::string line;
   while (std::getline(file, line)) {
-    remove_comments(&line);
-    trim_whitespace(&line);
+    removeComments(&line);
+    trimWhitespace(&line);
     if (!line.empty()) {
-      _raw_lines.push_back(line);
+      _rawLines.push_back(line);
     }
   }
 
-  parse_tokens();
+  parseTokens();
 }
 
 ConfigParser::ConfigParser(const ConfigParser& other)
-    : _raw_lines(other._raw_lines), _servers(other._servers) {}
+    : _rawLines(other._rawLines), _servers(other._servers) {}
 
 ConfigParser& ConfigParser::operator=(const ConfigParser& other) {
   if (this != &other) {
-    _raw_lines = other._raw_lines;
+    _rawLines = other._rawLines;
     _servers = other._servers;
   }
   return *this;
@@ -43,31 +43,31 @@ ConfigParser& ConfigParser::operator=(const ConfigParser& other) {
 
 ConfigParser::~ConfigParser() {}
 
-const std::vector<std::string>& ConfigParser::get_raw_lines() const {
-  return _raw_lines;
+const std::vector<std::string>& ConfigParser::getRawLines() const {
+  return _rawLines;
 }
 
-const std::vector<ServerConfig>& ConfigParser::get_servers() const {
+const std::vector<ServerConfig>& ConfigParser::getServers() const {
   return _servers;
 }
 
-std::vector<std::string> ConfigParser::_flatten_tokens() const {
-  std::vector<std::string> all_tokens;
-  for (size_t i = 0; i < _raw_lines.size(); ++i) {
-    std::vector<std::string> line_tokens = tokenize(_raw_lines[i]);
-    all_tokens.insert(all_tokens.end(), line_tokens.begin(), line_tokens.end());
+std::vector<std::string> ConfigParser::_flattenTokens() const {
+  std::vector<std::string> allTokens;
+  for (size_t i = 0; i < _rawLines.size(); ++i) {
+    std::vector<std::string> lineTokens = tokenize(_rawLines[i]);
+    allTokens.insert(allTokens.end(), lineTokens.begin(), lineTokens.end());
   }
-  return all_tokens;
+  return allTokens;
 }
 
-void ConfigParser::parse_tokens() {
-  std::vector<std::string> all_tokens = _flatten_tokens();
+void ConfigParser::parseTokens() {
+  std::vector<std::string> allTokens = _flattenTokens();
   size_t i = 0;
 
-  while (i < all_tokens.size()) {
-    if (all_tokens[i] == "server") {
+  while (i < allTokens.size()) {
+    if (allTokens[i] == "server") {
       ServerConfig server;
-      _parse_server_block(all_tokens, &i, &server);
+      _parseServerBlock(allTokens, &i, &server);
       _servers.push_back(server);
     } else {
       throw std::runtime_error(
@@ -76,7 +76,7 @@ void ConfigParser::parse_tokens() {
   }
 }
 
-void ConfigParser::_handle_location_directive(
+void ConfigParser::_handleLocationDirective(
     const std::vector<std::string>& tokens, size_t* i, ServerConfig* server) {
   LocationConfig loc;
   // Inherit context defaults
@@ -86,48 +86,48 @@ void ConfigParser::_handle_location_directive(
   loc.set_client_max_body_size(server->get_client_max_body_size());
   loc.set_autoindex(server->get_autoindex());
 
-  _parse_location_block(tokens, i, &loc);
+  _parseLocationBlock(tokens, i, &loc);
   server->add_location(loc);
 }
 
-void ConfigParser::_handle_listen_directive(
+void ConfigParser::_handleListenDirective(
     const std::vector<std::string>& tokens, size_t* i, ServerConfig* server) {
   (*i)++;
   if (*i >= tokens.size() || tokens[*i] == ";") {
     throw std::runtime_error("Syntax error: incomplete 'listen' directive");
   }
-  std::string listen_val = tokens[*i];
+  std::string listenVal = tokens[*i];
   std::string host = "127.0.0.1";
-  std::string port_str;
+  std::string portStr;
 
-  size_t colon_pos = listen_val.find(':');
-  if (colon_pos != std::string::npos) {
-    host = listen_val.substr(0, colon_pos);
-    port_str = listen_val.substr(colon_pos + 1);
+  size_t colonPos = listenVal.find(':');
+  if (colonPos != std::string::npos) {
+    host = listenVal.substr(0, colonPos);
+    portStr = listenVal.substr(colonPos + 1);
   } else {
-    port_str = listen_val;
+    portStr = listenVal;
   }
 
   // Validate port string
-  if (port_str.empty()) {
+  if (portStr.empty()) {
     throw std::runtime_error(
         "Syntax error: port missing in 'listen' directive");
   }
-  for (size_t j = 0; j < port_str.length(); ++j) {
-    if (!std::isdigit(static_cast<unsigned char>(port_str[j]))) {
-      throw std::runtime_error("Syntax error: invalid port '" + port_str +
+  for (size_t j = 0; j < portStr.length(); ++j) {
+    if (!std::isdigit(static_cast<unsigned char>(portStr[j]))) {
+      throw std::runtime_error("Syntax error: invalid port '" + portStr +
                                "' (must be digits)");
     }
   }
 
-  long port_val = std::strtol(port_str.c_str(), NULL, 10);  // NOLINT
-  if (port_val < 1 || port_val > 65535) {
-    throw std::runtime_error("Syntax error: port '" + port_str +
+  long portVal = std::strtol(portStr.c_str(), NULL, 10);  // NOLINT
+  if (portVal < 1 || portVal > 65535) {
+    throw std::runtime_error("Syntax error: port '" + portStr +
                              "' out of range (1-65535)");
   }
 
   server->set_host(host);
-  server->set_port(static_cast<int>(port_val));
+  server->set_port(static_cast<int>(portVal));
 
   (*i)++;
   if (*i >= tokens.size() || tokens[*i] != ";") {
@@ -136,7 +136,7 @@ void ConfigParser::_handle_listen_directive(
   (*i)++;
 }
 
-void ConfigParser::_handle_server_name_directive(
+void ConfigParser::_handleServerNameDirective(
     const std::vector<std::string>& tokens, size_t* i, ServerConfig* server) {
   (*i)++;
   while (*i < tokens.size() && tokens[*i] != ";") {
@@ -149,7 +149,7 @@ void ConfigParser::_handle_server_name_directive(
   (*i)++;
 }
 
-void ConfigParser::_parse_server_block(const std::vector<std::string>& tokens,
+void ConfigParser::_parseServerBlock(const std::vector<std::string>& tokens,
                                        size_t* i, ServerConfig* server) {
   if (!i || !server) {
     return;
@@ -164,12 +164,12 @@ void ConfigParser::_parse_server_block(const std::vector<std::string>& tokens,
     const std::string& directive = tokens[*i];
 
     if (directive == "location") {
-      _handle_location_directive(tokens, i, server);
+      _handleLocationDirective(tokens, i, server);
     } else if (directive == "listen") {
-      _handle_listen_directive(tokens, i, server);
+      _handleListenDirective(tokens, i, server);
     } else if (directive == "server_name") {
-      _handle_server_name_directive(tokens, i, server);
-    } else if (_parse_context_directives(tokens, i, server)) {
+      _handleServerNameDirective(tokens, i, server);
+    } else if (_parseContextDirectives(tokens, i, server)) {
       continue;
     } else {
       throw std::runtime_error("Syntax error: unknown directive '" + directive +
@@ -183,7 +183,7 @@ void ConfigParser::_parse_server_block(const std::vector<std::string>& tokens,
   (*i)++;  // Skip "}"
 }
 
-void ConfigParser::_handle_allowed_methods_directive(
+void ConfigParser::_handleAllowedMethodsDirective(
     const std::vector<std::string>& tokens, size_t* i,
     LocationConfig* location) {
   (*i)++;
@@ -198,7 +198,7 @@ void ConfigParser::_handle_allowed_methods_directive(
   (*i)++;
 }
 
-void ConfigParser::_handle_cgi_path_directive(
+void ConfigParser::_handleCgiPathDirective(
     const std::vector<std::string>& tokens, size_t* i,
     LocationConfig* location) {
   (*i)++;
@@ -213,7 +213,7 @@ void ConfigParser::_handle_cgi_path_directive(
   (*i)++;
 }
 
-void ConfigParser::_handle_cgi_ext_directive(
+void ConfigParser::_handleCgiExtDirective(
     const std::vector<std::string>& tokens, size_t* i,
     LocationConfig* location) {
   (*i)++;
@@ -227,7 +227,7 @@ void ConfigParser::_handle_cgi_ext_directive(
   (*i)++;
 }
 
-void ConfigParser::_handle_redirect_directive(
+void ConfigParser::_handleRedirectDirective(
     const std::vector<std::string>& tokens, size_t* i,
     LocationConfig* location) {
   (*i)++;
@@ -242,7 +242,7 @@ void ConfigParser::_handle_redirect_directive(
   (*i)++;
 }
 
-void ConfigParser::_parse_location_block(const std::vector<std::string>& tokens,
+void ConfigParser::_parseLocationBlock(const std::vector<std::string>& tokens,
                                          size_t* i, LocationConfig* location) {
   if (!i || !location) {
     return;
@@ -264,14 +264,14 @@ void ConfigParser::_parse_location_block(const std::vector<std::string>& tokens,
     const std::string& directive = tokens[*i];
 
     if (directive == "allowed_methods") {
-      _handle_allowed_methods_directive(tokens, i, location);
+      _handleAllowedMethodsDirective(tokens, i, location);
     } else if (directive == "cgi_path") {
-      _handle_cgi_path_directive(tokens, i, location);
+      _handleCgiPathDirective(tokens, i, location);
     } else if (directive == "cgi_ext") {
-      _handle_cgi_ext_directive(tokens, i, location);
+      _handleCgiExtDirective(tokens, i, location);
     } else if (directive == "return" || directive == "redirect") {
-      _handle_redirect_directive(tokens, i, location);
-    } else if (_parse_context_directives(tokens, i, location)) {
+      _handleRedirectDirective(tokens, i, location);
+    } else if (_parseContextDirectives(tokens, i, location)) {
       continue;
     } else {
       throw std::runtime_error("Syntax error: unknown directive '" + directive +
@@ -286,7 +286,7 @@ void ConfigParser::_parse_location_block(const std::vector<std::string>& tokens,
   (*i)++;  // Skip "}"
 }
 
-bool ConfigParser::_parse_context_directives(
+bool ConfigParser::_parseContextDirectives(
     const std::vector<std::string>& tokens, size_t* i, Context* ctx) {
   if (!i || !ctx || *i >= tokens.size()) {
     return false;
@@ -373,7 +373,7 @@ bool ConfigParser::_parse_context_directives(
   return false;
 }
 
-void ConfigParser::trim_whitespace(std::string* line) {
+void ConfigParser::trimWhitespace(std::string* line) {
   if (!line) {
     return;
   }
@@ -389,7 +389,7 @@ void ConfigParser::trim_whitespace(std::string* line) {
   *line = line->substr(start, end - start + 1);
 }
 
-void ConfigParser::remove_comments(std::string* line) {
+void ConfigParser::removeComments(std::string* line) {
   if (!line) {
     return;
   }
@@ -401,76 +401,76 @@ void ConfigParser::remove_comments(std::string* line) {
 
 std::vector<std::string> ConfigParser::tokenize(const std::string& line) {
   std::vector<std::string> tokens;
-  std::string current_token;
+  std::string currentToken;
 
   for (size_t i = 0; i < line.length(); ++i) {
     char c = line[i];
 
     if (std::isspace(static_cast<unsigned char>(c))) {
-      if (!current_token.empty()) {
-        tokens.push_back(current_token);
-        current_token.clear();
+      if (!currentToken.empty()) {
+        tokens.push_back(currentToken);
+        currentToken.clear();
       }
     } else if (c == ';' || c == '{' || c == '}') {
-      if (!current_token.empty()) {
-        tokens.push_back(current_token);
-        current_token.clear();
+      if (!currentToken.empty()) {
+        tokens.push_back(currentToken);
+        currentToken.clear();
       }
       tokens.push_back(std::string(1, c));
     } else {
-      current_token += c;
+      currentToken += c;
     }
   }
 
-  if (!current_token.empty()) {
-    tokens.push_back(current_token);
+  if (!currentToken.empty()) {
+    tokens.push_back(currentToken);
   }
 
   return tokens;
 }
 
-void ConfigParser::parse_directive(Context* ctx, const std::string& line) {
+void ConfigParser::parseDirective(Context* ctx, const std::string& line) {
   if (!ctx) {
     return;
   }
   std::vector<std::string> tokens;
-  std::string current_token;
+  std::string currentToken;
 
   // Manual tokenization to split by spaces, but we don't need full parsing,
   // we just need the first word and the rest of the string before the
   // semicolon. Using the existing tokenize might be easier.
-  std::vector<std::string> line_tokens = tokenize(line);
+  std::vector<std::string> lineTokens = tokenize(line);
 
-  if (line_tokens.empty()) {
+  if (lineTokens.empty()) {
     return;
   }
 
-  if (line_tokens.back() != ";") {
+  if (lineTokens.back() != ";") {
     throw std::runtime_error(
         "Syntax error: missing ';' at the end of directive '" + line + "'");
   }
 
-  std::string key = line_tokens[0];
+  std::string key = lineTokens[0];
 
   if (key == "root") {
-    if (line_tokens.size() != 3) {
+    if (lineTokens.size() != 3) {
       throw std::runtime_error("Syntax error: invalid 'root' directive");
     }
-    ctx->set_root(line_tokens[1]);
+    ctx->set_root(lineTokens[1]);
   } else if (key == "client_max_body_size") {
-    if (line_tokens.size() != 3) {
+    if (lineTokens.size() != 3) {
       throw std::runtime_error(
           "Syntax error: invalid 'client_max_body_size' directive");
     }
-    const std::string& value_str = line_tokens[1];
-    for (size_t j = 0; j < value_str.length(); ++j) {
-      if (!std::isdigit(static_cast<unsigned char>(value_str[j]))) {
+    const std::string& valueStr = lineTokens[1];
+    for (size_t j = 0; j < valueStr.length(); ++j) {
+      if (!std::isdigit(static_cast<unsigned char>(valueStr[j]))) {
         throw std::runtime_error(
             "Syntax error: invalid 'client_max_body_size' value (must be pure "
             "bytes)");
       }
     }
-    size_t val = static_cast<size_t>(std::strtoul(value_str.c_str(), NULL, 10));
+    size_t val = static_cast<size_t>(std::strtoul(valueStr.c_str(), NULL, 10));
     ctx->set_client_max_body_size(val);
   }
 }
