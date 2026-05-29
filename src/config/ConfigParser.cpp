@@ -205,7 +205,7 @@ void ConfigParser::_handleCgiPathDirective(
   if (*i >= tokens.size() || tokens[*i] == ";") {
     throw std::runtime_error("Syntax error: incomplete 'cgi_path'");
   }
-  location->set_cgi_path(tokens[*i]);
+  location->setCgiPath(tokens[*i]);
   (*i)++;
   if (*i >= tokens.size() || tokens[*i] != ";") {
     throw std::runtime_error("Syntax error: missing ';' after 'cgi_path'");
@@ -218,7 +218,7 @@ void ConfigParser::_handleCgiExtDirective(
     LocationConfig* location) {
   (*i)++;
   while (*i < tokens.size() && tokens[*i] != ";") {
-    location->add_cgi_extension(tokens[*i]);
+    location->addCgiExtension(tokens[*i]);
     (*i)++;
   }
   if (*i >= tokens.size() || tokens[*i] != ";") {
@@ -234,7 +234,7 @@ void ConfigParser::_handleRedirectDirective(
   if (*i >= tokens.size() || tokens[*i] == ";") {
     throw std::runtime_error("Syntax error: incomplete 'redirect/return'");
   }
-  location->set_redirect(tokens[*i]);
+  location->setRedirect(tokens[*i]);
   (*i)++;
   if (*i >= tokens.size() || tokens[*i] != ";") {
     throw std::runtime_error("Syntax error: missing ';' after redirect");
@@ -252,7 +252,7 @@ void ConfigParser::_parseLocationBlock(const std::vector<std::string>& tokens,
     throw std::runtime_error("Syntax error: missing path for location");
   }
 
-  location->set_path(tokens[*i]);
+  location->setPath(tokens[*i]);
   (*i)++;  // Skip path
 
   if (*i >= tokens.size() || tokens[*i] != "{") {

@@ -47,7 +47,7 @@ void test_setters_and_getters() {
   srv.add_server_name("www.example.com");
 
   LocationConfig loc;
-  loc.set_path("/");
+  loc.setPath("/");
   srv.add_location(loc);
 
   bool pass = true;
@@ -60,7 +60,7 @@ void test_setters_and_getters() {
     pass = false;
 
   const std::vector<LocationConfig>& locs = srv.get_locations();
-  if (locs.size() != 1 || locs[0].get_path() != "/") pass = false;
+  if (locs.size() != 1 || locs[0].getPath() != "/") pass = false;
 
   print_result("test_setters_and_getters", pass);
 }
@@ -74,7 +74,7 @@ void test_canonical_form() {
   srv1.add_server_name("orig");
 
   LocationConfig loc;
-  loc.set_path("/api");
+  loc.setPath("/api");
   srv1.add_location(loc);
   srv1.setRoot("/orig/root");
 
@@ -83,7 +83,7 @@ void test_canonical_form() {
   bool copy_pass =
       (srv2.get_port() == 80 && srv2.get_server_names().size() == 1 &&
        srv2.get_locations().size() == 1 &&
-       srv2.get_locations()[0].get_path() == "/api" &&
+       srv2.get_locations()[0].getPath() == "/api" &&
        srv2.getRoot() == "/orig/root");
 
   // Assignment
@@ -92,14 +92,14 @@ void test_canonical_form() {
   bool assign_pass =
       (srv3.get_port() == 80 && srv3.get_server_names().size() == 1 &&
        srv3.get_locations().size() == 1 &&
-       srv3.get_locations()[0].get_path() == "/api");
+       srv3.get_locations()[0].getPath() == "/api");
 
   // Verify deep copy of locations
-  loc.set_path("/changed");
+  loc.setPath("/changed");
   srv1.set_locations(std::vector<LocationConfig>());
   srv1.add_location(loc);
 
-  bool deep_pass = (srv2.get_locations()[0].get_path() == "/api");
+  bool deep_pass = (srv2.get_locations()[0].getPath() == "/api");
 
   print_result("test_canonical_form", copy_pass && assign_pass && deep_pass);
 }
@@ -113,12 +113,12 @@ void test_edge_cases() {
     LocationConfig loc;
     std::stringstream ss;
     ss << "/path-" << i;
-    loc.set_path(ss.str());
+    loc.setPath(ss.str());
     srv.add_location(loc);
   }
 
   bool massive_pass = (srv.get_locations().size() == 500 &&
-                       srv.get_locations().back().get_path() == "/path-499");
+                       srv.get_locations().back().getPath() == "/path-499");
 
   print_result("test_edge_cases", massive_pass);
 }
@@ -131,7 +131,7 @@ void test_stress() {
 
     for (int j = 0; j < 5; ++j) {
       LocationConfig loc;
-      loc.set_path("/loc");
+      loc.setPath("/loc");
       srv.add_location(loc);
     }
 
@@ -154,48 +154,48 @@ void test_longest_prefix_match() {
 
   // Setup locations
   LocationConfig loc_root;
-  loc_root.set_path("/");
+  loc_root.setPath("/");
   srv.add_location(loc_root);
 
   LocationConfig loc_api;
-  loc_api.set_path("/api");
+  loc_api.setPath("/api");
   srv.add_location(loc_api);
 
   LocationConfig loc_users;
-  loc_users.set_path("/api/users");
+  loc_users.setPath("/api/users");
   srv.add_location(loc_users);
 
   LocationConfig loc_images;
-  loc_images.set_path("/images/");
+  loc_images.setPath("/images/");
   srv.add_location(loc_images);
 
   bool pass = true;
 
   // 1. Exact Match
   const LocationConfig* res = srv.find_location("/api");
-  if (!res || res->get_path() != "/api") pass = false;
+  if (!res || res->getPath() != "/api") pass = false;
 
   // 2. Prefix Match
   res = srv.find_location("/api/docs");
-  if (!res || res->get_path() != "/api") pass = false;
+  if (!res || res->getPath() != "/api") pass = false;
 
   // 3. Longest Prefix Wins
   res = srv.find_location("/api/users/profile");
-  if (!res || res->get_path() != "/api/users") pass = false;
+  if (!res || res->getPath() != "/api/users") pass = false;
 
   // 4. Strict Boundary Check (Failure Case)
   // "/api_v2" starts with "/api" but is not a subpath.
   // Should match root "/" or NULL.
   res = srv.find_location("/api_v2");
-  if (!res || res->get_path() != "/") pass = false;
+  if (!res || res->getPath() != "/") pass = false;
 
   // 5. Trailing Slash Handling
   res = srv.find_location("/images/logo.png");
-  if (!res || res->get_path() != "/images/") pass = false;
+  if (!res || res->getPath() != "/images/") pass = false;
 
   // 6. Root Fallback
   res = srv.find_location("/something_else");
-  if (!res || res->get_path() != "/") pass = false;
+  if (!res || res->getPath() != "/") pass = false;
 
   print_result("test_longest_prefix_match", pass);
 }

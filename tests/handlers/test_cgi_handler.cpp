@@ -167,7 +167,7 @@ void test_cgi_interpreter_resolution() {
   std::cout << "[Test] Verifying interpreter resolution by config override..."
             << std::endl;
   LocationConfig loc;
-  loc.set_cgi_path("/usr/local/bin/python-custom");
+  loc.setCgiPath("/usr/local/bin/python-custom");
   assert(handler._get_interpreter("script.py", &loc) ==
          "/usr/local/bin/python-custom");
   assert(handler._get_interpreter("any.file", &loc) ==

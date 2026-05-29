@@ -74,7 +74,7 @@ const LocationConfig* ServerConfig::find_location(
 
   for (std::vector<LocationConfig>::const_iterator it = _locations.begin();
        it != _locations.end(); ++it) {
-    const std::string& path = it->get_path();
+    const std::string& path = it->getPath();
 
     if (uri.find(path) == 0) {
       bool is_clean_match = false;

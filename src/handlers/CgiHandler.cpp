@@ -167,8 +167,8 @@ bool CgiHandler::parse_cgi_output(const std::string& raw_output,
 
 std::string CgiHandler::_get_interpreter(const std::string& script_path,
                                          const LocationConfig* loc) const {
-  if (loc != NULL && !loc->get_cgi_path().empty()) {
-    return loc->get_cgi_path();
+  if (loc != NULL && !loc->getCgiPath().empty()) {
+    return loc->getCgiPath();
   }
   size_t dot_pos = script_path.find_last_of('.');
   if (dot_pos != std::string::npos) {

@@ -1,6 +1,6 @@
 // Copyright 2026 serjimen vja-nie dlesieur
-#ifndef SRC_CONFIG_LOCATIONCONFIG_HPP_
-#define SRC_CONFIG_LOCATIONCONFIG_HPP_
+#ifndef INCLUDE_CONFIG_LOCATIONCONFIG_HPP_
+#define INCLUDE_CONFIG_LOCATIONCONFIG_HPP_
 
 #include <string>
 #include <vector>
@@ -16,22 +16,22 @@ class LocationConfig : public Context {
   ~LocationConfig();
 
   // Getters
-  const std::string& get_path() const;
-  const std::string& get_cgi_path() const;
-  const std::string& get_redirect() const;
-  const std::vector<std::string>& get_cgi_extensions() const;
+  const std::string& getPath() const;
+  const std::string& getCgiPath() const;
+  const std::string& getRedirect() const;
+  const std::vector<std::string>& getCgiExtensions() const;
 
   // Setters
-  void set_path(const std::string& path);
-  void set_cgi_path(const std::string& cgi_path);
-  void set_redirect(const std::string& redirect);
-  void add_cgi_extension(const std::string& ext);
+  void setPath(const std::string& path);
+  void setCgiPath(const std::string& cgiPath);
+  void setRedirect(const std::string& redirect);
+  void addCgiExtension(const std::string& ext);
 
  private:
   std::string _path;
-  std::string _cgi_path;
+  std::string _cgiPath;
   std::string _redirect;
-  std::vector<std::string> _cgi_extensions;
+  std::vector<std::string> _cgiExtensions;
 };
 
-#endif  // SRC_CONFIG_LOCATIONCONFIG_HPP_
+#endif  // INCLUDE_CONFIG_LOCATIONCONFIG_HPP_

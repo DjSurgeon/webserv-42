@@ -55,9 +55,9 @@ const ServerConfig* EventLoop::_resolveServerConfig(
 
 bool EventLoop::_handleRedirect(const LocationConfig* loc,
                                 HttpResponse& res) const {
-  if (loc && !loc->get_redirect().empty()) {
+  if (loc && !loc->getRedirect().empty()) {
     res.set_status(301, "Moved Permanently");
-    res.add_header("Location", loc->get_redirect());
+    res.add_header("Location", loc->getRedirect());
     std::string body =
         "<html><body><h1>301 Moved Permanently</h1></body></html>";
     res.set_body(body);
@@ -74,7 +74,7 @@ bool EventLoop::_isCgiRequest(const std::string& physical_path,
                               const LocationConfig* loc) const {
   if (!loc) return false;
 
-  if (!loc->get_cgi_path().empty()) {
+  if (!loc->getCgiPath().empty()) {
     return true;
   }
 
@@ -84,7 +84,7 @@ bool EventLoop::_isCgiRequest(const std::string& physical_path,
     ext = physical_path.substr(dot_pos);
   }
 
-  const std::vector<std::string>& cgi_exts = loc->get_cgi_extensions();
+  const std::vector<std::string>& cgi_exts = loc->getCgiExtensions();
   for (size_t k = 0; k < cgi_exts.size(); ++k) {
     if (ext == cgi_exts[k]) {
       return true;

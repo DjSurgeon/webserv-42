@@ -5,56 +5,56 @@
 #include <vector>
 
 LocationConfig::LocationConfig()
-    : Context(), _path(""), _cgi_path(""), _redirect("") {}
+    : Context(), _path(""), _cgiPath(""), _redirect("") {}
 
 LocationConfig::LocationConfig(const LocationConfig& other)
     : Context(other),
       _path(other._path),
-      _cgi_path(other._cgi_path),
+      _cgiPath(other._cgiPath),
       _redirect(other._redirect),
-      _cgi_extensions(other._cgi_extensions) {}
+      _cgiExtensions(other._cgiExtensions) {}
 
 LocationConfig& LocationConfig::operator=(const LocationConfig& other) {
   if (this != &other) {
     Context::operator=(other);
     _path = other._path;
-    _cgi_path = other._cgi_path;
+    _cgiPath = other._cgiPath;
     _redirect = other._redirect;
-    _cgi_extensions = other._cgi_extensions;
+    _cgiExtensions = other._cgiExtensions;
   }
   return *this;
 }
 
 LocationConfig::~LocationConfig() {}
 
-const std::string& LocationConfig::get_path() const {
+const std::string& LocationConfig::getPath() const {
   return _path;
 }
 
-const std::string& LocationConfig::get_cgi_path() const {
-  return _cgi_path;
+const std::string& LocationConfig::getCgiPath() const {
+  return _cgiPath;
 }
 
-const std::string& LocationConfig::get_redirect() const {
+const std::string& LocationConfig::getRedirect() const {
   return _redirect;
 }
 
-const std::vector<std::string>& LocationConfig::get_cgi_extensions() const {
-  return _cgi_extensions;
+const std::vector<std::string>& LocationConfig::getCgiExtensions() const {
+  return _cgiExtensions;
 }
 
-void LocationConfig::set_path(const std::string& path) {
+void LocationConfig::setPath(const std::string& path) {
   _path = path;
 }
 
-void LocationConfig::set_cgi_path(const std::string& cgi_path) {
-  _cgi_path = cgi_path;
+void LocationConfig::setCgiPath(const std::string& cgiPath) {
+  _cgiPath = cgiPath;
 }
 
-void LocationConfig::set_redirect(const std::string& redirect) {
+void LocationConfig::setRedirect(const std::string& redirect) {
   _redirect = redirect;
 }
 
-void LocationConfig::add_cgi_extension(const std::string& ext) {
-  _cgi_extensions.push_back(ext);
+void LocationConfig::addCgiExtension(const std::string& ext) {
+  _cgiExtensions.push_back(ext);
 }
