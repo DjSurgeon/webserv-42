@@ -49,13 +49,18 @@ class EventLoop {
   void _handleClientData(int fd);
   void _handleClientWrite(int fd);
 
-  const ServerConfig* _resolveServerConfig(int clientFd, const std::string& hostHeader) const;
-  void _dispatchRequest(const HttpRequest& req, const ServerConfig* server, HttpResponse& res);
+  const ServerConfig* _resolveServerConfig(int clientFd,
+                                           const std::string& hostHeader) const;
+  void _dispatchRequest(const HttpRequest& req, const ServerConfig* server,
+                        HttpResponse& res);
   bool _shouldCloseConnection(const HttpRequest& req) const;
 
   bool _handleRedirect(const LocationConfig* loc, HttpResponse& res) const;
-  bool _isCgiRequest(const std::string& physicalPath, const LocationConfig* loc) const;
-  void _executeFileHandler(const HttpRequest& req, const Context* activeCtx, const std::string& physicalPath, HttpResponse& res) const;
+  bool _isCgiRequest(const std::string& physicalPath,
+                     const LocationConfig* loc) const;
+  void _executeFileHandler(const HttpRequest& req, const Context* activeCtx,
+                           const std::string& physicalPath,
+                           HttpResponse& res) const;
 };
 
 #endif  // SRC_NETWORK_EVENTLOOP_HPP_

@@ -46,6 +46,16 @@ class ConfigParser {
 
   bool _parseContextDirectives(const std::vector<std::string>& tokens,
                                size_t* i, Context* ctx);
+  void _handleRootDirective(const std::vector<std::string>& tokens, size_t* i,
+                            Context* ctx);
+  void _handleIndexDirective(const std::vector<std::string>& tokens, size_t* i,
+                             Context* ctx);
+  void _handleAutoindexDirective(const std::vector<std::string>& tokens,
+                                 size_t* i, Context* ctx);
+  void _handleErrorPageDirective(const std::vector<std::string>& tokens,
+                                 size_t* i, Context* ctx);
+  void _handleClientMaxBodySizeDirective(const std::vector<std::string>& tokens,
+                                         size_t* i, Context* ctx);
 
   static void trimWhitespace(std::string* line);
   static void removeComments(std::string* line);

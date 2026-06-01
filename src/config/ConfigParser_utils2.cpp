@@ -1,10 +1,10 @@
 // Copyright 2026 serjimen vja-nie dlesieur
-#include "config/ConfigParser.hpp"
-
 #include <cctype>
 #include <cstdlib>
 #include <stdexcept>
 #include <string>
+
+#include "config/ConfigParser.hpp"
 
 void ConfigParser::parseHostPort(const std::string& listenVal,
                                  std::string* host, std::string* portStr) {
