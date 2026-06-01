@@ -50,6 +50,11 @@ class ConfigParser {
   static void trimWhitespace(std::string* line);
   static void removeComments(std::string* line);
   static std::vector<std::string> tokenize(const std::string& line);
+
+  // Utils 2
+  static void parseHostPort(const std::string& listenVal, std::string* host,
+                            std::string* portStr);
+  static int validatePort(const std::string& portStr);
   void parseDirective(Context* ctx, const std::string& line);
 };
 

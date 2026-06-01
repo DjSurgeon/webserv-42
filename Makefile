@@ -34,6 +34,7 @@ SRCS		= $(SRC_DIR)/main.cpp \
 			  $(SRC_DIR)/config/ServerConfig.cpp \
 			  $(SRC_DIR)/config/ConfigParser.cpp \
 			  $(SRC_DIR)/config/ConfigParser_utils.cpp \
+			  $(SRC_DIR)/config/ConfigParser_utils2.cpp \
 			  $(SRC_DIR)/config/ConfigParser_server.cpp \
 			  $(SRC_DIR)/config/ConfigParser_location.cpp \
 			  $(SRC_DIR)/config/ConfigParser_context.cpp \
@@ -86,6 +87,7 @@ LIB_SRCS	= $(SRC_DIR)/config/Context.cpp \
 			  $(SRC_DIR)/config/ServerConfig.cpp \
 			  $(SRC_DIR)/config/ConfigParser.cpp \
 			  $(SRC_DIR)/config/ConfigParser_utils.cpp \
+			  $(SRC_DIR)/config/ConfigParser_utils2.cpp \
 			  $(SRC_DIR)/config/ConfigParser_server.cpp \
 			  $(SRC_DIR)/config/ConfigParser_location.cpp \
 			  $(SRC_DIR)/config/ConfigParser_context.cpp \

@@ -14,38 +14,13 @@ void ConfigParser::_handleListenDirective(
   if (*i >= tokens.size() || tokens[*i] == ";") {
     throw std::runtime_error("Syntax error: incomplete 'listen' directive");
   }
-  std::string listenVal = tokens[*i];
-  std::string host = "127.0.0.1";
-  std::string portStr;
 
-  size_t colonPos = listenVal.find(':');
-  if (colonPos != std::string::npos) {
-    host = listenVal.substr(0, colonPos);
-    portStr = listenVal.substr(colonPos + 1);
-  } else {
-    portStr = listenVal;
-  }
-
-  // Validate port string
-  if (portStr.empty()) {
-    throw std::runtime_error(
-        "Syntax error: port missing in 'listen' directive");
-  }
-  for (size_t j = 0; j < portStr.length(); ++j) {
-    if (!std::isdigit(static_cast<unsigned char>(portStr[j]))) {
-      throw std::runtime_error("Syntax error: invalid port '" + portStr +
-                               "' (must be digits)");
-    }
-  }
-
-  long portVal = std::strtol(portStr.c_str(), NULL, 10);  // NOLINT
-  if (portVal < 1 || portVal > 65535) {
-    throw std::runtime_error("Syntax error: port '" + portStr +
-                             "' out of range (1-65535)");
-  }
+  std::string host, portStr;
+  parseHostPort(tokens[*i], &host, &portStr);
+  int port = validatePort(portStr);
 
   server->setHost(host);
-  server->setPort(static_cast<int>(portVal));
+  server->setPort(port);
 
   (*i)++;
   if (*i >= tokens.size() || tokens[*i] != ";") {
