@@ -36,9 +36,9 @@ class ClientSocket {
 
  private:
   int _fd;
-  std::string _read_buffer;
-  std::string _write_buffer;
-  bool _should_close;
+  std::string _readBuffer;
+  std::string _writeBuffer;
+  bool _shouldClose;
 
   // Prevent copying (Strict C++98 compliance rule against double-close bugs)
   ClientSocket(const ClientSocket& other);

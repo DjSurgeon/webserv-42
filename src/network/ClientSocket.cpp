@@ -17,7 +17,7 @@
  * @throw std::runtime_error If the file descriptor is invalid or fcntl() fails.
  */
 ClientSocket::ClientSocket(int client_fd)
-    : _fd(client_fd), _should_close(false) {
+    : _fd(client_fd), _shouldClose(false) {
   if (_fd < 0) {
     throw std::runtime_error("ClientSocket: Invalid file descriptor");
   }
@@ -55,7 +55,7 @@ int ClientSocket::getFd() const {
  * @return const std::string& The constant reference to the read buffer.
  */
 const std::string& ClientSocket::getReadBuffer() const {
-  return _read_buffer;
+  return _readBuffer;
 }
 
 /**
@@ -64,7 +64,7 @@ const std::string& ClientSocket::getReadBuffer() const {
  * @return const std::string& The constant reference to the write buffer.
  */
 const std::string& ClientSocket::getWriteBuffer() const {
-  return _write_buffer;
+  return _writeBuffer;
 }
 
 /**
@@ -73,7 +73,7 @@ const std::string& ClientSocket::getWriteBuffer() const {
  * @param data The data string to append.
  */
 void ClientSocket::appendToReadBuffer(const std::string& data) {
-  _read_buffer.append(data);
+  _readBuffer.append(data);
 }
 
 /**
@@ -82,7 +82,7 @@ void ClientSocket::appendToReadBuffer(const std::string& data) {
  * @param data The data string to append.
  */
 void ClientSocket::appendToWriteBuffer(const std::string& data) {
-  _write_buffer.append(data);
+  _writeBuffer.append(data);
 }
 
 /**
@@ -95,10 +95,10 @@ void ClientSocket::appendToWriteBuffer(const std::string& data) {
  * @param bytes Number of bytes to consume.
  */
 void ClientSocket::consumeReadBuffer(size_t bytes) {
-  if (bytes >= _read_buffer.size()) {
-    _read_buffer.clear();
+  if (bytes >= _readBuffer.size()) {
+    _readBuffer.clear();
   } else {
-    _read_buffer.erase(0, bytes);
+    _readBuffer.erase(0, bytes);
   }
 }
 
@@ -106,7 +106,7 @@ void ClientSocket::consumeReadBuffer(size_t bytes) {
  * @brief Clears the write buffer completely.
  */
 void ClientSocket::clearWriteBuffer() {
-  _write_buffer.clear();
+  _writeBuffer.clear();
 }
 
 /**
@@ -117,10 +117,10 @@ void ClientSocket::clearWriteBuffer() {
  * @param bytes Number of bytes to consume.
  */
 void ClientSocket::consumeWriteBuffer(size_t bytes) {
-  if (bytes >= _write_buffer.size()) {
-    _write_buffer.clear();
+  if (bytes >= _writeBuffer.size()) {
+    _writeBuffer.clear();
   } else {
-    _write_buffer.erase(0, bytes);
+    _writeBuffer.erase(0, bytes);
   }
 }
 
@@ -130,7 +130,7 @@ void ClientSocket::consumeWriteBuffer(size_t bytes) {
  * @param close True if the connection should be closed after writing.
  */
 void ClientSocket::setShouldClose(bool close) {
-  _should_close = close;
+  _shouldClose = close;
 }
 
 /**
@@ -139,5 +139,5 @@ void ClientSocket::setShouldClose(bool close) {
  * @return true If the connection is marked for closure.
  */
 bool ClientSocket::getShouldClose() const {
-  return _should_close;
+  return _shouldClose;
 }
