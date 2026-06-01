@@ -101,6 +101,6 @@ ListeningSocket::~ListeningSocket() {
  *
  * @return int The socket file descriptor.
  */
-int ListeningSocket::get_fd() const {
+int ListeningSocket::getFd() const {
   return _fd;
 }

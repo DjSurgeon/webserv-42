@@ -17,9 +17,9 @@ To ensure smooth compilation when merging branches, the following class boundari
     - `int accept_connection();` -> Spawns a raw client descriptor.
 - **`ClientSocket`**: Encapsulates active client state.
   - *Public API:*
-    - `int get_fd() const;`
-    - `std::string& get_read_buffer();`
-    - `std::string& get_write_buffer();`
+    - `int getFd() const;`
+    - `std::string& getReadBuffer();`
+    - `std::string& getWriteBuffer();`
 
 ### B. HTTP Parser Module (`src/http/`)
 - **`HttpRequest`**: Immutable data container filled by the parser.

@@ -193,9 +193,9 @@ void EventLoop::_handleClientData(int fd) {
   int bytes = recv(fd, buffer, sizeof(buffer), 0);
 
   if (bytes > 0) {
-    client_it->second->append_to_read_buffer(std::string(buffer, bytes));
+    client_it->second->appendToReadBuffer(std::string(buffer, bytes));
     // Process the buffer with the parser
-    const std::string& read_buf = client_it->second->get_read_buffer();
+    const std::string& read_buf = client_it->second->getReadBuffer();
     size_t i = 0;
     while (i < read_buf.length()) {
       e_parser_state state = parser_it->second->feed(read_buf[i]);
@@ -219,23 +219,23 @@ void EventLoop::_handleClientData(int fd) {
         _dispatchRequest(req, matched_server, res);
 
         bool should_close = _shouldCloseConnection(req);
-        client_it->second->set_should_close(should_close);
+        client_it->second->setShouldClose(should_close);
 
         std::string raw_response = res.to_string();
-        client_it->second->append_to_write_buffer(raw_response);
+        client_it->second->appendToWriteBuffer(raw_response);
         parser_it->second->reset();
         break;
       } else if (state == STATE_ERROR) {
         std::cerr << "EventLoop: Parser error from client " << fd << "\n";
-        client_it->second->append_to_write_buffer(
+        client_it->second->appendToWriteBuffer(
             "HTTP/1.1 400 Bad Request\r\n"
             "Connection: close\r\n"
             "\r\n");
-        client_it->second->set_should_close(true);
+        client_it->second->setShouldClose(true);
         break;
       }
     }
-    client_it->second->consume_read_buffer(i);
+    client_it->second->consumeReadBuffer(i);
   } else if (bytes == 0) {
     removeSocket(fd);
   }

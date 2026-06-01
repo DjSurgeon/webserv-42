@@ -1,6 +1,6 @@
 // Copyright 2026 serjimen vja-nie dlesieur
-#ifndef SRC_NETWORK_LISTENINGSOCKET_HPP_
-#define SRC_NETWORK_LISTENINGSOCKET_HPP_
+#ifndef INCLUDE_NETWORK_LISTENINGSOCKET_HPP_
+#define INCLUDE_NETWORK_LISTENINGSOCKET_HPP_
 
 /**
  * @brief RAII class to manage a listening socket file descriptor.
@@ -16,7 +16,7 @@ class ListeningSocket {
   ~ListeningSocket();
 
   void init(int port);
-  int get_fd() const;
+  int getFd() const;
 
  private:
   int _fd;
@@ -26,4 +26,4 @@ class ListeningSocket {
   ListeningSocket& operator=(const ListeningSocket& other);
 };
 
-#endif  // SRC_NETWORK_LISTENINGSOCKET_HPP_
+#endif  // INCLUDE_NETWORK_LISTENINGSOCKET_HPP_

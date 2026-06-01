@@ -53,7 +53,7 @@ int main(int argc, char** argv) {
       int port = it->first;
       ListeningSocket* socket = new ListeningSocket();
       socket->init(port);
-      loop.addServerSocket(socket->get_fd(), it->second);
+      loop.addServerSocket(socket->getFd(), it->second);
       listening_sockets.push_back(socket);
       std::cout << "Server listening on port " << port << " ("
                 << it->second.size() << " virtual hosts)" << std::endl;

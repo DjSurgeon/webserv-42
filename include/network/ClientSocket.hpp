@@ -1,6 +1,6 @@
 // Copyright 2026 serjimen vja-nie dlesieur
-#ifndef SRC_NETWORK_CLIENTSOCKET_HPP_
-#define SRC_NETWORK_CLIENTSOCKET_HPP_
+#ifndef INCLUDE_NETWORK_CLIENTSOCKET_HPP_
+#define INCLUDE_NETWORK_CLIENTSOCKET_HPP_
 
 #include <cstddef>
 #include <string>
@@ -19,20 +19,20 @@ class ClientSocket {
   ~ClientSocket();
 
   // --- Getters (Zero-copy, read-only constant references) ---
-  int get_fd() const;
-  const std::string& get_read_buffer() const;
-  const std::string& get_write_buffer() const;
+  int getFd() const;
+  const std::string& getReadBuffer() const;
+  const std::string& getWriteBuffer() const;
 
   // --- Mutators (Controlled state modification gates) ---
-  void append_to_read_buffer(const std::string& data);
-  void append_to_write_buffer(const std::string& data);
-  void consume_read_buffer(size_t bytes);
-  void consume_write_buffer(size_t bytes);
-  void clear_write_buffer();
+  void appendToReadBuffer(const std::string& data);
+  void appendToWriteBuffer(const std::string& data);
+  void consumeReadBuffer(size_t bytes);
+  void consumeWriteBuffer(size_t bytes);
+  void clearWriteBuffer();
 
   // --- Connection Lifecycle ---
-  void set_should_close(bool close);
-  bool get_should_close() const;
+  void setShouldClose(bool close);
+  bool getShouldClose() const;
 
  private:
   int _fd;
@@ -45,4 +45,4 @@ class ClientSocket {
   ClientSocket& operator=(const ClientSocket& other);
 };
 
-#endif  // SRC_NETWORK_CLIENTSOCKET_HPP_
+#endif  // INCLUDE_NETWORK_CLIENTSOCKET_HPP_

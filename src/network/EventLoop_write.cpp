@@ -21,17 +21,16 @@ void EventLoop::_handleClientWrite(int fd) {
     return;
   }
 
-  const std::string& data = it->second->get_write_buffer();
+  const std::string& data = it->second->getWriteBuffer();
   if (!data.empty()) {
     int sent = send(fd, data.c_str(), data.length(), 0);
     if (sent > 0) {
-      it->second->consume_write_buffer(sent);
+      it->second->consumeWriteBuffer(sent);
     }
   }
 
   // Check if we should close the connection after sending all data
-  if (it->second->get_write_buffer().empty() &&
-      it->second->get_should_close()) {
+  if (it->second->getWriteBuffer().empty() && it->second->getShouldClose()) {
     removeSocket(fd);
   }
 }
