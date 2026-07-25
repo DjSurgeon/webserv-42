@@ -113,6 +113,15 @@ void StaticRouter::_translate_path(const HttpRequest& req, const Context* ctx,
   std::string clean_root = root;
   std::string clean_uri = uri;
 
+  const LocationConfig* location =
+    dynamic_cast<const LocationConfig*>(ctx);
+
+  if (location) {
+    const std::string& prefix = location->getPath();
+    if (clean_uri.find(prefix) == 0)
+      clean_uri.erase(0, prefix.length());
+  }
+
   if (!clean_root.empty() && clean_root[clean_root.length() - 1] == '/') {
     clean_root = clean_root.substr(0, clean_root.length() - 1);
   }
