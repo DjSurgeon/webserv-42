@@ -96,7 +96,7 @@ void EventLoop::run() {
 
     int ret = poll(&_pollfds[0], _pollfds.size(), POLL_TIMEOUT);
 
-    if (ret < 0) {
+    if (ret < 0 && g_running == 1) {
       std::cerr << "EventLoop: poll() failed" << std::endl;
       continue;
     }
