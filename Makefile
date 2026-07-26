@@ -3,10 +3,10 @@
 #                                                         :::      ::::::::    #
 #    Makefile                                           :+:      :+:    :+:    #
 #                                                     +:+ +:+         +:+      #
-#    By: webserv-42                                 +#+  +:+       +#+         #
+#    By: raperez- <raperez-@student.42madrid.com    +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
-#    Created: 2026/05/20 14:37:00                      #+#    #+#              #
-#    Updated: 2026/05/20 14:37:00                     ###   ########.fr        #
+#    Created: 2026/05/20 14:37:00 by                   #+#    #+#              #
+#    Updated: 2026/07/26 00:18:10 by raperez-         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -141,7 +141,7 @@ $(NAME): $(OBJS)
 	@$(CXX) $(CXXFLAGS) $(INCLUDES) $(OBJS) -o $(NAME)
 	@echo "$(BOLD)$(GREEN)"
 	@echo "  ╔═════════════════════════════════════════════╗"
-	@echo "  ║      ✅  $(NAME) compiled successfully     ║"
+	@echo "  ║      ✅  $(NAME) compiled successfully      ║"
 	@echo "  ╚═════════════════════════════════════════════╝"
 	@echo "$(RESET)"
 

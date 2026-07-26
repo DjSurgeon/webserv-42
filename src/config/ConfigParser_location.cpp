@@ -10,14 +10,20 @@
 void ConfigParser::_handleLocationDirective(
     const std::vector<std::string>& tokens, size_t* i, ServerConfig* server) {
   LocationConfig loc;
-  // Inherit context defaults
-  loc.setRoot(server->getRoot());
-  loc.setIndexFiles(server->getIndexFiles());
-  loc.setErrorPages(server->getErrorPages());
+
   loc.setClientMaxBodySize(server->getClientMaxBodySize());
   loc.setAutoindex(server->getAutoindex());
 
   _parseLocationBlock(tokens, i, &loc);
+
+  // Inherit context defaults
+  if (loc.getRoot().empty())
+    loc.setRoot(server->getRoot());
+  if (loc.getIndexFiles().empty())
+    loc.setIndexFiles(server->getIndexFiles());
+  if (loc.getErrorPages().empty())
+    loc.setErrorPages(server->getErrorPages());
+
   server->addLocation(loc);
 }
 
