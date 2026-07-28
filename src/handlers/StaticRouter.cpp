@@ -134,7 +134,7 @@ void StaticRouter::_translate_path(const HttpRequest& req, const Context* ctx,
   *out_physical_path = clean_root + clean_uri;
 
   struct stat st;
-  if (stat(out_physical_path->c_str(), &st) == 0 && S_ISDIR(st.st_mode)) {
+  if (stat(out_physical_path->c_str(), &st) == 0 && S_ISDIR(st.st_mode) && (req.get_method() == "GET" || req.get_method() == "HEAD")) {
     const std::vector<std::string>& index_files = ctx->getIndexFiles();
     std::string test_path = "";
     for (size_t i = 0; i < index_files.size(); ++i) {

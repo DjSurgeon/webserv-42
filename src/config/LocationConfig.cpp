@@ -5,14 +5,15 @@
 #include <vector>
 
 LocationConfig::LocationConfig()
-    : Context(), _path(""), _cgiPath(""), _redirect("") {}
+    : Context(), _path(""), _cgiPath(""), _redirect(""), _uploadPath("") {}
 
 LocationConfig::LocationConfig(const LocationConfig& other)
     : Context(other),
       _path(other._path),
       _cgiPath(other._cgiPath),
       _redirect(other._redirect),
-      _cgiExtensions(other._cgiExtensions) {}
+      _cgiExtensions(other._cgiExtensions),
+      _uploadPath(other._uploadPath) {}
 
 LocationConfig& LocationConfig::operator=(const LocationConfig& other) {
   if (this != &other) {
@@ -21,6 +22,7 @@ LocationConfig& LocationConfig::operator=(const LocationConfig& other) {
     _cgiPath = other._cgiPath;
     _redirect = other._redirect;
     _cgiExtensions = other._cgiExtensions;
+    _uploadPath = other._uploadPath;
   }
   return *this;
 }
@@ -43,6 +45,10 @@ const std::vector<std::string>& LocationConfig::getCgiExtensions() const {
   return _cgiExtensions;
 }
 
+const std::string& LocationConfig::getUploadPath() const {
+  return _uploadPath;
+}
+
 void LocationConfig::setPath(const std::string& path) {
   _path = path;
 }
@@ -57,4 +63,8 @@ void LocationConfig::setRedirect(const std::string& redirect) {
 
 void LocationConfig::addCgiExtension(const std::string& ext) {
   _cgiExtensions.push_back(ext);
+}
+
+void LocationConfig::setUploadPath(const std::string& uploadPath) {
+  _uploadPath = uploadPath;
 }

@@ -1,5 +1,6 @@
 // Copyright 2026 serjimen vja-nie dlesieur
 #include "handlers/FileHandler.hpp"
+#include "config/LocationConfig.hpp"
 
 #include <dirent.h>
 #include <sys/stat.h>
@@ -9,6 +10,7 @@
 #include <fstream>
 #include <sstream>
 #include <string>
+#include <iostream>
 
 // -----------------------------------------------------------------------------
 // Orthodox Canonical Form
@@ -63,6 +65,84 @@ bool FileHandler::serve_file(const std::string& physical_path,
   return true;
 }
 
+std::string FileHandler::_getAvailableFilename(const std::string& directory,
+                                              const std::string& filename) {
+  std::string base = filename;
+  std::string extension;
+
+  std::size_t dot = filename.find_last_of('.');
+  if (dot != std::string::npos && dot != 0) {
+    base = filename.substr(0, dot);
+    extension = filename.substr(dot);
+  }
+
+  std::string candidate = directory + "/" + filename;
+  int i = 1;
+  while (access(candidate.c_str(), F_OK) == 0) {
+    std::ostringstream oss;
+    oss << directory << "/" << base << "(" << i++ << ")" << extension;
+    candidate = oss.str();
+  }
+  return candidate;
+}
+
+bool FileHandler::_uploadRaw(HttpResponse* res, const LocationConfig* loc,
+                            const HttpRequest* req) {
+  std::string uri = req->get_uri();
+  std::size_t pos = uri.find_last_of('/');
+  if (pos == std::string::npos || pos == uri.size() - 1) {
+    res->generate_error_response(400, loc, req);
+    return false;
+  }
+
+  //Create the file
+  std::string filename = uri.substr(pos + 1);
+  std::string filepath = _getAvailableFilename(loc->getRoot() + "/" + loc->getUploadPath(), filename);
+  std::cout << "Trying to create file on: " << filepath.c_str() << std::endl;
+  std::ofstream file(filepath.c_str(), std::ios::binary);
+  if (!file.is_open()) {
+    res->generate_error_response(500, loc, req);
+    return false;
+  }
+  file.write(req->get_body().data(), req->get_body().size());
+  file.close();
+
+  //Construct the 201 response
+  if (res) {
+    res->set_body("Created");
+    //res->add_header("Content-Type", _get_mime_type(physical_path));
+    res->add_header("Content-Length", "7");
+    res->set_status(201, "Created");
+  }
+  return true;
+}
+
+bool FileHandler::_uploadMultipart(HttpResponse* res, const LocationConfig* loc,
+                                  const HttpRequest* req) {
+  (void)res;
+  (void)loc;
+  (void)req;
+  return false;
+}
+
+bool FileHandler::upload_file(const std::string& physical_path,
+                             HttpResponse* res, const Context* ctx,
+                             const HttpRequest* req) {
+  (void) physical_path;
+  const LocationConfig* loc = dynamic_cast<const LocationConfig*>(ctx);
+  if (!loc || loc->getUploadPath().empty()) {
+    res->generate_error_response(403, ctx, req);
+    return false;
+  }
+
+  const std::map<std::string, std::string>& headers = req->get_headers();
+  std::map<std::string, std::string>::const_iterator it = headers.find("Content-Type");
+  if (it != headers.end() && it->second.find("multipart/form-data") != std::string::npos)
+    return _uploadMultipart(res, loc, req);
+  else
+    return _uploadRaw(res, loc, req);
+}
+
 bool FileHandler::delete_file(const std::string& physical_path,
                               HttpResponse* res, const Context* ctx,
                               const HttpRequest* req) {
@@ -87,6 +167,8 @@ bool FileHandler::delete_file(const std::string& physical_path,
   }
   return true;
 }
+
+
 
 void FileHandler::generate_autoindex(const std::string& dir_path,
                                      const std::string& uri, HttpResponse* res,

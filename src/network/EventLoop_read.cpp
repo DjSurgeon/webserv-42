@@ -113,6 +113,8 @@ void EventLoop::_executeFileHandler(const HttpRequest& req,
     } else {
       file_handler.serve_file(physical_path, &res, active_ctx, &req);
     }
+  } else if (method == "POST") {
+    file_handler.upload_file(physical_path, &res, active_ctx, &req);
   } else if (method == "DELETE") {
     file_handler.delete_file(physical_path, &res, active_ctx, &req);
   } else {
