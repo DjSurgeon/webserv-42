@@ -1,4 +1,4 @@
-// Copyright 2026 serjimen vja-nie dlesieur
+// Copyright 2026 raperez- serjimen
 #include <csignal>
 #include <iostream>
 #include <map>
@@ -9,17 +9,18 @@
 #include "config/ServerConfig.hpp"
 #include "network/EventLoop.hpp"
 #include "network/ListeningSocket.hpp"
+#include "utils/FileUtils.hpp"
 
 volatile sig_atomic_t g_running = 1;
 
-void sig_handler(int signum) {
+void sigHandler(int signum) {
   (void)signum;
   g_running = 0;
 }
 
 int main(int argc, char** argv) {
-  signal(SIGINT, sig_handler);
-  signal(SIGTERM, sig_handler);
+  signal(SIGINT, sigHandler);
+  signal(SIGTERM, sigHandler);
 
   if (argc > 2) {
     std::cerr << "Usage: " << argv[0] << " [configuration_file]" << std::endl;
@@ -29,7 +30,17 @@ int main(int argc, char** argv) {
   std::vector<ListeningSocket*> listening_sockets;
 
   try {
-    std::string config_file = (argc == 2) ? argv[1] : "conf/default.conf";
+    std::string config_file;
+    if (argc == 2) {
+      config_file = argv[1];
+    } else {
+      config_file = "conf/default.conf";
+    }
+
+    if (!FileUtils::isValidExtension(config_file, ".conf")) {
+      throw std::runtime_error("Invalid configuration file extension. Must end with '.conf'");
+    }
+
     std::cout << "--- Webserv Initialization ---" << std::endl;
     std::cout << "Loading configuration from: " << config_file << std::endl;
 

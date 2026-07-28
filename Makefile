@@ -55,7 +55,8 @@ SRCS		= $(SRC_DIR)/main.cpp \
 			  $(SRC_DIR)/network/EventLoop.cpp \
 			  $(SRC_DIR)/network/EventLoop_sockets.cpp \
 			  $(SRC_DIR)/network/EventLoop_read.cpp \
-			  $(SRC_DIR)/network/EventLoop_write.cpp
+			  $(SRC_DIR)/network/EventLoop_write.cpp \
+			  $(SRC_DIR)/utils/FileUtils.cpp
 
 OBJS		= $(SRCS:$(SRC_DIR)/%.cpp=$(OBJ_DIR)/%.o)
 
