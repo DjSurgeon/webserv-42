@@ -44,6 +44,9 @@ class CgiHandler {
                            const HttpRequest& req) const;
   void _add_query_string(std::vector<std::string>* env,
                          const std::string& uri) const;
+  void _add_path_info(std::vector<std::string>* env,
+                                const HttpRequest& req,
+                                const LocationConfig* loc) const;
   void _add_custom_headers(
       std::vector<std::string>* env,
       const std::map<std::string, std::string>& headers) const;

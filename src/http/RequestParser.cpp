@@ -51,6 +51,18 @@ e_parser_state RequestParser::feed(char c) {
     case STATE_BODY:
       _handle_state_body(c);
       break;
+    case STATE_CHUNK_SIZE:
+      _handle_state_chunk_size(c);
+      break;
+    case STATE_CHUNK_DATA:
+      _handle_state_chunk_data(c);
+      break;
+    case STATE_CHUNK_CRLF:
+      _handle_state_chunk_crlf(c);
+      break;
+    case STATE_CHUNK_END:
+      _handle_state_chunk_end(c);
+      break;
     case STATE_COMPLETE:
       break;
     case STATE_ERROR:
@@ -66,7 +78,7 @@ e_parser_state RequestParser::feed(char c) {
  *
  * @param c The active character being evaluated.
  */
-void RequestParser::_handle_global_newline(char c) {
+/*void RequestParser::_handle_global_newline(char c) {
   if (c == '\n') {
     _expect_newline = false;
     if (_state == STATE_VERSION || _state == STATE_HEADER_VALUE) {
@@ -76,6 +88,52 @@ void RequestParser::_handle_global_newline(char c) {
     }
   } else {
     _state = STATE_ERROR;
+  }
+}*/
+
+void RequestParser::_handle_global_newline(char c) {
+  if (c != '\n') {
+    _state = STATE_ERROR;
+    return;
+  }
+
+  _expect_newline = false;
+
+  switch (_state) {
+    case STATE_VERSION:
+      _state = STATE_HEADER_KEY;
+      break;
+
+    case STATE_HEADER_VALUE:
+      _state = STATE_HEADER_KEY;
+      break;
+
+    case STATE_HEADER_KEY:
+      _determine_body_transition();
+      break;
+
+    case STATE_CHUNK_SIZE:
+      if (_chunk_size == 0) {
+        _state = STATE_CHUNK_END;
+      } else {
+        _chunk_read = 0;
+        _state = STATE_CHUNK_DATA;
+      }
+      break;
+
+    case STATE_CHUNK_CRLF:
+      _chunk_size_buffer.clear();
+      _state = STATE_CHUNK_SIZE;
+      break;
+
+    case STATE_CHUNK_END:
+      _request.set_body(_storage_buffer);
+      _storage_buffer.clear();
+      _state = STATE_COMPLETE;
+      break;
+
+    default:
+      break;
   }
 }
 
