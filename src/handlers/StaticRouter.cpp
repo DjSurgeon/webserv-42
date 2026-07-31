@@ -109,7 +109,14 @@ void StaticRouter::_translate_path(const HttpRequest& req, const Context* ctx,
     return;
   }
   const std::string& root = ctx->getRoot();
-  const std::string& uri = req.get_uri();
+  //const std::string& uri = req.get_uri();
+
+  std::string uri = req.get_uri();
+
+  // Eliminar la query string
+  size_t query_pos = uri.find('?');
+  if (query_pos != std::string::npos)
+    uri.erase(query_pos);
 
   std::string clean_root = root;
   std::string clean_uri = uri;
