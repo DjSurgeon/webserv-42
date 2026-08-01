@@ -3,10 +3,10 @@
 #                                                         :::      ::::::::    #
 #    Makefile                                           :+:      :+:    :+:    #
 #                                                     +:+ +:+         +:+      #
-#    By: raperez- <raperez-@student.42madrid.com    +#+  +:+       +#+         #
+#    By: raperez- <raperez-@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2026/05/20 14:37:00 by                   #+#    #+#              #
-#    Updated: 2026/07/26 00:18:10 by raperez-         ###   ########.fr        #
+#    Updated: 2026/08/01 12:01:32 by raperez-         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -141,9 +141,9 @@ all: $(NAME)
 $(NAME): $(OBJS)
 	@$(CXX) $(CXXFLAGS) $(INCLUDES) $(OBJS) -o $(NAME)
 	@echo "$(BOLD)$(GREEN)"
-	@echo "  ╔═════════════════════════════════════════════╗"
-	@echo "  ║      ✅  $(NAME) compiled successfully      ║"
-	@echo "  ╚═════════════════════════════════════════════╝"
+	@echo "  -----------------------------------------------"
+	@echo "  |      ✅  $(NAME) compiled successfully      |"
+	@echo "  -----------------------------------------------"
 	@echo "$(RESET)"
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp $(HDRS)
