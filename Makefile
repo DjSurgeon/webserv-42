@@ -3,10 +3,10 @@
 #                                                         :::      ::::::::    #
 #    Makefile                                           :+:      :+:    :+:    #
 #                                                     +:+ +:+         +:+      #
-#    By: webserv-42                                 +#+  +:+       +#+         #
+#    By: raperez- <raperez-@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
-#    Created: 2026/05/20 14:37:00                      #+#    #+#              #
-#    Updated: 2026/05/20 14:37:00                     ###   ########.fr        #
+#    Created: 2026/05/20 14:37:00 by                   #+#    #+#              #
+#    Updated: 2026/08/01 12:01:32 by raperez-         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -18,7 +18,8 @@ NAME		= webserv
 
 CXX			= c++
 CXXFLAGS	= -Wall -Wextra -Werror -std=c++98
-INCLUDES	= -Isrc
+INCLUDES	= -Iinclude
+INC_DIR		= include
 
 # ──────────────────────────────────────────────────────────────────────────── #
 #                                 SOURCES                                      #
@@ -32,31 +33,47 @@ SRCS		= $(SRC_DIR)/main.cpp \
 			  $(SRC_DIR)/config/LocationConfig.cpp \
 			  $(SRC_DIR)/config/ServerConfig.cpp \
 			  $(SRC_DIR)/config/ConfigParser.cpp \
+			  $(SRC_DIR)/config/ConfigParser_utils.cpp \
+			  $(SRC_DIR)/config/ConfigParser_utils2.cpp \
+			  $(SRC_DIR)/config/ConfigParser_server.cpp \
+			  $(SRC_DIR)/config/ConfigParser_location.cpp \
+			  $(SRC_DIR)/config/ConfigParser_context.cpp \
 			  $(SRC_DIR)/handlers/StaticRouter.cpp \
 			  $(SRC_DIR)/handlers/FileHandler.cpp \
 			  $(SRC_DIR)/handlers/CgiHandler.cpp \
 			  $(SRC_DIR)/http/HttpRequest.cpp \
+			  $(SRC_DIR)/http/HttpRequest_headers.cpp \
 			  $(SRC_DIR)/http/HttpResponse.cpp \
+			  $(SRC_DIR)/http/HttpResponse_error.cpp \
 			  $(SRC_DIR)/http/RequestParser.cpp \
+			  $(SRC_DIR)/http/RequestParser_request_line.cpp \
+			  $(SRC_DIR)/http/RequestParser_headers.cpp \
+			  $(SRC_DIR)/http/RequestParser_body.cpp \
+			  $(SRC_DIR)/http/SessionManager.cpp \
 			  $(SRC_DIR)/network/ListeningSocket.cpp \
 			  $(SRC_DIR)/network/ClientSocket.cpp \
-			  $(SRC_DIR)/network/EventLoop.cpp
+			  $(SRC_DIR)/network/EventLoop.cpp \
+			  $(SRC_DIR)/network/EventLoop_sockets.cpp \
+			  $(SRC_DIR)/network/EventLoop_read.cpp \
+			  $(SRC_DIR)/network/EventLoop_write.cpp \
+			  $(SRC_DIR)/utils/FileUtils.cpp
 
 OBJS		= $(SRCS:$(SRC_DIR)/%.cpp=$(OBJ_DIR)/%.o)
 
-HDRS		= $(SRC_DIR)/config/Context.hpp \
-			  $(SRC_DIR)/config/LocationConfig.hpp \
-			  $(SRC_DIR)/config/ServerConfig.hpp \
-			  $(SRC_DIR)/config/ConfigParser.hpp \
-			  $(SRC_DIR)/handlers/StaticRouter.hpp \
-			  $(SRC_DIR)/handlers/FileHandler.hpp \
-			  $(SRC_DIR)/handlers/CgiHandler.hpp \
-			  $(SRC_DIR)/http/HttpRequest.hpp \
-			  $(SRC_DIR)/http/HttpResponse.hpp \
-			  $(SRC_DIR)/http/RequestParser.hpp \
-			  $(SRC_DIR)/network/ListeningSocket.hpp \
-			  $(SRC_DIR)/network/ClientSocket.hpp \
-			  $(SRC_DIR)/network/EventLoop.hpp
+HDRS		= $(INC_DIR)/config/Context.hpp \
+			  $(INC_DIR)/config/LocationConfig.hpp \
+			  $(INC_DIR)/config/ServerConfig.hpp \
+			  $(INC_DIR)/config/ConfigParser.hpp \
+			  $(INC_DIR)/handlers/StaticRouter.hpp \
+			  $(INC_DIR)/handlers/FileHandler.hpp \
+			  $(INC_DIR)/handlers/CgiHandler.hpp \
+			  $(INC_DIR)/http/HttpRequest.hpp \
+			  $(INC_DIR)/http/HttpResponse.hpp \
+			  $(INC_DIR)/http/RequestParser.hpp \
+			  $(INC_DIR)/http/SessionManager.hpp \
+			  $(INC_DIR)/network/ListeningSocket.hpp \
+			  $(INC_DIR)/network/ClientSocket.hpp \
+			  $(INC_DIR)/network/EventLoop.hpp
 
 # ──────────────────────────────────────────────────────────────────────────── #
 #                                  TESTS                                       #
@@ -70,15 +87,29 @@ LIB_SRCS	= $(SRC_DIR)/config/Context.cpp \
 			  $(SRC_DIR)/config/LocationConfig.cpp \
 			  $(SRC_DIR)/config/ServerConfig.cpp \
 			  $(SRC_DIR)/config/ConfigParser.cpp \
+			  $(SRC_DIR)/config/ConfigParser_utils.cpp \
+			  $(SRC_DIR)/config/ConfigParser_utils2.cpp \
+			  $(SRC_DIR)/config/ConfigParser_server.cpp \
+			  $(SRC_DIR)/config/ConfigParser_location.cpp \
+			  $(SRC_DIR)/config/ConfigParser_context.cpp \
 			  $(SRC_DIR)/handlers/StaticRouter.cpp \
 			  $(SRC_DIR)/handlers/FileHandler.cpp \
 			  $(SRC_DIR)/handlers/CgiHandler.cpp \
 			  $(SRC_DIR)/http/HttpRequest.cpp \
+			  $(SRC_DIR)/http/HttpRequest_headers.cpp \
 			  $(SRC_DIR)/http/HttpResponse.cpp \
+			  $(SRC_DIR)/http/HttpResponse_error.cpp \
 			  $(SRC_DIR)/http/RequestParser.cpp \
+			  $(SRC_DIR)/http/RequestParser_request_line.cpp \
+			  $(SRC_DIR)/http/RequestParser_headers.cpp \
+			  $(SRC_DIR)/http/RequestParser_body.cpp \
+			  $(SRC_DIR)/http/SessionManager.cpp \
 			  $(SRC_DIR)/network/ListeningSocket.cpp \
 			  $(SRC_DIR)/network/ClientSocket.cpp \
 			  $(SRC_DIR)/network/EventLoop.cpp \
+			  $(SRC_DIR)/network/EventLoop_sockets.cpp \
+			  $(SRC_DIR)/network/EventLoop_read.cpp \
+			  $(SRC_DIR)/network/EventLoop_write.cpp \
 			  $(TEST_DIR)/integration/test_globals.cpp
 
 TEST_SRCS	= $(filter-out $(TEST_DIR)/integration/test_globals.cpp $(TEST_DIR)/integration/stress_client.cpp, $(wildcard $(TEST_DIR)/*/*.cpp))
@@ -110,9 +141,9 @@ all: $(NAME)
 $(NAME): $(OBJS)
 	@$(CXX) $(CXXFLAGS) $(INCLUDES) $(OBJS) -o $(NAME)
 	@echo "$(BOLD)$(GREEN)"
-	@echo "  ╔═════════════════════════════════════════════╗"
-	@echo "  ║      ✅  $(NAME) compiled successfully     ║"
-	@echo "  ╚═════════════════════════════════════════════╝"
+	@echo "  -----------------------------------------------"
+	@echo "  |      ✅  $(NAME) compiled successfully      |"
+	@echo "  -----------------------------------------------"
 	@echo "$(RESET)"
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp $(HDRS)

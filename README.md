@@ -5,7 +5,12 @@ This project is a fully functional, asynchronous, and non-blocking HTTP/1.1 Web 
 
 ### Current Architectural Status
 The project has successfully completed its core infrastructure foundation across the following layers:
-1. **Network Infrastructure (Sockets Layer):**
+
+1. **Canonical C++ Layout & SRP Refactoring:**
+   - **Industry Standard Structure**: The project strictly separates public interfaces (`include/`) from private implementations (`src/`), ensuring strong encapsulation, clean semantic `#include` directives, and zero compilation warnings.
+   - **Partial Implementations**: Monolithic source files (like `HttpResponse.cpp`) were shattered into focused, specialized sub-modules (e.g., `HttpResponse_error.cpp`). Functions were rigorously decoupled following the **Single Responsibility Principle (SRP)**, drastically reducing cognitive load and easing long-term maintainability.
+
+2. **Network Infrastructure (Sockets Layer):**
    - `ListeningSocket`: A pure RAII engine that safely manages server setup lifecycle (`socket`, `setsockopt`, `bind`, `listen`) preventing kernel descriptor leaks.
    - `ClientSocket`: Manages incoming active connections, automatically enforcing `O_NONBLOCK` settings at birth. It utilizes a zero-copy performance layout where reading modules consume data directly via constant string references (`const std::string&`), mitigating unnecessary heap allocations.
 
@@ -15,9 +20,9 @@ The project has successfully completed its core infrastructure foundation across
    - `HttpResponse`: Fully compliant HTTP/1.1 response builder. Incorporates a smart internal contingency system that automatically generates robust fallback HTML error pages (400, 403, 404, 405, 500) and injects strictly required headers (Content-Length, Content-Type) without duplicating logic, adhering to the DRY principle via an internal static reason phrase dictionary.
 
 3. **Configuration Architecture (NGINX Style):**
-   - A highly modular and strict C++98 hierarchical inheritance tree (`Context` -> `ServerConfig` & `LocationConfig`) established to store layout rules efficiently.
+   - A highly modular and strict C++98 hierarchical inheritance tree (`Context` -> `ServerConfig` & `LocationConfig`) established to store layout rules efficiently, entirely refactored to conform to strict `camelCase` coding standards.
    - It guarantees memory-safe deep cloning between configuration contexts leveraging the Orthodox Canonical Form, effectively preparing the runtime to absorb custom `.conf` directives safely.
-   - **Custom Configuration Parser**: A bespoke Recursive Descent Parser (`ConfigParser`) that ingests, tokenizes, and structures complex `.conf` layout files in $O(N)$ time complexity. It automatically handles comment sanitization, whitespace trimming, and context cascading (where locations safely inherit properties from their parent servers) directly translating text into executable C++ runtime structures. Recently refactored to completely eliminate the "Arrow Code" anti-pattern, the parser is highly modularized into single-responsibility handlers, drastically reducing cyclomatic complexity.
+   - **Bespoke Recursive Descent Parser (`ConfigParser`)**: Ingests, tokenizes, and structures complex `.conf` layout files in $O(N)$ time complexity. Physically shattered into 5 specialized sub-modules (e.g. `ConfigParser_server.cpp`, `ConfigParser_location.cpp`, `ConfigParser_context.cpp`) to strictly adhere to the Single Responsibility Principle (SRP). It automatically handles comment sanitization, whitespace trimming, and context cascading. It provides extreme resilience against edge cases (missing semicolons, unclosed brackets, unknown directives, etc.) aborting gracefully instead of inducing segmentation faults.
 
 4. **Content Delivery Layer:**
    - `FileHandler`: A secure, non-blocking I/O engine responsible for physical file serving and dynamic autoindexing. It strictly adheres to POSIX standards (`<dirent.h>`, `<sys/stat.h>`, `<unistd.h>`) to authenticate read permissions and sanitize paths before opening files.
@@ -30,11 +35,14 @@ The project has successfully completed its core infrastructure foundation across
    - **Anti-Deadlock Storage**: Safe offloading of massive POST request payloads via `tmpfile` buffer allocations to bypass POSIX kernel pipe-locking capacity constraints.
    - **RFC 3875 Strict Parser**: Implements an NGINX-style rigorous header separation routine (`\r\n\r\n` boundary checks) that aggressively sanitizes untrusted CGI output. Intercepts script pseudo-headers (like `Status`) directly into the HTTP core pipeline instead of erroneously leaking them into payloads, and safely injects an exact byte-calculated `Content-Length`. Any non-compliant execution immediately triggers a safe `502 Bad Gateway` containment boundary.
 
-6. **Routing & Event Multiplexing:**
-   - `StaticRouter` acting as an intelligent path translation engine and security firewall (validating HTTP methods and enforcing `client_max_body_size`).
-   - `EventLoop` routing dynamic/static requests via `cgi_ext` dynamic extension resolution, removing all hardcoded logic.
-   - Intelligent `index` auto-resolution via POSIX `stat()` preventing internal routing loops and transparently feeding `FileHandler`.
-   - Robust HTTP/1.1 TCP Lifecycle Management: Full Keep-Alive and Pipelining support via `RequestParser::reset()`, including graceful connection closure (`Connection: close` or HTTP/1.0 fallback) preventing File Descriptor leakage under heavy load.
+6. **Routing, Firewall & Event Multiplexing:**
+   - `StaticRouter` acting as an intelligent path translation engine and security firewall (instantly generating HTTP 405 for illegal methods and HTTP 413 to repel malicious massive payload attacks via `client_max_body_size`).
+   - `EventLoop` routing dynamic/static requests via `cgi_ext` dynamic extension resolution. It also implements an $O(1)$ HTTP 301 Short-circuit redirect, safely bypassing heavy file handlers to deliver immediate redirection instructions.
+   - **Context-Aware Error Propagation:** Native support for injecting Context pointers down the stack, enabling handlers to serve completely personalized visual error pages (`error_page` directive) per isolated location.
+   - Robust HTTP/1.1 TCP Lifecycle Management: Full Keep-Alive and Pipelining support via `RequestParser::reset()`, including graceful connection closure preventing File Descriptor leakage under heavy load. The infrastructure achieves a proven flawless status under strict `valgrind` tracing (0 memory leaks).
+
+7. **Advanced Bonus Features:**
+   - **Native Cookie Management:** Extends the baseline HTTP/1.1 protocol handling to securely parse, trim, and extract browser-sent `Cookie` payloads into queryable C++ Maps during request digestion. It simultaneously features an asynchronous, multi-header emission engine allowing secure injection of independent `Set-Cookie` directives bypassing `std::map` key-collision boundaries.
 
 ---
 

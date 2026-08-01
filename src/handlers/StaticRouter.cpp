@@ -1,8 +1,9 @@
-// Copyright 2026 serjimen vja-nie dlesieur
+// Copyright 2026 raperez- serjimen
 #include "handlers/StaticRouter.hpp"
 
 #include <sys/stat.h>
 
+#include <iostream>
 #include <string>
 #include <vector>
 
@@ -22,8 +23,9 @@ StaticRouter::~StaticRouter() {}
 bool StaticRouter::process_route(const HttpRequest& req,
                                  const ServerConfig* server,
                                  const LocationConfig* loc, HttpResponse* res,
-                                 std::string* out_physical_path) const {
-  if (!_check_null_context(server, loc, res)) {
+                                 std::string* out_physical_path,
+                                 const Context* active_ctx) const {
+  if (!_check_null_context(server, loc, res, active_ctx)) {
     return false;
   }
 
@@ -45,10 +47,11 @@ bool StaticRouter::process_route(const HttpRequest& req,
 
 bool StaticRouter::_check_null_context(const ServerConfig* server,
                                        const LocationConfig* loc,
-                                       HttpResponse* res) const {
+                                       HttpResponse* res,
+                                       const Context* ctx) const {
   if (loc == NULL && server == NULL) {
     if (res) {
-      res->generate_error_response(404);
+      res->generate_error_response(404, ctx, NULL);
     }
     return false;
   }
@@ -58,7 +61,7 @@ bool StaticRouter::_check_null_context(const ServerConfig* server,
 bool StaticRouter::_validate_method(const HttpRequest& req, const Context* ctx,
                                     HttpResponse* res) const {
   const std::string& method = req.get_method();
-  const std::vector<std::string>& allowed_methods = ctx->get_allowed_methods();
+  const std::vector<std::string>& allowed_methods = ctx->getAllowedMethods();
   bool method_allowed = false;
 
   if (allowed_methods.empty()) {
@@ -76,7 +79,7 @@ bool StaticRouter::_validate_method(const HttpRequest& req, const Context* ctx,
 
   if (!method_allowed) {
     if (res) {
-      res->generate_error_response(405);
+      res->generate_error_response(405, ctx, &req);
     }
     return false;
   }
@@ -87,12 +90,12 @@ bool StaticRouter::_validate_method(const HttpRequest& req, const Context* ctx,
 bool StaticRouter::_validate_payload_size(const HttpRequest& req,
                                           const Context* ctx,
                                           HttpResponse* res) const {
-  size_t max_size = ctx->get_client_max_body_size();
+  size_t max_size = ctx->getClientMaxBodySize();
 
   // 0 is interpreted as unlimited body size
   if (max_size > 0 && req.get_body().length() > max_size) {
     if (res) {
-      res->generate_error_response(413);
+      res->generate_error_response(413, ctx, &req);
     }
     return false;
   }
@@ -105,11 +108,24 @@ void StaticRouter::_translate_path(const HttpRequest& req, const Context* ctx,
   if (!out_physical_path) {
     return;
   }
-  const std::string& root = ctx->get_root();
-  const std::string& uri = req.get_uri();
+  const std::string& root = ctx->getRoot();
+  // const std::string& uri = req.get_uri();
+
+  std::string uri = req.get_uri();
+
+  // Eliminar la query string
+  size_t query_pos = uri.find('?');
+  if (query_pos != std::string::npos) uri.erase(query_pos);
 
   std::string clean_root = root;
   std::string clean_uri = uri;
+
+  const LocationConfig* location = dynamic_cast<const LocationConfig*>(ctx);
+
+  if (location) {
+    const std::string& prefix = location->getPath();
+    if (clean_uri.find(prefix) == 0) clean_uri.erase(0, prefix.length());
+  }
 
   if (!clean_root.empty() && clean_root[clean_root.length() - 1] == '/') {
     clean_root = clean_root.substr(0, clean_root.length() - 1);
@@ -122,18 +138,49 @@ void StaticRouter::_translate_path(const HttpRequest& req, const Context* ctx,
   *out_physical_path = clean_root + clean_uri;
 
   struct stat st;
-  if (stat(out_physical_path->c_str(), &st) == 0 && S_ISDIR(st.st_mode)) {
-    const std::vector<std::string>& index_files = ctx->get_index_files();
+  if (!ctx->getAutoindex() && stat(out_physical_path->c_str(), &st) == 0 &&
+      S_ISDIR(st.st_mode) &&
+      (req.get_method() == "GET" || req.get_method() == "HEAD")) {
+    const std::vector<std::string>& index_files = ctx->getIndexFiles();
+    std::string test_path = "";
     for (size_t i = 0; i < index_files.size(); ++i) {
       std::string base_path = *out_physical_path;
       if (!base_path.empty() && base_path[base_path.length() - 1] != '/') {
         base_path += "/";
       }
-      std::string test_path = base_path + index_files[i];
+      test_path = base_path + index_files[i];
       struct stat idx_st;
       if (stat(test_path.c_str(), &idx_st) == 0 && S_ISREG(idx_st.st_mode)) {
         *out_physical_path = test_path;
         break;
+      }
+    }
+    *out_physical_path = test_path;
+  }
+
+  // Internationalization (i18n) Check
+  if (out_physical_path->length() >= 5 &&
+      out_physical_path->substr(out_physical_path->length() - 5) == ".html") {
+    std::vector<LanguageWeight> langs = req.get_accepted_languages();
+    for (size_t i = 0; i < langs.size(); ++i) {
+      std::string lang_path = *out_physical_path + "." + langs[i].lang;
+      struct stat lang_st;
+
+      // Try exact match (e.g. index.html.es-ES or index.html.en)
+      if (stat(lang_path.c_str(), &lang_st) == 0 && S_ISREG(lang_st.st_mode)) {
+        *out_physical_path = lang_path;
+        break;
+      }
+
+      // Try short match (e.g. es-ES -> es)
+      if (langs[i].lang.length() > 2 && langs[i].lang[2] == '-') {
+        std::string short_lang = langs[i].lang.substr(0, 2);
+        std::string short_lang_path = *out_physical_path + "." + short_lang;
+        if (stat(short_lang_path.c_str(), &lang_st) == 0 &&
+            S_ISREG(lang_st.st_mode)) {
+          *out_physical_path = short_lang_path;
+          break;
+        }
       }
     }
   }

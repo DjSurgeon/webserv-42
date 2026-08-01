@@ -6,7 +6,9 @@
 #include <string>
 #include <vector>
 
+#include "http/HttpRequest.hpp"
 #include "http/HttpResponse.hpp"
+#include "http/SessionManager.hpp"
 
 // ANSI Color codes for pretty output
 #define RED "\033[31m"
@@ -76,20 +78,38 @@ void test_serialization() {
 void test_error_generation() {
   std::cout << "[Test] Verifying generate_error_response..." << std::endl;
 
-  // Known code
-  HttpResponse res404;
-  res404.generate_error_response(404);
-  std::string s404 = res404.to_string();
-  bool pass404 = (s404.find("404 Not Found") != std::string::npos &&
-                  s404.find("Content-Length:") != std::string::npos);
+  // 1. Anonymous 404
+  {
+    HttpResponse res;
+    HttpRequest req;
+    res.generate_error_response(404, NULL, &req);
+    std::string s = res.to_string();
+    assert(s.find("404 Not Found") != std::string::npos);
+    assert(s.find("Lo sentimos") == std::string::npos);
+  }
 
-  // Unknown code (fallback to 500)
-  HttpResponse res999;
-  res999.generate_error_response(999);
-  std::string s999 = res999.to_string();
-  bool pass999 = (s999.find("500 Internal Server Error") != std::string::npos);
+  // 2. Authenticated 404 (Personalized)
+  {
+    std::string sid =
+        SessionManager::get_instance().create_session("admin_user");
+    HttpResponse res;
+    HttpRequest req;
+    req.add_cookie("session_id", sid);
+    res.generate_error_response(404, NULL, &req);
+    std::string s = res.to_string();
+    assert(s.find("404 Not Found") != std::string::npos);
+    assert(s.find("Lo sentimos, <b>admin_user</b>") != std::string::npos);
+  }
 
-  print_result("test_error_generation", pass404 && pass999);
+  // 3. Unknown code (fallback to 500)
+  {
+    HttpResponse res;
+    res.generate_error_response(999);
+    std::string s = res.to_string();
+    assert(s.find("500 Internal Server Error") != std::string::npos);
+  }
+
+  print_result("test_error_generation", true);
 }
 
 void test_edge_cases() {
@@ -134,6 +154,31 @@ void test_stress() {
   print_result("test_stress", true);
 }
 
+void test_http_response_cookies() {
+  std::cout << "[Test] Verifying Set-Cookie serialization..." << std::endl;
+  HttpResponse res;
+
+  // 1. Single cookie with options
+  res.add_cookie("session", "42", "Path=/; HttpOnly");
+  // 2. Single cookie with default options
+  res.add_cookie("theme", "dark");
+
+  // 3. Raw cookie string (overload)
+  res.add_cookie("lang=en-US; Domain=example.com");
+
+  std::string s = res.to_string();
+
+  // Assertions
+  bool check1 = (s.find("Set-Cookie: session=42; Path=/; HttpOnly\r\n") !=
+                 std::string::npos);
+  bool check2 = (s.find("Set-Cookie: theme=dark\r\n") != std::string::npos);
+  bool check3 = (s.find("Set-Cookie: lang=en-US; Domain=example.com\r\n") !=
+                 std::string::npos);
+
+  // Verification of coexistence (all should be there)
+  print_result("test_http_response_cookies", check1 && check2 && check3);
+}
+
 int main() {
   std::cout << "=== STARTING HTTP RESPONSE TESTS ===\n" << std::endl;
 
@@ -144,6 +189,8 @@ int main() {
   test_serialization();
   std::cout << std::endl;
   test_error_generation();
+  std::cout << std::endl;
+  test_http_response_cookies();
   std::cout << std::endl;
   test_edge_cases();
   std::cout << std::endl;

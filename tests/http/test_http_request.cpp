@@ -111,6 +111,37 @@ void test_clear() {
   print_result("test_clear", pass);
 }
 
+void test_accept_language_parsing() {
+  std::cout << "[Test] Verifying Accept-Language parsing..." << std::endl;
+  HttpRequest req;
+  req.add_header("Accept-Language", "fr, en;q=0.9, es;q=0.2");
+
+  std::vector<LanguageWeight> langs = req.get_accepted_languages();
+
+  bool pass = true;
+  if (langs.size() != 3) {
+    std::cerr << "Expected 3 languages, got " << langs.size() << std::endl;
+    pass = false;
+  }
+  if (pass && (langs[0].lang != "fr" || langs[0].q != 1.0)) {
+    std::cerr << "Expected fr with q=1.0, got " << langs[0].lang
+              << " with q=" << langs[0].q << std::endl;
+    pass = false;
+  }
+  if (pass && (langs[1].lang != "en" || langs[1].q != 0.9)) {
+    std::cerr << "Expected en with q=0.9, got " << langs[1].lang
+              << " with q=" << langs[1].q << std::endl;
+    pass = false;
+  }
+  if (pass && (langs[2].lang != "es" || langs[2].q != 0.2)) {
+    std::cerr << "Expected es with q=0.2, got " << langs[2].lang
+              << " with q=" << langs[2].q << std::endl;
+    pass = false;
+  }
+
+  print_result("test_accept_language_parsing", pass);
+}
+
 int main() {
   std::cout << "=== STARTING HTTP REQUEST TESTS ===\n" << std::endl;
 
@@ -119,6 +150,8 @@ int main() {
   test_setters_and_getters();
   std::cout << std::endl;
   test_clear();
+  std::cout << std::endl;
+  test_accept_language_parsing();
 
   std::cout << "\n=== HTTP REQUEST TESTS COMPLETED ===" << std::endl;
   return 0;

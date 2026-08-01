@@ -61,14 +61,15 @@ void test_invalid_port() {
             << std::endl;
   ListeningSocket ls;
   try {
-    // htons will overflow, but bind should still fail or behave predictably
     ls.init(999999);
+    print_result("test_invalid_port", false);
+  } catch (const std::runtime_error& e) {
+    std::cout << "Caught expected exception: " << e.what() << std::endl;
+    std::string msg = e.what();
     print_result("test_invalid_port",
-                 true);  // bind might succeed with truncated port, but we check
-                         // if it crashes
-  } catch (const std::exception& e) {
-    std::cout << "Caught exception: " << e.what() << std::endl;
-    print_result("test_invalid_port", true);
+                 msg == "ListeningSocket: Invalid port range");
+  } catch (...) {
+    print_result("test_invalid_port", false);
   }
 }
 
@@ -129,7 +130,7 @@ void test_explicit_constructor() {
             << std::endl;
   try {
     ListeningSocket ls(8083);
-    if (ls.get_fd() == -1) {
+    if (ls.getFd() == -1) {
       print_result("test_explicit_constructor", false);
       return;
     }
@@ -160,43 +161,43 @@ void test_client_socket_buffers() {
     ClientSocket cs(fd);
 
     // Initial state
-    if (!cs.get_read_buffer().empty() || !cs.get_write_buffer().empty()) {
+    if (!cs.getReadBuffer().empty() || !cs.getWriteBuffer().empty()) {
       print_result("test_client_socket_buffers (initial state)", false);
       return;
     }
 
     // Test appending
-    cs.append_to_read_buffer("GET / HTTP/1.1\r\n");
-    cs.append_to_read_buffer("Host: localhost\r\n\r\n");
-    if (cs.get_read_buffer() != "GET / HTTP/1.1\r\nHost: localhost\r\n\r\n") {
+    cs.appendToReadBuffer("GET / HTTP/1.1\r\n");
+    cs.appendToReadBuffer("Host: localhost\r\n\r\n");
+    if (cs.getReadBuffer() != "GET / HTTP/1.1\r\nHost: localhost\r\n\r\n") {
       print_result("test_client_socket_buffers (append read)", false);
       return;
     }
 
     // Test consuming
-    cs.consume_read_buffer(16);  // length of "GET / HTTP/1.1\r\n"
-    if (cs.get_read_buffer() != "Host: localhost\r\n\r\n") {
-      std::cout << "Buffer is: " << cs.get_read_buffer() << std::endl;
+    cs.consumeReadBuffer(16);  // length of "GET / HTTP/1.1\r\n"
+    if (cs.getReadBuffer() != "Host: localhost\r\n\r\n") {
+      std::cout << "Buffer is: " << cs.getReadBuffer() << std::endl;
       print_result("test_client_socket_buffers (consume partial)", false);
       return;
     }
 
     // Test consuming more than size
-    cs.consume_read_buffer(50);
-    if (!cs.get_read_buffer().empty()) {
+    cs.consumeReadBuffer(50);
+    if (!cs.getReadBuffer().empty()) {
       print_result("test_client_socket_buffers (consume excessive)", false);
       return;
     }
 
     // Test write buffer and clear
-    cs.append_to_write_buffer("HTTP/1.1 200 OK\r\n");
-    if (cs.get_write_buffer() != "HTTP/1.1 200 OK\r\n") {
+    cs.appendToWriteBuffer("HTTP/1.1 200 OK\r\n");
+    if (cs.getWriteBuffer() != "HTTP/1.1 200 OK\r\n") {
       print_result("test_client_socket_buffers (append write)", false);
       return;
     }
 
-    cs.clear_write_buffer();
-    if (!cs.get_write_buffer().empty()) {
+    cs.clearWriteBuffer();
+    if (!cs.getWriteBuffer().empty()) {
       print_result("test_client_socket_buffers (clear write)", false);
       return;
     }

@@ -1,4 +1,4 @@
-// Copyright 2026 serjimen vja-nie dlesieur
+// Copyright 2026 raperez- serjimen
 #include "network/ClientSocket.hpp"
 
 #include <fcntl.h>
@@ -17,7 +17,7 @@
  * @throw std::runtime_error If the file descriptor is invalid or fcntl() fails.
  */
 ClientSocket::ClientSocket(int client_fd)
-    : _fd(client_fd), _should_close(false) {
+    : _fd(client_fd), _shouldClose(false) {
   if (_fd < 0) {
     throw std::runtime_error("ClientSocket: Invalid file descriptor");
   }
@@ -45,7 +45,7 @@ ClientSocket::~ClientSocket() {
  *
  * @return int The file descriptor.
  */
-int ClientSocket::get_fd() const {
+int ClientSocket::getFd() const {
   return _fd;
 }
 
@@ -54,8 +54,8 @@ int ClientSocket::get_fd() const {
  *
  * @return const std::string& The constant reference to the read buffer.
  */
-const std::string& ClientSocket::get_read_buffer() const {
-  return _read_buffer;
+const std::string& ClientSocket::getReadBuffer() const {
+  return _readBuffer;
 }
 
 /**
@@ -63,8 +63,8 @@ const std::string& ClientSocket::get_read_buffer() const {
  *
  * @return const std::string& The constant reference to the write buffer.
  */
-const std::string& ClientSocket::get_write_buffer() const {
-  return _write_buffer;
+const std::string& ClientSocket::getWriteBuffer() const {
+  return _writeBuffer;
 }
 
 /**
@@ -72,8 +72,8 @@ const std::string& ClientSocket::get_write_buffer() const {
  *
  * @param data The data string to append.
  */
-void ClientSocket::append_to_read_buffer(const std::string& data) {
-  _read_buffer.append(data);
+void ClientSocket::appendToReadBuffer(const std::string& data) {
+  _readBuffer.append(data);
 }
 
 /**
@@ -81,8 +81,8 @@ void ClientSocket::append_to_read_buffer(const std::string& data) {
  *
  * @param data The data string to append.
  */
-void ClientSocket::append_to_write_buffer(const std::string& data) {
-  _write_buffer.append(data);
+void ClientSocket::appendToWriteBuffer(const std::string& data) {
+  _writeBuffer.append(data);
 }
 
 /**
@@ -94,19 +94,19 @@ void ClientSocket::append_to_write_buffer(const std::string& data) {
  *
  * @param bytes Number of bytes to consume.
  */
-void ClientSocket::consume_read_buffer(size_t bytes) {
-  if (bytes >= _read_buffer.size()) {
-    _read_buffer.clear();
+void ClientSocket::consumeReadBuffer(size_t bytes) {
+  if (bytes >= _readBuffer.size()) {
+    _readBuffer.clear();
   } else {
-    _read_buffer.erase(0, bytes);
+    _readBuffer.erase(0, bytes);
   }
 }
 
 /**
  * @brief Clears the write buffer completely.
  */
-void ClientSocket::clear_write_buffer() {
-  _write_buffer.clear();
+void ClientSocket::clearWriteBuffer() {
+  _writeBuffer.clear();
 }
 
 /**
@@ -116,11 +116,11 @@ void ClientSocket::clear_write_buffer() {
  *
  * @param bytes Number of bytes to consume.
  */
-void ClientSocket::consume_write_buffer(size_t bytes) {
-  if (bytes >= _write_buffer.size()) {
-    _write_buffer.clear();
+void ClientSocket::consumeWriteBuffer(size_t bytes) {
+  if (bytes >= _writeBuffer.size()) {
+    _writeBuffer.clear();
   } else {
-    _write_buffer.erase(0, bytes);
+    _writeBuffer.erase(0, bytes);
   }
 }
 
@@ -129,8 +129,8 @@ void ClientSocket::consume_write_buffer(size_t bytes) {
  *
  * @param close True if the connection should be closed after writing.
  */
-void ClientSocket::set_should_close(bool close) {
-  _should_close = close;
+void ClientSocket::setShouldClose(bool close) {
+  _shouldClose = close;
 }
 
 /**
@@ -138,6 +138,6 @@ void ClientSocket::set_should_close(bool close) {
  *
  * @return true If the connection is marked for closure.
  */
-bool ClientSocket::get_should_close() const {
-  return _should_close;
+bool ClientSocket::getShouldClose() const {
+  return _shouldClose;
 }

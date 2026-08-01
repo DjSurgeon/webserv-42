@@ -1,4 +1,4 @@
-// Copyright 2026 serjimen vja-nie dlesieur
+// Copyright 2026 raperez- serjimen
 #include "network/ListeningSocket.hpp"
 
 #include <netinet/in.h>
@@ -45,6 +45,10 @@ ListeningSocket::ListeningSocket(int port) : _fd(-1) {
 void ListeningSocket::init(int port) {
   if (_fd != -1) {
     throw std::runtime_error("ListeningSocket: Already initialized");
+  }
+
+  if (port < 1 || port > 65535) {
+    throw std::runtime_error("ListeningSocket: Invalid port range");
   }
 
   _fd = socket(AF_INET, SOCK_STREAM, 0);
@@ -97,6 +101,6 @@ ListeningSocket::~ListeningSocket() {
  *
  * @return int The socket file descriptor.
  */
-int ListeningSocket::get_fd() const {
+int ListeningSocket::getFd() const {
   return _fd;
 }

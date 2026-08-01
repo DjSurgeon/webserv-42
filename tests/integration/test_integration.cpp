@@ -37,10 +37,10 @@ static e_parser_state run_integration_pipeline(
     return STATE_ERROR;
   }
   // 1. El cliente recibe datos de la red y los inyecta en su búfer
-  client->append_to_read_buffer(raw_network_data);
+  client->appendToReadBuffer(raw_network_data);
 
   // 2. Leemos la referencia constante del búfer de lectura
-  const std::string& buffer = client->get_read_buffer();
+  const std::string& buffer = client->getReadBuffer();
   size_t bytes_processed = 0;
   e_parser_state current_state = parser->get_state();
 
@@ -58,7 +58,7 @@ static e_parser_state run_integration_pipeline(
 
   // 4. El parser le indica al cliente cuántos bytes del búfer puede consumir
   // (borrar)
-  client->consume_read_buffer(bytes_processed);
+  client->consumeReadBuffer(bytes_processed);
   return current_state;
 }
 
@@ -76,7 +76,7 @@ void test_standard_request() {
       (parser.get_request().get_method() == "GET") &&
       (parser.get_request().get_uri() == "/index.html") &&
       (parser.get_request().get_version() == "HTTP/1.1") &&
-      (client.get_read_buffer().empty());  // Todo el buffer debió ser consumido
+      (client.getReadBuffer().empty());  // Todo el buffer debió ser consumido
 
   print_test_result("Standard Valid Request Line", check);
 }
@@ -94,7 +94,7 @@ void test_fragmented_network_stream() {
   bool check = (final_state == STATE_HEADER_KEY) &&
                (parser.get_request().get_method() == "GET") &&
                (parser.get_request().get_uri() == "/search?q=42") &&
-               (client.get_read_buffer().empty());
+               (client.getReadBuffer().empty());
 
   print_test_result("Fragmented TCP Network Stream", check);
 }

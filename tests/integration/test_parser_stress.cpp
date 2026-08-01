@@ -54,8 +54,8 @@ static e_parser_state feed_pipeline(ClientSocket* client, RequestParser* parser,
   if (!client || !parser) {
     return STATE_ERROR;
   }
-  client->append_to_read_buffer(raw_packet);
-  const std::string& buffer = client->get_read_buffer();
+  client->appendToReadBuffer(raw_packet);
+  const std::string& buffer = client->getReadBuffer();
   size_t processed = 0;
   e_parser_state state = parser->get_state();
 
@@ -66,7 +66,7 @@ static e_parser_state feed_pipeline(ClientSocket* client, RequestParser* parser,
       break;
     }
   }
-  client->consume_read_buffer(processed);
+  client->consumeReadBuffer(processed);
   return state;
 }
 
@@ -199,22 +199,22 @@ void test_simultaneous_read_write() {
   RequestParser parser;
 
   // Inyectamos petición asíncrona fragmentada en buffer de lectura
-  client.append_to_read_buffer("GET /index.html HT");
+  client.appendToReadBuffer("GET /index.html HT");
   // Al mismo tiempo, cargamos datos en el buffer de escritura (Full-Duplex)
-  client.append_to_write_buffer("HTTP/1.1 200 OK\r\n\r\n");
+  client.appendToWriteBuffer("HTTP/1.1 200 OK\r\n\r\n");
 
   // Procesamos fragmento del buffer de lectura
-  const std::string& read_buf = client.get_read_buffer();
+  const std::string& read_buf = client.getReadBuffer();
   size_t processed = 0;
   for (size_t i = 0; i < read_buf.length(); ++i) {
     parser.feed(read_buf[i]);
     processed++;
   }
-  client.consume_read_buffer(processed);
+  client.consumeReadBuffer(processed);
 
   // Verificamos que ambos buffers avanzaron y operaron independientemente
-  bool read_empty = client.get_read_buffer().empty();
-  bool write_intact = (client.get_write_buffer() == "HTTP/1.1 200 OK\r\n\r\n");
+  bool read_empty = client.getReadBuffer().empty();
+  bool write_intact = (client.getWriteBuffer() == "HTTP/1.1 200 OK\r\n\r\n");
 
   assert_test("Full-Duplex: Reading and writing progress independently",
               read_empty && write_intact);

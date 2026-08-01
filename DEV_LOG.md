@@ -85,8 +85,8 @@ Para garantizar la solidez de las clases de red antes de integrarlas en el Event
 - **Liberación de FD ante fallo de fcntl:** Si la configuración no bloqueante (`fcntl`) falla en el constructor, se invoca a `close(_fd)` antes de lanzar la excepción para prevenir la fuga del FD aceptado.
 - **Frontera de Datos Segura (Opción C):**
   - **Getters Constantes:** Los getters de buffers retornan ahora referencias constantes (`const std::string&`). Esto elimina la duplicación de memoria en el heap y permite la lectura directa por parte del Parser, pero evita la corrupción externa de los datos.
-  - **Mutadores Controlados:** Se crearon métodos proxy exclusivos para modificar los buffers (`append_to_read_buffer`, `append_to_write_buffer`, `consume_read_buffer`, `clear_write_buffer`).
-  - **Consumo Seguro:** `consume_read_buffer(bytes)` cuenta con lógica defensiva que previene desbordamientos de buffer o borrados inválidos si se le solicita consumir más bytes de los presentes.
+  - **Mutadores Controlados:** Se crearon métodos proxy exclusivos para modificar los buffers (`appendToReadBuffer`, `appendToWriteBuffer`, `consumeReadBuffer`, `clearWriteBuffer`).
+  - **Consumo Seguro:** `consumeReadBuffer(bytes)` cuenta con lógica defensiva que previene desbordamientos de buffer o borrados inválidos si se le solicita consumir más bytes de los presentes.
 
 ### 🧪 Fase 4: Nuevas Pruebas en la Suite (`tests/test_sockets.cpp`)
 - Se agregaron dos nuevas pruebas para validar la refactorización:
@@ -286,7 +286,7 @@ Una vez validada la integración temprana de la Request-Line y los búferes de r
 
 ### 🎯 Objetivos de la Sesión
 1. Validar la interoperabilidad y flujo de datos entre el búfer de red asíncrono (`ClientSocket`) y la FSM del parser (`RequestParser`).
-2. Demostrar la consistencia del borrado de bytes procesados mediante `consume_read_buffer` evitando desalineaciones de memoria o fugas.
+2. Demostrar la consistencia del borrado de bytes procesados mediante `consumeReadBuffer` evitando desalineaciones de memoria o fugas.
 3. Asegurar que las ráfagas fragmentadas y ataques de entrada (como versiones incorrectas u espacios dobles) se manejen defensivamente en el pipeline conjunto.
 
 ### 🏗️ Fase 1: Creación de Suite de Integración
@@ -310,7 +310,7 @@ Una vez resuelto el problema de descriptores cerrados y con todos los tests unit
 
 ### 🎯 Objetivos de la Sesión
 1. Validar la interoperabilidad y flujo de datos entre el búfer de red asíncrono (`ClientSocket`) y la FSM del parser (`RequestParser`).
-2. Demostrar la consistencia del borrado de bytes procesados mediante `consume_read_buffer` evitando desalineaciones de memoria o fugas.
+2. Demostrar la consistencia del borrado de bytes procesados mediante `consumeReadBuffer` evitando desalineaciones de memoria o fugas.
 3. Asegurar que las ráfagas fragmentadas y ataques de entrada se manejen defensivamente en el pipeline conjunto.
 4. Resolver el conflicto de descriptores cerrados debido a que la destrucción del primer `ClientSocket` cierra el descriptor de entrada (`stdin` / FD 0), provocando fallos en `fcntl` en los siguientes tests.
 
@@ -482,7 +482,7 @@ El FSM RequestParser está completamente implementado y verificado para la lectu
 ### 🎯 Objetivos del Día
 1. Implementar el motor de multiplexación central (`EventLoop`) utilizando `poll()` para gestionar múltiples conexiones simultáneas.
 2. Integrar el `RequestParser` en el flujo de datos del `EventLoop` para procesar peticiones HTTP en tiempo real.
-3. Asegurar la integridad de los datos en envíos parciales mediante el consumo adecuado del búfer de escritura (`consume_write_buffer`).
+3. Asegurar la integridad de los datos en envíos parciales mediante el consumo adecuado del búfer de escritura (`consumeWriteBuffer`).
 
 ### 🏗️ Fase 1: Implementación del `EventLoop`
 - **Contenedores Internos**: Se reemplazó el almacenamiento de punteros simples por mapas (`std::map<int, ClientSocket*> _clients` y `std::map<int, RequestParser*> _parsers`) para asociar rápidamente cada FD a su estado y datos.
@@ -500,7 +500,7 @@ El FSM RequestParser está completamente implementado y verificado para la lectu
 - **`_handle_client_write(int fd)`**: Ejecuta `send()` enviando el contenido del búfer de escritura.
 
 ### ⚙️ Fase 3: Integridad de Envío Parcial (`ClientSocket`)
-- **Implementación de `consume_write_buffer(size_t bytes)`**: A diferencia del búfer de lectura, cuando `send()` solo puede enviar una fracción de los bytes solicitados (debido a los límites de la ventana TCP o búfer del kernel), el cliente usa este método para eliminar únicamente los bytes efectivamente transmitidos de la mochila. Esto previene la corrupción del mensaje en envíos asíncronos y fragmentados.
+- **Implementación de `consumeWriteBuffer(size_t bytes)`**: A diferencia del búfer de lectura, cuando `send()` solo puede enviar una fracción de los bytes solicitados (debido a los límites de la ventana TCP o búfer del kernel), el cliente usa este método para eliminar únicamente los bytes efectivamente transmitidos de la mochila. Esto previene la corrupción del mensaje en envíos asíncronos y fragmentados.
 - Se mantuvo estrictamente la norma de no comprobar `errno` durante las operaciones de E/S. Las operaciones asumen que si `send` o `recv` devuelven -1, simplemente no hay datos/espacio en ese momento, y el ciclo continúa sin penalizaciones.
 
 ### 🧪 Fase 4: Batería de Pruebas
@@ -684,3 +684,125 @@ Para soportar la estructura y herencia de bloques estilo NGINX (donde una ruta `
 - **Serialización Definitiva:** La respuesta `res.to_string()` empaquetada se encola directamente al `write_buffer` asíncrono del cliente.
 - **Pipelining Habilitado:** Se ha reemplazado el cierre forzado con `parser->reset()`, manteniendo el *socket* abierto para múltiples peticiones secuenciales.
 - **Gestión de Cierres Segura:** Detectamos `Connection: close` o `HTTP/1.0` en la petición entrante para levantar un flag interno en el cliente. Una vez el buffer de escritura se vacía, `_handle_client_write` invoca a `removeSocket(fd)` eliminando por fin el descriptor y la memoria RAM, eliminando por completo cualquier posibilidad de *Memory Leaks* a largo plazo.
+
+---
+
+## 📅 Día 11: HTTP Jumps (Redirects) y Custom Error Pages (Evaluación Final)
+
+### 🎯 Objetivos del Día
+1. Soportar la directiva `error_page` permitiendo páginas HTML visuales personalizadas según el contexto.
+2. Implementar `redirect` para saltos HTTP 301/302.
+3. Asegurar la inyección segura del `Context` a lo largo de toda la cadena de responsabilidades.
+
+### 🔀 Fase 1: Inyección de Contexto (Context-Aware Handlers)
+- **Problema:** `HttpResponse::generate_error_response` y `FileHandler` no tenían visibilidad de las directivas declaradas en el archivo `.conf`.
+- **Solución:** Se modificó la firma de todas las funciones que pueden arrojar un error HTTP (ej. `serve_file`, `_validate_file_access`, `generate_error_response`) para recibir un puntero `const Context* ctx`.
+- **Ejecución de Error:** Cuando se invoca `generate_error_response`, si el contexto contiene una ruta para ese código de error (`error_pages`), el servidor ensambla la ruta física real (`root` + `err_uri`) y la lee del disco en modo binario usando `std::ifstream`, saltando el fallback hardcodeado.
+
+### ⏭️ Fase 2: Cortocircuito de Redirección (301)
+- **Implementación en EventLoop:** Se añadió una validación en tiempo constante $O(1)$ tras resolver la ruta (`matched_loc`).
+- **El Cortocircuito:** Si el location block contiene una directiva `redirect`, el router (`StaticRouter`) y los Handlers se puentean por completo. El `EventLoop` ensambla directamente un status `301 Moved Permanently` con la cabecera mágica `Location` apuntando al nuevo sitio, optimizando el rendimiento frente a peticiones obsoletas.
+
+---
+
+## 📅 Día 12: Resiliencia Final, Master Config y Victoria de Valgrind
+
+### 🎯 Objetivos del Día
+1. Validar la resistencia del `ConfigParser` ante archivos `.conf` malformados (prevención de Core Dumps).
+2. Demostrar el escudo del *Firewall* mediante límites de tamaño de carga.
+3. Reparar caídas asíncronas de la tubería IPC en la ejecución de scripts CGI.
+4. Ensamblar la evaluación final y probar cero fugas (0 leaks) en el entorno cerrado.
+
+### 🛡️ Fase 1: Edge Cases y Escudos del Parser
+- **Pruebas de Destrucción:** Se inyectaron configuraciones con puntos y comas faltantes (`missing_semicolon.conf`), directivas sin cerrar (`unclosed_bracket.conf`), comandos inexistentes (`unknown_directive.conf`) y puertos ilegales.
+- **Resistencia:** El analizador sintáctico descendente recursivo (`ConfigParser`) repelió exitosamente cada ataque levantando excepciones controladas (`std::runtime_error`) y forzando un cierre limpio `exit(1)` con mensajes claros de *Syntax error*, imposibilitando *Segmentation Faults*.
+- **Límites de Payload:** Se implementó `client_max_body_size 10;`. Las solicitudes entrantes gigantescas son abortadas asíncronamente devolviendo el estado `413 Payload Too Large` instantáneamente, protegiendo los descriptores de disco.
+- **Zonas Restringidas:** Una ruta de solo lectura (`allowed_methods GET`) repele automáticamente el método POST con un estatus `405 Method Not Allowed`, blindando el enrutador.
+
+### 🐍 Fase 2: Saneamiento del IPC en CGI (Fix Broken Pipe)
+- **El Problema:** Al forkar el proceso en `CgiHandler`, el servidor padre cerraba ciegamente la tubería sin leerla, forzando a los scripts de Python a crashear con un `BrokenPipeError` al intentar escribir sus datos en un *Socket* fantasma.
+- **La Solución:** Se habilitó el *parent process* en `_execute_fork` para cerrar primero su descriptor de escritura local y, luego, realizar un bucle de lectura sincrónico extrayendo los datos crudos del CGI en un buffer. Los datos leídos se inyectan dinámicamente en el método original `parse_cgi_output`, recuperando los encabezados del lenguaje y el cuerpo HTML con una estabilidad envidiable.
+
+### 🏆 Fase 3: Entorno Master y 0 Leaks (Evaluación Final)
+- Se ensambló el ecosistema completo en `conf/eval_master.conf` que incluye: Virtual Hosting, Múltiples Puertos paralelos, Páginas de Errores Customizadas, Redirecciones Automáticas (301), y Autoindex.
+- **Análisis de Estrés con Valgrind:** Al correr el flujo entero de peticiones HTTP, parseo cruzado, ejecuciones PIPED de CGI, renderización y enrutamiento... Webserv superó con éxito la auditoría estricta de memoria:
+  ```
+  ==25250== All heap blocks were freed -- no leaks are possible
+  ==25250== ERROR SUMMARY: 0 errors from 0 contexts
+  ```
+- **Conclusión del Desarrollo:** La arquitectura basada íntegramente en directrices **RAII** e inspirada en **NGINX** culmina de forma exitosa. Se alcanzó la meta técnica exigida por la red 42 mediante la aplicación impecable del C++98.
+
+---
+
+## 📅 Día 13: Funciones Bonus (Soporte Nativo de Cookies)
+
+### 🎯 Objetivos del Día
+1. Expandir Webserv para cumplir con los requisitos *Bonus* del subject de 42, proporcionando gestión avanzada de estado.
+2. Implementar la extracción asíncrona y estructurada de la cabecera `Cookie` del lado del cliente.
+3. Facilitar la inyección nativa de múltiples cabeceras `Set-Cookie` hacia el cliente, puenteando las limitaciones de los mapas (`std::map`) de C++.
+
+### 🍪 Fase 1: Extracción Estructurada de Cookies (Entrantes)
+- Se inyectó en `HttpRequest` un contenedor `std::map<std::string, std::string> _cookies`.
+- **Parseo Dinámico:** Cuando `HttpRequest::add_header` intercepta la clave genérica `"cookie"`, delega el valor a un nuevo sub-parser privado `_parse_cookies_string`.
+- **RFC Compliant Trimming:** El parser fracciona la cadena asíncronamente iterando sobre el delimitador `;`, separando `clave=valor`. Se implementó la función auxiliar `trim_spaces_cookie` que purga los espacios o tabulaciones colindantes. Esto transforma cadenas sucias de red como `user=serjimen ;   theme=dark` directamente en pares limpios dentro del contenedor, accesibles inmediatamente vía `get_cookies()`.
+
+### 🍪 Fase 2: Inyección Multi-Cabecera (Salientes)
+- **El Problema Estándar:** El estándar HTTP permite enviar múltiples directivas de `Set-Cookie`. Si insertamos esto en el mapa de cabeceras (`_headers["Set-Cookie"]`), al ser C++98, cada nueva cookie sobrescribiría a la anterior.
+- **La Solución (Vector Aislado):** Se instanció un `std::vector<std::string> _cookies` en `HttpResponse` respaldado por un nuevo método API `add_cookie(name, value, options)`.
+- **Serialización Exacta:** Al momento de llamar a `to_string()`, Webserv itera secuencialmente sobre este vector y adjunta `Set-Cookie: name=value; options\r\n` justo antes del doble CRLF (`\r\n\r\n`), garantizando que los clientes web reciban tantas *cookies* como el servidor desee inyectar sin solapar llaves.
+
+---
+
+## 📅 Día 14: Arquitectura Profesional, SRP y Refactorización Estructural
+
+### 🎯 Objetivos del Día
+1. Trocear implementaciones monolíticas masivas (ej. `HttpResponse.cpp`) utilizando la técnica de "Implementaciones Múltiples" en C++ sin romper el encapsulamiento de sus cabeceras base.
+2. Refactorizar el motor de generación de errores HTTP (`generate_error_response`) para acatar estrictamente el **Principio de Responsabilidad Única (SRP)**.
+3. Migrar todo el árbol del proyecto a la Estructura Canónica de Directorios estándar de la industria, aislando por completo las interfaces (`include/`) de las implementaciones (`src/`).
+
+### 🏗️ Fase 1: Implementaciones Parciales y División de `HttpResponse`
+- **El Problema:** El archivo `HttpResponse.cpp` agrupaba tanto la lógica core de serialización como las extensas rutinas de renderizado de errores HTML y parseo físico del `Context`.
+- **La Solución:** Se aplicó el patrón de extensiones parciales creando el archivo `src/http/HttpResponse_error.cpp`. 
+- Se delegó allí toda la lógica de error, lo cual permite al compilador/linker de C++ unir la misma clase a través de múltiples archivos. Esto mantiene un único `HttpResponse.hpp` limpio y documentado (con estilo Doxygen minimalista a nivel de clase), mientras que el código de implementación queda fragmentado y legible.
+
+### 🧹 Fase 2: Aplicación del Principio SRP (Single Responsibility Principle)
+- La función `generate_error_response` era un "God Method" que mezclaba extracción de cookies, acceso físico a archivos e inyección de cabeceras.
+- **Refactorización:** Se diseñaron e implementaron tres funciones privadas auxiliares en `HttpResponse`:
+  1. `_extract_username`: Se encarga exclusivamente de parsear el session_id y consultar el SessionManager.
+  2. `_try_serve_custom_error_page`: Gestiona puramente la búsqueda, apertura binaria y lectura del HTML personalizado desde el `Context`.
+  3. `_finalize_html_response`: Encapsula de forma estricta la configuración final del cuerpo, `Content-Type` y longitud.
+- Ahora, `generate_error_response` es simplemente una función orquestadora de alto nivel, lo cual la hace ridículamente fácil de leer y testear.
+
+### 🏛️ Fase 3: The Canonical C++ Layout
+- Para elevar el proyecto a los estándares de producción, se erradicó la mezcla de archivos `.hpp` y `.cpp` que poblaban `src/`.
+- Se creó el árbol completo en `include/` (`config`, `handlers`, `http`, `network`).
+- Todos los archivos de cabecera fueron migrados a esta nueva fortaleza.
+- **Actualización del `Makefile`:** Se añadió el flag `INCLUDES = -Iinclude` y se actualizó la variable de cabeceras `HDRS`. Dado que el código C++ ya utilizaba importaciones semánticas (`#include "http/HttpRequest.hpp"`), el código fuente no necesitó alteración interna, demostrando el poder de los includes absolutos y un diseño de software previsor.
+
+---
+
+## 📅 Día 15: Refactorización a `camelCase` y Modularización Extrema del `ConfigParser`
+
+### 🎯 Objetivos del Día
+1. Estandarizar las clases orientadas a la configuración (`Context`, `ServerConfig`, `LocationConfig`) para usar convenciones de nombrado `camelCase`, respetando el Coding Standard del proyecto.
+2. Fragmentar el monolito `ConfigParser.cpp` (que excedía las 400 líneas) en múltiples archivos parciales para cumplir con el **Principio de Responsabilidad Única (SRP)**.
+
+### 🐪 Fase 1: Migración a `camelCase` en el Módulo de Configuración
+- **El Problema:** La base de código arrastraba convenciones mezcladas (`snake_case` y `camelCase`) en los getters, setters y atributos de las clases base de configuración.
+- **La Solución:** Se refactorizaron exhaustivamente las cabeceras e implementaciones de `Context`, `ServerConfig` y `LocationConfig`.
+- Se actualizaron todos los *Call Sites* a nivel global (incluyendo el EventLoop, Handlers y Tests) asegurando una transición perfecta y cero errores de enlazado, homogeneizando toda la lógica orientada a objetos de la configuración web.
+
+### 🧩 Fase 2: El Despiece de `ConfigParser.cpp`
+- **El Problema:** Aunque el analizador descendente recursivo (`ConfigParser`) era funcional, el archivo fuente `ConfigParser.cpp` centralizaba demasiadas responsabilidades (utilidades de strings, parseo de servers, parseo de locations y parseo de contextos), lo que lo convertía en un cuello de botella para la mantenibilidad.
+- **La Solución:** Inspirados por el modelo de C++ de múltiples archivos para una misma clase, se seccionó el monolito en 5 módulos atómicos:
+  1. `ConfigParser.cpp`: Conservado exclusivamente como la entrada del sistema, métodos canónicos y el orquestador principal.
+  2. `ConfigParser_utils.cpp` y `ConfigParser_utils2.cpp`: Repositorio de métodos estáticos puramente utilitarios (`trimWhitespace`, `tokenize`, `parseHostPort`, etc.).
+  3. `ConfigParser_server.cpp`: Aislamiento total de las directivas específicas de bloques de servidor (`listen`, `server_name`).
+  4. `ConfigParser_location.cpp`: Aislamiento total de las directivas de bloque de ubicación HTTP (`allowed_methods`, `cgi_path`, etc.).
+  5. `ConfigParser_context.cpp`: Concentra el parseo de directivas heredadas universalmente por el sistema de configuración (`root`, `autoindex`, `error_page`).
+
+### 🧹 Fase 3: Delegación y SRP Interno
+- La gran función `_parseContextDirectives` que contenía más de 80 líneas, fue desmantelada completamente.
+- Cada directiva de contexto se extrajo en un método propio declarado en `ConfigParser.hpp` (ej: `_handleRootDirective`, `_handleClientMaxBodySizeDirective`).
+- La función padre ahora se reduce a un enrutador limpio (`switch`/`router`) de $O(1)$, que determina la instrucción y pasa el estado del analizador directamente al submétodo pertinente.
+- Todo esto sin utilizar `wildcards` en el `Makefile` por seguridad, actualizándolo de manera manual para incluir las nuevas piezas parciales.

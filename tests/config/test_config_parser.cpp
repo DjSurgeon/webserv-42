@@ -28,7 +28,7 @@ void test_file_loading() {
   std::cout << "[Test] Verifying file loading and line count..." << std::endl;
   try {
     ConfigParser parser("tests/assets/test_basic.conf");
-    bool count_pass = (parser.get_raw_lines().size() == 3);
+    bool count_pass = (parser.getRawLines().size() == 3);
     print_result("test_file_loading", count_pass);
   } catch (const std::exception& e) {
     std::cerr << "Unexpected exception: " << e.what() << std::endl;
@@ -51,7 +51,7 @@ void test_preprocessing_edge_cases() {
   std::cout << "[Test] Verifying preprocessing edge cases..." << std::endl;
   try {
     ConfigParser parser("tests/assets/test_edge_cases.conf");
-    const std::vector<std::string>& lines = parser.get_raw_lines();
+    const std::vector<std::string>& lines = parser.getRawLines();
     bool count_pass = (lines.size() == 6);
     print_result("test_preprocessing_edge_cases", count_pass);
   } catch (const std::exception& e) {
@@ -65,16 +65,16 @@ void test_block_parsing_valid() {
             << std::endl;
   try {
     ConfigParser parser("tests/assets/test_complex_valid.conf");
-    const std::vector<ServerConfig>& servers = parser.get_servers();
+    const std::vector<ServerConfig>& servers = parser.getServers();
 
     // test_complex_valid.conf: "server { location / { } }
     // server{location/api{}}"
     bool pass = (servers.size() == 2);
     if (pass) {
-      if (servers[0].get_locations().size() != 1) pass = false;
-      if (servers[0].get_locations()[0].get_path() != "/") pass = false;
-      if (servers[1].get_locations().size() != 1) pass = false;
-      if (servers[1].get_locations()[0].get_path() != "/api") pass = false;
+      if (servers[0].getLocations().size() != 1) pass = false;
+      if (servers[0].getLocations()[0].getPath() != "/") pass = false;
+      if (servers[1].getLocations().size() != 1) pass = false;
+      if (servers[1].getLocations()[0].getPath() != "/api") pass = false;
     }
 
     print_result("test_block_parsing_valid", pass);
@@ -102,11 +102,14 @@ void test_block_parsing_errors() {
                  "Directive at root level"};
   TestCase c4 = {"tests/assets/test_invalid_missing_location_path.conf",
                  "Missing location path"};
+  TestCase c5 = {"conf/edge_cases/invalid_port.conf",
+                 "Invalid port (out of range)"};
 
   cases.push_back(c1);
   cases.push_back(c2);
   cases.push_back(c3);
   cases.push_back(c4);
+  cases.push_back(c5);
 
   bool all_caught = true;
   for (size_t i = 0; i < cases.size(); ++i) {
@@ -135,7 +138,7 @@ void test_stress_parsing() {
 
   try {
     ConfigParser parser(filename);
-    bool pass = (parser.get_servers().size() == 1000);
+    bool pass = (parser.getServers().size() == 1000);
     print_result("test_stress_parsing", pass);
   } catch (const std::exception& e) {
     std::cerr << "Stress test failed: " << e.what() << std::endl;
