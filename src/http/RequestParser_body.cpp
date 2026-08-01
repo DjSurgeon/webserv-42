@@ -1,8 +1,8 @@
 // Copyright 2026 raperez- serjimen
+#include <cctype>
 #include <map>
 #include <sstream>
 #include <string>
-#include <cctype>
 
 #include "http/RequestParser.hpp"
 
@@ -16,8 +16,8 @@ void RequestParser::_determine_body_transition() {
       headers.find("transfer-encoding");
   if (transfer != headers.end()) {
     if (transfer->second != "chunked") {
-        _state = STATE_ERROR;
-        return;
+      _state = STATE_ERROR;
+      return;
     }
     _chunk_size = 0;
     _chunk_read = 0;
@@ -108,8 +108,7 @@ void RequestParser::_handle_state_chunk_data(char c) {
   _storage_buffer += c;
   ++_chunk_read;
 
-  if (_chunk_read == _chunk_size)
-    _state = STATE_CHUNK_CRLF;
+  if (_chunk_read == _chunk_size) _state = STATE_CHUNK_CRLF;
 }
 
 void RequestParser::_handle_state_chunk_crlf(char c) {

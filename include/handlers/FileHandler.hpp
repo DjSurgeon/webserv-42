@@ -20,7 +20,7 @@ class FileHandler {
   bool serve_file(const std::string& physical_path, HttpResponse* res,
                   const Context* ctx = NULL, const HttpRequest* req = NULL);
   bool upload_file(const std::string& physical_path, HttpResponse* res,
-                  const Context* ctx = NULL, const HttpRequest* req = NULL);
+                   const Context* ctx = NULL, const HttpRequest* req = NULL);
   bool delete_file(const std::string& physical_path, HttpResponse* res,
                    const Context* ctx = NULL, const HttpRequest* req = NULL);
   void generate_autoindex(const std::string& dir_path, const std::string& uri,

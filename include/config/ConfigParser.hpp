@@ -42,7 +42,7 @@ class ConfigParser {
   void _handleCgiExtDirective(const std::vector<std::string>& tokens, size_t* i,
                               LocationConfig* location);
   void _handleUploadPathDirective(const std::vector<std::string>& tokens,
-                               size_t* i, LocationConfig* location);
+                                  size_t* i, LocationConfig* location);
   void _handleRedirectDirective(const std::vector<std::string>& tokens,
                                 size_t* i, LocationConfig* location);
 

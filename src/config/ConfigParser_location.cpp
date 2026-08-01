@@ -17,12 +17,9 @@ void ConfigParser::_handleLocationDirective(
   _parseLocationBlock(tokens, i, &loc);
 
   // Inherit context defaults
-  if (loc.getRoot().empty())
-    loc.setRoot(server->getRoot());
-  if (loc.getIndexFiles().empty())
-    loc.setIndexFiles(server->getIndexFiles());
-  if (loc.getErrorPages().empty())
-    loc.setErrorPages(server->getErrorPages());
+  if (loc.getRoot().empty()) loc.setRoot(server->getRoot());
+  if (loc.getIndexFiles().empty()) loc.setIndexFiles(server->getIndexFiles());
+  if (loc.getErrorPages().empty()) loc.setErrorPages(server->getErrorPages());
 
   server->addLocation(loc);
 }

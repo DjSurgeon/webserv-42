@@ -68,7 +68,7 @@ bool FileHandler::serve_file(const std::string& physical_path,
 }
 
 std::string FileHandler::_getAvailableFilename(const std::string& directory,
-                                              const std::string& filename) {
+                                               const std::string& filename) {
   std::string base = filename;
   std::string extension;
 
@@ -89,7 +89,7 @@ std::string FileHandler::_getAvailableFilename(const std::string& directory,
 }
 
 bool FileHandler::_uploadRaw(HttpResponse* res, const LocationConfig* loc,
-                            const HttpRequest* req) {
+                             const HttpRequest* req) {
   std::string uri = req->get_uri();
   std::size_t pos = uri.find_last_of('/');
   if (pos == std::string::npos || pos == uri.size() - 1) {
@@ -121,7 +121,7 @@ bool FileHandler::_uploadRaw(HttpResponse* res, const LocationConfig* loc,
 }
 
 bool FileHandler::_uploadMultipart(HttpResponse* res, const LocationConfig* loc,
-                                  const HttpRequest* req) {
+                                   const HttpRequest* req) {
   (void)res;
   (void)loc;
   (void)req;
@@ -129,9 +129,9 @@ bool FileHandler::_uploadMultipart(HttpResponse* res, const LocationConfig* loc,
 }
 
 bool FileHandler::upload_file(const std::string& physical_path,
-                             HttpResponse* res, const Context* ctx,
-                             const HttpRequest* req) {
-  (void) physical_path;
+                              HttpResponse* res, const Context* ctx,
+                              const HttpRequest* req) {
+  (void)physical_path;
   const LocationConfig* loc = dynamic_cast<const LocationConfig*>(ctx);
   if (!loc || loc->getUploadPath().empty()) {
     res->generate_error_response(403, ctx, req);
@@ -172,8 +172,6 @@ bool FileHandler::delete_file(const std::string& physical_path,
   }
   return true;
 }
-
-
 
 void FileHandler::generate_autoindex(const std::string& dir_path,
                                      const std::string& uri, HttpResponse* res,

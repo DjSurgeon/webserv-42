@@ -3,9 +3,9 @@
 
 #include <sys/stat.h>
 
+#include <iostream>
 #include <string>
 #include <vector>
-#include <iostream>
 
 StaticRouter::StaticRouter() {}
 
@@ -115,19 +115,16 @@ void StaticRouter::_translate_path(const HttpRequest& req, const Context* ctx,
 
   // Eliminar la query string
   size_t query_pos = uri.find('?');
-  if (query_pos != std::string::npos)
-    uri.erase(query_pos);
+  if (query_pos != std::string::npos) uri.erase(query_pos);
 
   std::string clean_root = root;
   std::string clean_uri = uri;
 
-  const LocationConfig* location =
-    dynamic_cast<const LocationConfig*>(ctx);
+  const LocationConfig* location = dynamic_cast<const LocationConfig*>(ctx);
 
   if (location) {
     const std::string& prefix = location->getPath();
-    if (clean_uri.find(prefix) == 0)
-      clean_uri.erase(0, prefix.length());
+    if (clean_uri.find(prefix) == 0) clean_uri.erase(0, prefix.length());
   }
 
   if (!clean_root.empty() && clean_root[clean_root.length() - 1] == '/') {

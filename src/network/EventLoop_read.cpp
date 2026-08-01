@@ -72,23 +72,19 @@ bool EventLoop::_handleRedirect(const LocationConfig* loc,
 
 bool EventLoop::_isCgiRequest(const std::string& physical_path,
                               const LocationConfig* loc) const {
-  if (!loc)
-    return false;
+  if (!loc) return false;
 
   const std::vector<std::string>& cgi_exts = loc->getCgiExtensions();
 
-  if (cgi_exts.empty())
-    return false;
+  if (cgi_exts.empty()) return false;
 
   std::size_t dot_pos = physical_path.find_last_of('.');
-  if (dot_pos == std::string::npos)
-    return false;
+  if (dot_pos == std::string::npos) return false;
 
   std::string ext = physical_path.substr(dot_pos);
 
   for (std::size_t i = 0; i < cgi_exts.size(); ++i) {
-    if (ext == cgi_exts[i])
-      return true;
+    if (ext == cgi_exts[i]) return true;
   }
 
   return false;
