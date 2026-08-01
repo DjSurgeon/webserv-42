@@ -41,7 +41,7 @@ jobs:
         run: sudo pip install cpplint
 
       - name: Run cpplint
-        run: cpplint --recursive src/
+        run: cpplint --recursive src/ include/
 
   format_check:
     name: 🎨 clang-format Style Check
@@ -51,11 +51,13 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install clang-format
-        run: sudo apt-get install -y clang-format
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y clang-format
 
       - name: Check formatting
         run: |
-          FILES=$(find src -name "*.cpp" -o -name "*.hpp")
+          FILES=$(find src include -type f \( -name "*.cpp" -o -name "*.hpp" \))
           clang-format --dry-run --Werror $FILES
 
   valgrind:
@@ -66,7 +68,9 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install valgrind
-        run: sudo apt-get install -y valgrind
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y valgrind
 
       - name: Build
         run: make
