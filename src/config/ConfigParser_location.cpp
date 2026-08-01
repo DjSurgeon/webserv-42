@@ -71,6 +71,21 @@ void ConfigParser::_handleCgiExtDirective(
   (*i)++;
 }
 
+void ConfigParser::_handleUploadPathDirective(
+    const std::vector<std::string>& tokens, size_t* i,
+    LocationConfig* location) {
+  (*i)++;
+  if (*i >= tokens.size() || tokens[*i] == ";") {
+    throw std::runtime_error("Syntax error: incomplete 'upload_path'");
+  }
+  location->setUploadPath(tokens[*i]);
+  (*i)++;
+  if (*i >= tokens.size() || tokens[*i] != ";") {
+    throw std::runtime_error("Syntax error: missing ';' after 'upload_path'");
+  }
+  (*i)++;
+}
+
 void ConfigParser::_handleRedirectDirective(
     const std::vector<std::string>& tokens, size_t* i,
     LocationConfig* location) {
@@ -107,20 +122,21 @@ void ConfigParser::_parseLocationBlock(const std::vector<std::string>& tokens,
   while (*i < tokens.size() && tokens[*i] != "}") {
     const std::string& directive = tokens[*i];
 
-    if (directive == "allowed_methods") {
+    if (directive == "allowed_methods")
       _handleAllowedMethodsDirective(tokens, i, location);
-    } else if (directive == "cgi_path") {
+    else if (directive == "cgi_path")
       _handleCgiPathDirective(tokens, i, location);
-    } else if (directive == "cgi_ext") {
+    else if (directive == "cgi_ext")
       _handleCgiExtDirective(tokens, i, location);
-    } else if (directive == "return" || directive == "redirect") {
+    else if (directive == "upload_path")
+      _handleUploadPathDirective(tokens, i, location);
+    else if (directive == "return" || directive == "redirect")
       _handleRedirectDirective(tokens, i, location);
-    } else if (_parseContextDirectives(tokens, i, location)) {
+    else if (_parseContextDirectives(tokens, i, location))
       continue;
-    } else {
+    else
       throw std::runtime_error("Syntax error: unknown directive '" + directive +
                                "' in location block");
-    }
   }
 
   if (*i >= tokens.size() || tokens[*i] != "}") {

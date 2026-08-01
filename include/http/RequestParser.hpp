@@ -19,7 +19,11 @@ enum e_parser_state {
   STATE_HEADER_VALUE,
   STATE_BODY,
   STATE_COMPLETE,
-  STATE_ERROR
+  STATE_ERROR,
+  STATE_CHUNK_SIZE,
+  STATE_CHUNK_DATA,
+  STATE_CHUNK_CRLF,
+  STATE_CHUNK_END
 };
 
 /**
@@ -44,6 +48,9 @@ class RequestParser {
   std::string _storage_buffer;
   std::string _current_header_key;
   size_t _content_length;
+  size_t _chunk_size;
+  size_t _chunk_read;
+  std::string _chunk_size_buffer;
 
   // --- Private State Handlers (The Refactored Switch Delegation) ---
   void _handle_state_start(char c);
@@ -53,6 +60,10 @@ class RequestParser {
   void _handle_state_header_key(char c);
   void _handle_state_header_value(char c);
   void _handle_state_body(char c);
+  void _handle_state_chunk_size(char c);
+  void _handle_state_chunk_data(char c);
+  void _handle_state_chunk_crlf(char c);
+  void _handle_state_chunk_end(char c);
   void _determine_body_transition();
   void _handle_global_newline(char c);
 

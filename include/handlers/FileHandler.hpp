@@ -5,6 +5,7 @@
 #include <string>
 
 #include "config/Context.hpp"
+#include "config/LocationConfig.hpp"
 #include "http/HttpRequest.hpp"
 #include "http/HttpResponse.hpp"
 
@@ -17,6 +18,8 @@ class FileHandler {
   ~FileHandler();
 
   bool serve_file(const std::string& physical_path, HttpResponse* res,
+                  const Context* ctx = NULL, const HttpRequest* req = NULL);
+  bool upload_file(const std::string& physical_path, HttpResponse* res,
                   const Context* ctx = NULL, const HttpRequest* req = NULL);
   bool delete_file(const std::string& physical_path, HttpResponse* res,
                    const Context* ctx = NULL, const HttpRequest* req = NULL);
@@ -36,6 +39,12 @@ class FileHandler {
                              const Context* ctx, const HttpRequest* req);
   bool _validate_delete_access(const std::string& path, HttpResponse* res,
                                const Context* ctx, const HttpRequest* req);
+  std::string _getAvailableFilename(const std::string& directory,
+                                    const std::string& filename);
+  bool _uploadRaw(HttpResponse* res, const LocationConfig* loc,
+                  const HttpRequest* req);
+  bool _uploadMultipart(HttpResponse* res, const LocationConfig* loc,
+                        const HttpRequest* req);
   std::string _get_mime_type(const std::string& path);
   std::string _build_autoindex_html(const std::string& dir_path,
                                     const std::string& uri);

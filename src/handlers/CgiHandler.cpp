@@ -241,6 +241,7 @@ bool CgiHandler::_execute_fork(const std::string& script_path,
     }
 
     // Execute
+    std::cerr << "Ruta del execve: " << argv[0] << std::endl;
     execve(argv[0], argv, envp);
 
     // Fatal Fallback (Kill-Switch)
@@ -320,6 +321,7 @@ std::vector<std::string> CgiHandler::_build_env_vector(
 
   _add_core_variables(&env, req);
   _add_query_string(&env, req.get_uri());
+  _add_path_info(&env, req, loc);
   _add_custom_headers(&env, req.get_headers());
 
   // Authentication Bridge
@@ -353,6 +355,51 @@ void CgiHandler::_add_query_string(std::vector<std::string>* env,
   } else {
     env->push_back("QUERY_STRING=");
   }
+}
+
+void CgiHandler::_add_path_info(std::vector<std::string>* env,
+                                const HttpRequest& req,
+                                const LocationConfig* loc) const {
+  if (!env || !loc)
+    return;
+
+  std::string uri = req.get_uri();
+
+  // Eliminar la query string
+  size_t query_pos = uri.find('?');
+  if (query_pos != std::string::npos)
+    uri.erase(query_pos);
+
+  std::string script_name = uri;
+  std::string path_info;
+
+  const std::vector<std::string>& cgi_exts = loc->getCgiExtensions();
+
+  size_t last_slash = uri.find_last_of('/');
+  if (last_slash == std::string::npos)
+    last_slash = 0;
+  for (std::vector<std::string>::const_iterator it = cgi_exts.begin(); it != cgi_exts.end(); ++it) {
+    size_t ext_pos = uri.find(*it, last_slash);
+    if (ext_pos != std::string::npos) {
+      ext_pos += it->length();
+      script_name = uri.substr(0, ext_pos);
+      if (ext_pos < uri.length())
+        path_info = uri.substr(ext_pos);
+      break;
+    }
+  }
+
+  std::string location = loc->getPath();
+
+  if (script_name.find(location) == 0)
+    script_name.erase(0, location.length());
+
+  if (script_name.empty() || script_name[0] != '/')
+    script_name.insert(0, "/");
+
+  env->push_back("SCRIPT_NAME=" + script_name);
+  env->push_back("PATH_INFO=" + script_name);
+  env->push_back("REQUEST_URI=" + script_name);
 }
 
 void CgiHandler::_add_custom_headers(
@@ -400,6 +447,7 @@ char** CgiHandler::_allocate_env_array(
       envp[i][j] = env_vec[i][j];
     }
     envp[i][env_vec[i].length()] = '\0';
+    std::cerr << envp[i] << std::endl;
   }
   envp[size] = NULL;
 

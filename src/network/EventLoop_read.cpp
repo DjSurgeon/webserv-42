@@ -72,23 +72,23 @@ bool EventLoop::_handleRedirect(const LocationConfig* loc,
 
 bool EventLoop::_isCgiRequest(const std::string& physical_path,
                               const LocationConfig* loc) const {
-  if (!loc) return false;
-
-  if (!loc->getCgiPath().empty()) {
-    return true;
-  }
-
-  std::string ext = "";
-  size_t dot_pos = physical_path.find_last_of('.');
-  if (dot_pos != std::string::npos) {
-    ext = physical_path.substr(dot_pos);
-  }
+  if (!loc)
+    return false;
 
   const std::vector<std::string>& cgi_exts = loc->getCgiExtensions();
-  for (size_t k = 0; k < cgi_exts.size(); ++k) {
-    if (ext == cgi_exts[k]) {
+
+  if (cgi_exts.empty())
+    return false;
+
+  std::size_t dot_pos = physical_path.find_last_of('.');
+  if (dot_pos == std::string::npos)
+    return false;
+
+  std::string ext = physical_path.substr(dot_pos);
+
+  for (std::size_t i = 0; i < cgi_exts.size(); ++i) {
+    if (ext == cgi_exts[i])
       return true;
-    }
   }
 
   return false;
@@ -113,6 +113,8 @@ void EventLoop::_executeFileHandler(const HttpRequest& req,
     } else {
       file_handler.serve_file(physical_path, &res, active_ctx, &req);
     }
+  } else if (method == "POST") {
+    file_handler.upload_file(physical_path, &res, active_ctx, &req);
   } else if (method == "DELETE") {
     file_handler.delete_file(physical_path, &res, active_ctx, &req);
   } else {
@@ -191,6 +193,9 @@ void EventLoop::_handleClientData(int fd) {
 
   char buffer[8192];
   int bytes = recv(fd, buffer, sizeof(buffer), 0);
+  //std::cout << "Received " << bytes << " bytes:\n";
+  //std::cout.write(buffer, bytes);
+  //std::cout << "\n----------------------\n";
 
   if (bytes > 0) {
     client_it->second->appendToReadBuffer(std::string(buffer, bytes));

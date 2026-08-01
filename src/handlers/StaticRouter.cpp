@@ -109,7 +109,14 @@ void StaticRouter::_translate_path(const HttpRequest& req, const Context* ctx,
     return;
   }
   const std::string& root = ctx->getRoot();
-  const std::string& uri = req.get_uri();
+  //const std::string& uri = req.get_uri();
+
+  std::string uri = req.get_uri();
+
+  // Eliminar la query string
+  size_t query_pos = uri.find('?');
+  if (query_pos != std::string::npos)
+    uri.erase(query_pos);
 
   std::string clean_root = root;
   std::string clean_uri = uri;
@@ -134,7 +141,7 @@ void StaticRouter::_translate_path(const HttpRequest& req, const Context* ctx,
   *out_physical_path = clean_root + clean_uri;
 
   struct stat st;
-  if (stat(out_physical_path->c_str(), &st) == 0 && S_ISDIR(st.st_mode)) {
+  if (!ctx->getAutoindex() && stat(out_physical_path->c_str(), &st) == 0 && S_ISDIR(st.st_mode) && (req.get_method() == "GET" || req.get_method() == "HEAD")) {
     const std::vector<std::string>& index_files = ctx->getIndexFiles();
     std::string test_path = "";
     for (size_t i = 0; i < index_files.size(); ++i) {
