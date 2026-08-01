@@ -3,25 +3,7 @@
 <head>
   <title>Webserv 42 - Evaluation</title>
   <meta charset="UTF-8">
-  <style>
-    body { font-family: monospace; background: #FFFFFF; color: #1B1B1B; text-align: center; margin-top: 100px; }
-    h1 { font-size: 3em; }
-    a { color: #00BABC; font-weight: 600;}
-    a:hover { color: #EC3391; }
-    hr {
-        margin-left: 30%;
-        margin-right: 30%;
-        margin-bottom: 40px;
-        border: none;
-        height: 2px;
-        background: linear-gradient(to right, #EC3391, #96A3EB, #00BABC);
-        box-shadow: 0 0 6px #96a3eb6b
-    }
-    button {
-        font-family: monospace;
-        background: white;
-    }
-  </style>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <h1>✅ WEBSERV 42 Home Page</h1>
@@ -29,29 +11,6 @@
   
   <h2>Autoindex</h2>
   <a href="/uploads">Files Uploaded (Autoindex)</a>
-  <hr>
-
-  <h2>Upload file</h2>
-  <input type="file" id="file">
-  <button onclick="upload()">Upload</button>
-
-  <script>
-  async function upload() {
-    const file = document.getElementById("file").files[0];
-    if (!file) {
-      alert("Missing file");
-      return;
-    }
-    await fetch("/uploads/" + file.name, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/octet-stream"
-        },
-        body: file
-    });
-    alert("Upload completed");
-  }
-  </script>
   <hr>
 
   <h2>Delete file</h2>
@@ -83,4 +42,78 @@
   <h2>Redirect</h2>
   <a href="/redirect">Test 301 Redirect</a>
 </body>
+
+<div class="cards">
+
+    <div class="card">
+        <h2>📂 Autoindex</h2>
+        <p>Browse uploaded files.</p>
+        <button onclick="location.href='/uploads'">
+            Open
+        </button>
+    </div>
+
+    <div class="card">
+        <h2>⬆️ Upload</h2>
+        <p>Upload a new file.</p>
+        <input type="file" id="file">
+        <button onclick="upload()">Upload</button>
+        <script>
+        async function upload() {
+          const file = document.getElementById("file").files[0];
+          if (!file) {
+            alert("Missing file");
+            return;
+          }
+          await fetch("/uploads/" + file.name, {
+              method: "POST",
+              headers: {
+                  "Content-Type": "application/octet-stream"
+              },
+              body: file
+          });
+          alert("Upload completed");
+        }
+        </script>
+    </div>
+
+    <div class="card">
+        <h2>* Delete</h2>
+        <p>Delete an uploaded file.</p>
+        <input type="text" id="filename" placeholder="Ex: file.txt">
+        <button onclick="deleteFile()">
+            Open
+        </button>
+        <script>
+        function deleteFile() {
+            const file = document.getElementById("filename").value;
+
+            fetch("/uploads/" + file, {
+                method: "DELETE"
+            })
+            .then(async response => {
+                const text = await response.text();
+                alert("Status code: " + response.status + "\n\n" + text);
+            });
+        }
+        </script>
+    </div>
+
+    <div class="card">
+        <h2>🐍 CGI</h2>
+        <p>Run Python examples.</p>
+        <button onclick="location.href='/cgi/ok.py'">
+            Run
+        </button>
+    </div>
+
+    <div class="card">
+        <h2>🐍 CGI</h2>
+        <p>Run Python examples.</p>
+        <button onclick="location.href='/cgi/ok.py'">
+            Run
+        </button>
+    </div>
+
+</div>
 </html>

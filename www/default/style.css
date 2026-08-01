@@ -1,0 +1,86 @@
+/*body { font-family: monospace; background: #FFFFFF; color: #1B1B1B; text-align: center; margin-top: 100px; }
+
+h1 { font-size: 3em; }
+
+a { color: #00BABC; font-weight: 600;}
+
+a:hover { color: #EC3391; }
+
+hr {
+    margin-left: 30%;
+    margin-right: 30%;
+    margin-bottom: 40px;
+    border: none;
+    height: 2px;
+    background: linear-gradient(to right, #EC3391, #96A3EB, #00BABC);
+    box-shadow: 0 0 6px #96a3eb6b
+}
+
+button {
+        font-family: monospace;
+        background: white;
+}
+*/
+
+body {
+    margin: 0;
+    padding: 50px;
+    font-family: monospace;
+    background: #fff;
+    color: #1B1B1B;
+}
+
+.container {
+    max-width: 1200px;
+    margin: auto;
+}
+
+.cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px,1fr));
+    gap: 25px;
+    margin-top: 50px;
+}
+
+.card {
+    background: white;
+    border-radius: 18px;
+    padding: 25px;
+    box-shadow: 0 10px 30px rgba(0,0,0,.08);
+    transition: .25s;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 18px 40px rgba(0,0,0,.12);
+}
+
+.card h2 {
+    margin-top: 0;
+}
+
+.card p {
+    color: #666;
+}
+
+.card button {
+    margin-top: 20px;
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 10px;
+    background: linear-gradient(
+        to right,
+        #EC3391,
+        #96A3EB,
+        #00BABC
+    );
+    color: white;
+    font-family: inherit;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.card button:hover {
+    filter: brightness(1.05);
+}
