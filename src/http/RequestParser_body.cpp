@@ -1,4 +1,4 @@
-// Copyright 2026 serjimen vja-nie dlesieur
+// Copyright 2026 raperez- serjimen
 #include <map>
 #include <sstream>
 #include <string>
@@ -12,7 +12,8 @@
  */
 void RequestParser::_determine_body_transition() {
   const std::map<std::string, std::string>& headers = _request.get_headers();
-  std::map<std::string,std::string>::const_iterator transfer = headers.find("transfer-encoding");
+  std::map<std::string, std::string>::const_iterator transfer =
+      headers.find("transfer-encoding");
   if (transfer != headers.end()) {
     if (transfer->second != "chunked") {
         _state = STATE_ERROR;

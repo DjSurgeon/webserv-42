@@ -1,6 +1,6 @@
-// Copyright 2026 serjimen vja-nie dlesieur
-#ifndef SRC_HTTP_HTTPREQUEST_HPP_
-#define SRC_HTTP_HTTPREQUEST_HPP_
+// Copyright 2026 raperez- serjimen
+#ifndef INCLUDE_HTTP_HTTPREQUEST_HPP_
+#define INCLUDE_HTTP_HTTPREQUEST_HPP_
 
 #include <map>
 #include <string>
@@ -53,4 +53,4 @@ class HttpRequest {
   void _parse_cookies_string(const std::string& raw_cookies);
 };
 
-#endif  // SRC_HTTP_HTTPREQUEST_HPP_
+#endif  // INCLUDE_HTTP_HTTPREQUEST_HPP_

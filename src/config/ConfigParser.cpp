@@ -1,4 +1,4 @@
-// Copyright 2026 serjimen vja-nie dlesieur
+// Copyright 2026 raperez- serjimen
 #include "config/ConfigParser.hpp"
 
 #include <fstream>

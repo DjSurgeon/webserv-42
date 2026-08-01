@@ -1,4 +1,4 @@
-// Copyright 2026 serjimen vja-nie dlesieur
+// Copyright 2026 raperez- serjimen
 #ifndef INCLUDE_CONFIG_SERVERCONFIG_HPP_
 #define INCLUDE_CONFIG_SERVERCONFIG_HPP_
 

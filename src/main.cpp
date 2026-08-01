@@ -38,7 +38,8 @@ int main(int argc, char** argv) {
     }
 
     if (!FileUtils::isValidExtension(config_file, ".conf")) {
-      throw std::runtime_error("Invalid configuration file extension. Must end with '.conf'");
+      throw std::runtime_error(
+          "Invalid configuration file extension. Must end with '.conf'");
     }
 
     std::cout << "--- Webserv Initialization ---" << std::endl;

@@ -1,6 +1,6 @@
-// Copyright 2026 serjimen vja-nie dlesieur
-#ifndef SRC_HTTP_SESSIONMANAGER_HPP_
-#define SRC_HTTP_SESSIONMANAGER_HPP_
+// Copyright 2026 raperez- serjimen
+#ifndef INCLUDE_HTTP_SESSIONMANAGER_HPP_
+#define INCLUDE_HTTP_SESSIONMANAGER_HPP_
 
 #include <ctime>
 #include <map>
@@ -35,4 +35,4 @@ class SessionManager {
   std::map<std::string, SessionData> _active_sessions;
 };
 
-#endif  // SRC_HTTP_SESSIONMANAGER_HPP_
+#endif  // INCLUDE_HTTP_SESSIONMANAGER_HPP_

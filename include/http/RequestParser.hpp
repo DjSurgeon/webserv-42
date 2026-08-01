@@ -1,6 +1,6 @@
-// Copyright 2026 serjimen vja-nie dlesieur
-#ifndef SRC_HTTP_REQUESTPARSER_HPP_
-#define SRC_HTTP_REQUESTPARSER_HPP_
+// Copyright 2026 raperez- serjimen
+#ifndef INCLUDE_HTTP_REQUESTPARSER_HPP_
+#define INCLUDE_HTTP_REQUESTPARSER_HPP_
 
 #include <cstddef>
 #include <string>
@@ -72,4 +72,4 @@ class RequestParser {
   RequestParser& operator=(const RequestParser& other);
 };
 
-#endif  // SRC_HTTP_REQUESTPARSER_HPP_
+#endif  // INCLUDE_HTTP_REQUESTPARSER_HPP_

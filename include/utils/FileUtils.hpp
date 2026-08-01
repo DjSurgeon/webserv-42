@@ -1,5 +1,6 @@
-#ifndef FILEUTILS_HPP
-#define FILEUTILS_HPP
+// Copyright 2026 raperez- serjimen
+#ifndef INCLUDE_UTILS_FILEUTILS_HPP_
+#define INCLUDE_UTILS_FILEUTILS_HPP_
 
 #include <string>
 
@@ -15,4 +16,4 @@ class FileUtils {
   ~FileUtils();
 };
 
-#endif  // FILEUTILS_HPP
+#endif  // INCLUDE_UTILS_FILEUTILS_HPP_

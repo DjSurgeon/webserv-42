@@ -1,6 +1,6 @@
-// Copyright 2026 serjimen vja-nie dlesieur
-#ifndef SRC_HANDLERS_FILEHANDLER_HPP_
-#define SRC_HANDLERS_FILEHANDLER_HPP_
+// Copyright 2026 raperez- serjimen
+#ifndef INCLUDE_HANDLERS_FILEHANDLER_HPP_
+#define INCLUDE_HANDLERS_FILEHANDLER_HPP_
 
 #include <string>
 
@@ -50,4 +50,4 @@ class FileHandler {
                                     const std::string& uri);
 };
 
-#endif  // SRC_HANDLERS_FILEHANDLER_HPP_
+#endif  // INCLUDE_HANDLERS_FILEHANDLER_HPP_

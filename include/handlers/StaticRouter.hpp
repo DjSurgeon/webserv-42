@@ -1,6 +1,6 @@
-// Copyright 2026 serjimen vja-nie dlesieur
-#ifndef SRC_HANDLERS_STATICROUTER_HPP_
-#define SRC_HANDLERS_STATICROUTER_HPP_
+// Copyright 2026 raperez- serjimen
+#ifndef INCLUDE_HANDLERS_STATICROUTER_HPP_
+#define INCLUDE_HANDLERS_STATICROUTER_HPP_
 
 #include <string>
 
@@ -34,4 +34,4 @@ class StaticRouter {
                        std::string* out_physical_path) const;
 };
 
-#endif  // SRC_HANDLERS_STATICROUTER_HPP_
+#endif  // INCLUDE_HANDLERS_STATICROUTER_HPP_

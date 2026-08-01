@@ -1,6 +1,6 @@
-// Copyright 2026 serjimen vja-nie dlesieur
-#ifndef SRC_HTTP_HTTPRESPONSE_HPP_
-#define SRC_HTTP_HTTPRESPONSE_HPP_
+// Copyright 2026 raperez- serjimen
+#ifndef INCLUDE_HTTP_HTTPRESPONSE_HPP_
+#define INCLUDE_HTTP_HTTPRESPONSE_HPP_
 
 #include <map>
 #include <string>
@@ -50,4 +50,4 @@ class HttpResponse {
                                       const std::string& username) const;
 };
 
-#endif  // SRC_HTTP_HTTPRESPONSE_HPP_
+#endif  // INCLUDE_HTTP_HTTPRESPONSE_HPP_

@@ -1,4 +1,4 @@
-// Copyright 2026 serjimen vja-nie dlesieur
+// Copyright 2026 raperez- serjimen
 #include "handlers/CgiHandler.hpp"
 
 #include <fcntl.h>
@@ -378,7 +378,8 @@ void CgiHandler::_add_path_info(std::vector<std::string>* env,
   size_t last_slash = uri.find_last_of('/');
   if (last_slash == std::string::npos)
     last_slash = 0;
-  for (std::vector<std::string>::const_iterator it = cgi_exts.begin(); it != cgi_exts.end(); ++it) {
+  for (std::vector<std::string>::const_iterator it = cgi_exts.begin();
+       it != cgi_exts.end(); ++it) {
     size_t ext_pos = uri.find(*it, last_slash);
     if (ext_pos != std::string::npos) {
       ext_pos += it->length();

@@ -1,4 +1,4 @@
-// Copyright 2026 serjimen vja-nie dlesieur
+// Copyright 2026 raperez- serjimen
 #ifndef INCLUDE_NETWORK_CLIENTSOCKET_HPP_
 #define INCLUDE_NETWORK_CLIENTSOCKET_HPP_
 

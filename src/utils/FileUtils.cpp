@@ -1,4 +1,7 @@
+// Copyright 2026 raperez- serjimen
 #include "utils/FileUtils.hpp"
+
+#include <string>
 
 bool FileUtils::isValidExtension(const std::string& filename,
                                  const std::string& extension) {

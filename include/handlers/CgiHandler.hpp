@@ -1,6 +1,6 @@
-// Copyright 2026 serjimen vja-nie dlesieur
-#ifndef SRC_HANDLERS_CGIHANDLER_HPP_
-#define SRC_HANDLERS_CGIHANDLER_HPP_
+// Copyright 2026 raperez- serjimen
+#ifndef INCLUDE_HANDLERS_CGIHANDLER_HPP_
+#define INCLUDE_HANDLERS_CGIHANDLER_HPP_
 
 #include <cstdio>
 #include <map>
@@ -55,4 +55,4 @@ class CgiHandler {
   void _free_env_array(char** envp) const;
 };
 
-#endif  // SRC_HANDLERS_CGIHANDLER_HPP_
+#endif  // INCLUDE_HANDLERS_CGIHANDLER_HPP_

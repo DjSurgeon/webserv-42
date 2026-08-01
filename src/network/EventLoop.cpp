@@ -1,4 +1,4 @@
-// Copyright 2026 serjimen vja-nie dlesieur
+// Copyright 2026 raperez- serjimen
 #include "network/EventLoop.hpp"
 
 #include <sys/socket.h>
@@ -96,7 +96,7 @@ void EventLoop::run() {
 
     int ret = poll(&_pollfds[0], _pollfds.size(), POLL_TIMEOUT);
 
-    //Dont show error message when failed due to a signal
+    // Dont show error message when failed due to a signal
     if (!g_running)
       break;
 

@@ -1,12 +1,13 @@
-// Copyright 2026 serjimen vja-nie dlesieur
-#ifndef SRC_NETWORK_EVENTLOOP_HPP_
-#define SRC_NETWORK_EVENTLOOP_HPP_
+// Copyright 2026 raperez- serjimen
+#ifndef INCLUDE_NETWORK_EVENTLOOP_HPP_
+#define INCLUDE_NETWORK_EVENTLOOP_HPP_
 
 #include <sys/poll.h>
 
 #include <csignal>
 #include <ctime>
 #include <map>
+#include <string>
 #include <vector>
 
 #include "config/ServerConfig.hpp"
@@ -63,4 +64,4 @@ class EventLoop {
                            HttpResponse& res) const;
 };
 
-#endif  // SRC_NETWORK_EVENTLOOP_HPP_
+#endif  // INCLUDE_NETWORK_EVENTLOOP_HPP_

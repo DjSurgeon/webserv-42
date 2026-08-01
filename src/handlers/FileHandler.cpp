@@ -1,6 +1,5 @@
-// Copyright 2026 serjimen vja-nie dlesieur
+// Copyright 2026 raperez- serjimen
 #include "handlers/FileHandler.hpp"
-#include "config/LocationConfig.hpp"
 
 #include <dirent.h>
 #include <sys/stat.h>
@@ -8,9 +7,12 @@
 
 #include <cstddef>
 #include <fstream>
+#include <iostream>
+#include <map>
 #include <sstream>
 #include <string>
-#include <iostream>
+
+#include "config/LocationConfig.hpp"
 
 // -----------------------------------------------------------------------------
 // Orthodox Canonical Form
@@ -95,9 +97,10 @@ bool FileHandler::_uploadRaw(HttpResponse* res, const LocationConfig* loc,
     return false;
   }
 
-  //Create the file
+  // Create the file
   std::string filename = uri.substr(pos + 1);
-  std::string filepath = _getAvailableFilename(loc->getRoot() + "/" + loc->getUploadPath(), filename);
+  std::string filepath = _getAvailableFilename(
+      loc->getRoot() + "/" + loc->getUploadPath(), filename);
   std::cout << "Trying to create file on: " << filepath.c_str() << std::endl;
   std::ofstream file(filepath.c_str(), std::ios::binary);
   if (!file.is_open()) {
@@ -107,10 +110,10 @@ bool FileHandler::_uploadRaw(HttpResponse* res, const LocationConfig* loc,
   file.write(req->get_body().data(), req->get_body().size());
   file.close();
 
-  //Construct the 201 response
+  // Construct the 201 response
   if (res) {
     res->set_body("Created");
-    //res->add_header("Content-Type", _get_mime_type(physical_path));
+    // res->add_header("Content-Type", _get_mime_type(physical_path));
     res->add_header("Content-Length", "7");
     res->set_status(201, "Created");
   }
@@ -136,8 +139,10 @@ bool FileHandler::upload_file(const std::string& physical_path,
   }
 
   const std::map<std::string, std::string>& headers = req->get_headers();
-  std::map<std::string, std::string>::const_iterator it = headers.find("Content-Type");
-  if (it != headers.end() && it->second.find("multipart/form-data") != std::string::npos)
+  std::map<std::string, std::string>::const_iterator it =
+      headers.find("Content-Type");
+  if (it != headers.end() &&
+      it->second.find("multipart/form-data") != std::string::npos)
     return _uploadMultipart(res, loc, req);
   else
     return _uploadRaw(res, loc, req);

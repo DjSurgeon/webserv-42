@@ -1,4 +1,4 @@
-// Copyright 2026 serjimen vja-nie dlesieur
+// Copyright 2026 raperez- serjimen
 #include <sys/socket.h>
 #include <sys/stat.h>
 
@@ -193,9 +193,9 @@ void EventLoop::_handleClientData(int fd) {
 
   char buffer[8192];
   int bytes = recv(fd, buffer, sizeof(buffer), 0);
-  //std::cout << "Received " << bytes << " bytes:\n";
-  //std::cout.write(buffer, bytes);
-  //std::cout << "\n----------------------\n";
+  // std::cout << "Received " << bytes << " bytes:\n";
+  // std::cout.write(buffer, bytes);
+  // std::cout << "\n----------------------\n";
 
   if (bytes > 0) {
     client_it->second->appendToReadBuffer(std::string(buffer, bytes));
