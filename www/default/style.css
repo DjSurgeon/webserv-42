@@ -35,8 +35,6 @@ header > div {
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
-
-    color: #ffffff;
 }
 
 h1 {
@@ -46,13 +44,12 @@ h1 {
     line-height: 1;
 
     color: #ffffff;
+    color: #00BABC;
 
     background-image: linear-gradient(135deg, #ED3491 0%, #6A5CFF 50%, #00BABC 100%);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
-
-    color: #00BABC;
 }
 
 .desc {
@@ -121,14 +118,13 @@ form button {
     border-radius: 9999px;
     height: 2px;
     width: 60%;
+    background: #00BABC;
     background: linear-gradient(
         90deg,
         #ED3491,
         #6A5CFF,
         #00BABC
     );
-
-    background: #00BABC;
 }
 
 .card p {
