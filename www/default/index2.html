@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WEBSERV 42</title>
+
+    <!-- Space Grotesk se parece bastante a la estética de 42 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="style2.css">
+</head>
+
+<body>
+
+<header>
+
+    <div class="logo">
+        <span class="logo42">42</span>
+    </div>
+
+    <div class="title">
+        <h1>WEBSERV</h1>
+
+        <p>HTTP/1.1 server implementation</p>
+
+        <p>Built with C++98</p>
+    </div>
+
+</header>
+
+
+<main>
+
+<div class="cards">
+
+    <!-- AUTOINDEX -->
+
+    <div class="card">
+
+        <h2>AUTOINDEX</h2>
+
+        <div class="separator"></div>
+
+        <p>
+            Browse uploaded files.
+        </p>
+
+        <button onclick="location.href='/uploads'">
+            OPEN
+        </button>
+
+    </div>
+
+
+    <!-- UPLOAD -->
+
+    <div class="card">
+
+        <h2>UPLOAD</h2>
+
+        <div class="separator"></div>
+
+        <p>
+            Upload a new file.
+        </p>
+
+        <input
+            type="file"
+            id="file"
+        >
+
+        <button onclick="upload()">
+            UPLOAD
+        </button>
+
+    </div>
+
+
+    <!-- DELETE -->
+
+    <div class="card">
+
+        <h2>DELETE</h2>
+
+        <div class="separator"></div>
+
+        <p>
+            Delete an uploaded file.
+        </p>
+
+        <input
+            type="text"
+            id="filename"
+            placeholder="Ex: file.txt"
+        >
+
+        <button onclick="deleteFile()">
+            DELETE
+        </button>
+
+    </div>
+
+
+    <!-- PYTHON -->
+
+    <div class="card">
+
+        <h2>PYTHON CGI</h2>
+
+        <div class="separator"></div>
+
+        <p>
+            Run Python example.
+        </p>
+
+        <form action="/cgi/python/hello.py" method="GET">
+
+            <input
+                type="text"
+                name="name"
+                placeholder="Enter your name"
+            >
+
+            <button type="submit">
+                RUN
+            </button>
+
+        </form>
+
+    </div>
+
+
+    <!-- BASH -->
+
+    <div class="card">
+
+        <h2>BASH CGI</h2>
+
+        <div class="separator"></div>
+
+        <p>
+            Run Bash example.
+        </p>
+
+        <button onclick="location.href='/cgi/bash/script.sh'">
+            RUN
+        </button>
+
+    </div>
+
+
+    <!-- ERROR -->
+
+    <div class="card">
+
+        <h2>CUSTOM ERROR</h2>
+
+        <div class="separator"></div>
+
+        <p>
+            Open custom 404 page.
+        </p>
+
+        <button onclick="location.href='/NOEXISTING'">
+            OPEN
+        </button>
+
+    </div>
+
+
+    <!-- REDIRECT -->
+
+    <div class="card">
+
+        <h2>REDIRECT</h2>
+
+        <div class="separator"></div>
+
+        <p>
+            Redirect to YouTube.
+        </p>
+
+        <button onclick="location.href='/redirect'">
+            GO
+        </button>
+
+    </div>
+
+</div>
+
+</main>
+
+
+<footer>
+
+    <div>
+
+        WEBSERV PROJECT
+
+    </div>
+
+    <div>
+
+        Made by serjimen and raperez-
+
+    </div>
+
+</footer>
+
+
+<script>
+
+async function upload() {
+
+    const file = document.getElementById("file").files[0];
+
+    if (!file) {
+        alert("Missing file");
+        return;
+    }
+
+    fetch("/uploads/" + file.name, {
+
+        method: "POST",
+
+        headers: {
+            "Content-Type": "application/octet-stream"
+        },
+
+        body: file
+
+    })
+
+    .then(async response => {
+
+        const text = await response.text();
+
+        alert(
+            "Status code: "
+            + response.status
+            + "\n\n"
+            + text
+        );
+
+    });
+
+}
+
+
+
+function deleteFile() {
+
+    const file = document.getElementById("filename").value;
+
+    fetch("/uploads/" + file, {
+
+        method: "DELETE"
+
+    })
+
+    .then(async response => {
+
+        const text = await response.text();
+
+        alert(
+            "Status code: "
+            + response.status
+            + "\n\n"
+            + text
+        );
+
+    });
+
+}
+
+</script>
+
+</body>
+</html>
