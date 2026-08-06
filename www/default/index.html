@@ -6,22 +6,22 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>✅ WEBSERV 42 Home Page</h1>
-  <p style="text-align: center";>Welcome to the final evaluation environment.</p>
+  <h1>WEBSERV 42</h1>
+  <p style="text-align: center";>Welcome to the final testing environment.</p>
 
   <div class="cards">
 
     <div class="card">
-        <h2>📂 Autoindex</h2>
+        <h2>📂 AUTOINDEX</h2>
         <p>Browse uploaded files.</p>
-        <button onclick="location.href='/uploads'">Open</button>
+        <button onclick="location.href='/uploads'">OPEN</button>
     </div>
 
     <div class="card">
-        <h2>⬆️ Upload</h2>
+        <h2>⬆️ UPLOAD</h2>
         <p>Upload a new file.</p>
         <input type="file" id="file">
-        <button onclick="upload()">Upload</button>
+        <button onclick="upload()">UPLOAD</button>
         <script>
         async function upload() {
         const file = document.getElementById("file").files[0];
@@ -45,10 +45,10 @@
     </div>
 
     <div class="card">
-        <h2>🗑️ Delete</h2>
+        <h2>🗑️ DELETE</h2>
         <p>Delete an uploaded file.</p>
         <input type="text" id="filename" placeholder="Ex: file.txt" required>
-        <button onclick="deleteFile()">Delete</button>
+        <button onclick="deleteFile()">DELETE</button>
         <script>
         function deleteFile() {
             const file = document.getElementById("filename").value;
@@ -65,30 +65,30 @@
     </div>
 
     <div class="card">
-        <h2>🐍 Python CGI</h2>
+        <h2>🐍 PYTHON CGI</h2>
         <p>Run Python example.</p>
         <form action="/cgi/python/hello.py" method="GET">
             <input type="text" name="name" placeholder="Enter your name">
-            <button type="submit">Run</button>
+            <button type="submit">RUN</button>
         </form>
     </div>
 
     <div class="card">
-        <h2>🎲 Bash CGI</h2>
+        <h2>🎲 BASH CGI</h2>
         <p>Run Bash example.</p>
-        <button onclick="location.href='/cgi/bash/script.sh'">Run</button>
+        <button onclick="location.href='/cgi/bash/script.sh'">RUN</button>
     </div>
 
     <div class="card">
-        <h2>❌ Custom Error</h2>
+        <h2>❌ CUSTOM ERROR</h2>
         <p>Custom Error Page 404 Not Found</p>
-        <button onclick="location.href='/NOEXISTING'">Open</button>
+        <button onclick="location.href='/NOEXISTING'">OPEN</button>
     </div>
 
     <div class="card">
-        <h2>➡️ Redirect</h2>
+        <h2>➡️ REDIRECT</h2>
         <p>Redirection to YouTube</p>
-        <button onclick="location.href='/redirect'">Go</button>
+        <button onclick="location.href='/redirect'">GO</button>
     </div>
   </div>
 </body>
