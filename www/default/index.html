@@ -3,71 +3,93 @@
 <head>
   <title>Webserv 42 - Evaluation</title>
   <meta charset="UTF-8">
-  <style>
-    body { font-family: monospace; background: #1a1a1a; color: #00ff00; text-align: center; margin-top: 100px; }
-    h1 { font-size: 3em; }
-    a { color: #00ffff; }
-    hr { border: 0; border-top: 1px solid #454545; margin-left: 25%; margin-right: 25%; }
-  </style>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>✅ Webserv 42 Home Page</h1>
-  <p>Welcome to the final evaluation environment.</p>
-  
-  <h2>Autoindex</h2>
-  <a href="/uploads">Files Uploaded (Autoindex)</a>
-  <hr>
+  <h1>✅ WEBSERV 42 Home Page</h1>
+  <p style="text-align: center";>Welcome to the final evaluation environment.</p>
 
-  <h2>Upload file</h2>
-  <input type="file" id="file">
-  <button onclick="upload()">Upload</button>
+  <div class="cards">
 
-  <script>
-  async function upload() {
-    const file = document.getElementById("file").files[0];
-    if (!file) {
-      alert("Missing file");
-      return;
-    }
-    await fetch("/uploads/" + file.name, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/octet-stream"
-        },
-        body: file
-    });
-    alert("Upload completed");
-  }
-  </script>
-  <hr>
+    <div class="card">
+        <h2>📂 Autoindex</h2>
+        <p>Browse uploaded files.</p>
+        <button onclick="location.href='/uploads'">Open</button>
+    </div>
 
-  <h2>Delete file</h2>
-  <input type="text" id="filename" placeholder="Ex: file.txt">
-  <button onclick="deleteFile()">Delete</button>
-  <script>
-  function deleteFile() {
-      const file = document.getElementById("filename").value;
+    <div class="card">
+        <h2>⬆️ Upload</h2>
+        <p>Upload a new file.</p>
+        <input type="file" id="file">
+        <button onclick="upload()">Upload</button>
+        <script>
+        async function upload() {
+        const file = document.getElementById("file").files[0];
+        if (!file) {
+            alert("Missing file");
+            return;
+        }
+        fetch("/uploads/" + file.name, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/octet-stream"
+            },
+            body: file
+        })
+        .then(async response => {
+                const text = await response.text();
+                alert("Status code: " + response.status + "\n\n" + text);
+            });
+        }
+        </script>
+    </div>
 
-      fetch("/uploads/" + file, {
-          method: "DELETE"
-      })
-      .then(async response => {
-          const text = await response.text();
-          alert("Status code: " + response.status + "\n\n" + text);
-      });
-  }
-  </script>
-  <hr>
+    <div class="card">
+        <h2>🗑️ Delete</h2>
+        <p>Delete an uploaded file.</p>
+        <input type="text" id="filename" placeholder="Ex: file.txt" required>
+        <button onclick="deleteFile()">Delete</button>
+        <script>
+        function deleteFile() {
+            const file = document.getElementById("filename").value;
 
-  <h2>CGIs</h2>
-  <a href="/cgi/ok.py">Run Python CGI</a>
-  <hr>
+            fetch("/uploads/" + file, {
+                method: "DELETE"
+            })
+            .then(async response => {
+                const text = await response.text();
+                alert("Status code: " + response.status + "\n\n" + text);
+            });
+        }
+        </script>
+    </div>
 
-  <h2>Custom Error</h2>
-  <a href="/non_existing.html">Custom error 404</a>
-  <hr>
+    <div class="card">
+        <h2>🐍 Python CGI</h2>
+        <p>Run Python example.</p>
+        <form action="/cgi/python/hello.py" method="GET">
+            <input type="text" name="name" placeholder="Enter your name">
+            <button type="submit">Run</button>
+        </form>
+    </div>
 
-  <h2>Redirect</h2>
-  <a href="/redirect">Test 301 Redirect</a>
+    <div class="card">
+        <h2>🎲 Bash CGI</h2>
+        <p>Run Bash example.</p>
+        <button onclick="location.href='/cgi/bash/script.sh'">Run</button>
+    </div>
+
+    <div class="card">
+        <h2>❌ Custom Error</h2>
+        <p>Custom Error Page 404 Not Found</p>
+        <button onclick="location.href='/NOEXISTING'">Open</button>
+    </div>
+
+    <div class="card">
+        <h2>➡️ Redirect</h2>
+        <p>Redirection to YouTube</p>
+        <button onclick="location.href='/redirect'">Go</button>
+    </div>
+  </div>
 </body>
 </html>
