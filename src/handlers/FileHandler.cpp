@@ -319,6 +319,7 @@ std::string FileHandler::_get_mime_type(const std::string& path) {
                                        {".png", "image/png"},
                                        {".jpg", "image/jpeg"},
                                        {".jpeg", "image/jpeg"},
+                                       {".svg", "image/svg+xml"},
                                        {".txt", "text/plain"},
                                        {NULL, NULL}};
 

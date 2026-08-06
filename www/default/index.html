@@ -6,19 +6,28 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>WEBSERV 42</h1>
-  <p style="text-align: center";>Welcome to the final testing environment.</p>
+  <header>
+  <h1 class="logo">42</h1>
+  <div>
+    <h1>WEBSERV</h1>
+    <p class="desc";>Welcome to the final testing environment.</p>
+  </div>
+  </header>
 
   <div class="cards">
 
     <div class="card">
-        <h2>📂 AUTOINDEX</h2>
+        <img src="img/autoindex-icon.svg" alt="autoindex logo" height="60px" width="60px">
+        <h2>AUTOINDEX</h2>
+        <hr>
         <p>Browse uploaded files.</p>
         <button onclick="location.href='/uploads'">OPEN</button>
     </div>
 
     <div class="card">
-        <h2>⬆️ UPLOAD</h2>
+        <img src="img/upload-icon.svg" alt="autoindex logo" height="60px" width="60px">
+        <h2>UPLOAD</h2>
+        <hr>
         <p>Upload a new file.</p>
         <input type="file" id="file">
         <button onclick="upload()">UPLOAD</button>
@@ -45,7 +54,9 @@
     </div>
 
     <div class="card">
-        <h2>🗑️ DELETE</h2>
+        <img src="img/delete-icon.svg" alt="autoindex logo" height="60px" width="60px">
+        <h2>DELETE</h2>
+        <hr>
         <p>Delete an uploaded file.</p>
         <input type="text" id="filename" placeholder="Ex: file.txt" required>
         <button onclick="deleteFile()">DELETE</button>
@@ -65,7 +76,9 @@
     </div>
 
     <div class="card">
-        <h2>🐍 PYTHON CGI</h2>
+        <img src="img/python-icon.svg" alt="autoindex logo" height="60px" width="60px">
+        <h2>PYTHON CGI</h2>
+        <hr>
         <p>Run Python example.</p>
         <form action="/cgi/python/hello.py" method="GET">
             <input type="text" name="name" placeholder="Enter your name">
@@ -74,19 +87,25 @@
     </div>
 
     <div class="card">
-        <h2>🎲 BASH CGI</h2>
+        <img src="img/bash-icon.svg" alt="autoindex logo" height="60px" width="60px">
+        <h2>BASH CGI</h2>
+        <hr>
         <p>Run Bash example.</p>
         <button onclick="location.href='/cgi/bash/script.sh'">RUN</button>
     </div>
 
     <div class="card">
-        <h2>❌ CUSTOM ERROR</h2>
+        <img src="img/error-icon.svg" alt="autoindex logo" height="60px" width="60px">
+        <h2>CUSTOM ERROR</h2>
+        <hr>
         <p>Custom Error Page 404 Not Found</p>
         <button onclick="location.href='/NOEXISTING'">OPEN</button>
     </div>
 
     <div class="card">
-        <h2>➡️ REDIRECT</h2>
+        <img src="img/redirect-icon.svg" alt="autoindex logo" height="60px" width="60px">
+        <h2>REDIRECT</h2>
+        <hr>
         <p>Redirection to YouTube</p>
         <button onclick="location.href='/redirect'">GO</button>
     </div>
