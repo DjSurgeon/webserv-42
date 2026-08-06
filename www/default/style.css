@@ -35,6 +35,8 @@ header > div {
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
+
+    color: #ffffff;
 }
 
 h1 {
@@ -49,11 +51,13 @@ h1 {
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
+
+    color: #00BABC;
 }
 
 .desc {
     text-align: left;
-    color: #cfcdcd;
+    color: #ffffff;
     margin: 0;
     font-size: 0.95rem;
 }
@@ -123,6 +127,8 @@ form button {
         #6A5CFF,
         #00BABC
     );
+
+    background: #00BABC;
 }
 
 .card p {
