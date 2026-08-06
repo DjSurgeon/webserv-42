@@ -73,6 +73,10 @@ void RequestParser::_handle_state_uri(char c) {
     if (_storage_buffer.empty()) {
       _state = STATE_ERROR;
     } else {
+      size_t double_slash;
+      while ((double_slash = _storage_buffer.find("//")) != std::string::npos) {
+        _storage_buffer.erase(double_slash, 1);
+      }
       _request.set_uri(_storage_buffer);
       _storage_buffer.clear();
       _state = STATE_VERSION;

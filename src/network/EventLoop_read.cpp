@@ -222,6 +222,10 @@ void EventLoop::_handleClientData(int fd) {
         bool should_close = _shouldCloseConnection(req);
         client_it->second->setShouldClose(should_close);
 
+        if (req.get_method() == "HEAD") {
+          res.set_body("");
+        }
+
         std::string raw_response = res.to_string();
         client_it->second->appendToWriteBuffer(raw_response);
         parser_it->second->reset();

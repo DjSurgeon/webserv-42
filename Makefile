@@ -210,6 +210,32 @@ test: $(TEST_BINS)
 		echo ""; \
 	fi
 
+e2e: all
+	@echo ""
+	@echo "$(BOLD)$(MAGENTA)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo "$(BOLD)$(MAGENTA)            🌐  RUNNING END-TO-END (E2E) TESTS  🌐           $(RESET)"
+	@echo "$(BOLD)$(MAGENTA)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo ""
+	@echo "  $(CYAN)$(BOLD)▶$(RESET)  Starting webserv in background on port 8080..."
+	@./$(NAME) conf/raul.conf > /dev/null 2>&1 & \
+	SERVER_PID=$$!; \
+	sleep 1; \
+	echo "  $(CYAN)$(BOLD)▶$(RESET)  Running test_tester_bugs.py..."; \
+	./tests/test_tester_bugs.py; \
+	TEST1_RES=$$?; \
+	echo "  $(CYAN)$(BOLD)▶$(RESET)  Running test_evaluation_cheatsheet.py..."; \
+	./tests/test_evaluation_cheatsheet.py; \
+	TEST2_RES=$$?; \
+	echo "  $(CYAN)$(BOLD)▶$(RESET)  Killing webserv (PID: $$SERVER_PID)..."; \
+	kill $$SERVER_PID 2>/dev/null; \
+	echo ""; \
+	if [ $$TEST1_RES -eq 0 ] && [ $$TEST2_RES -eq 0 ]; then \
+		echo "  $(GREEN)$(BOLD)✔  All E2E tests passed!$(RESET)"; \
+	else \
+		echo "  $(RED)$(BOLD)✘  Some E2E tests failed!$(RESET)"; \
+		exit 1; \
+	fi
+
 $(BIN_DIR)/%: $(TEST_DIR)/*/*.cpp $(LIB_SRCS) $(HDRS)
 	@mkdir -p $(BIN_DIR)
 	@# Encontramos el archivo fuente correcto para el binario
@@ -221,6 +247,6 @@ $(BIN_DIR)/%: $(TEST_DIR)/*/*.cpp $(LIB_SRCS) $(HDRS)
 #                                 PHONY                                        #
 # ──────────────────────────────────────────────────────────────────────────── #
 
-.PHONY: all clean fclean re test stress
+.PHONY: all clean fclean re test stress e2e
 debug:
 	@echo $(TEST_BINS)
