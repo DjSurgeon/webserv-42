@@ -108,11 +108,12 @@ void AuthHandler::_handle_profile(const HttpRequest& req,
       res->set_status(200, "OK");
       res->add_header("Content-Type", "text/html");
 
-      std::string html =
-          "<html><body><h1>Welcome back to your profile, " +
-          session->username +
-          "!</h1><form method=\"POST\" action=\"/api/logout\"><button "
-          "type=\"submit\">Logout</button></form></body></html>";
+      std::stringstream html_ss;
+      html_ss << "<html><body><h1>Welcome back to your profile, "
+              << session->username << "!</h1><form method=\"POST\" "
+              << "action=\"/api/logout\"><button type=\"submit\">"
+              << "Logout</button></form></body></html>";
+      std::string html = html_ss.str();
       res->set_body(html);
 
       std::stringstream ss;
