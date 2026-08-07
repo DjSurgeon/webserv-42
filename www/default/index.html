@@ -109,6 +109,50 @@
         <p>Redirection to YouTube</p>
         <button onclick="location.href='/redirect'">GO</button>
     </div>
+    <div class="card">
+        <h2 style="font-size: 2.2rem; margin-bottom: -10px;">🔐</h2>
+        <h2>LOGIN</h2>
+        <hr>
+        <p>Create a Session Cookie.</p>
+        <input type="text" id="loginUsername" placeholder="Ex: Evaluador42" required>
+        <button onclick="login()">LOGIN</button>
+        <script>
+        function login() {
+            const user = document.getElementById("loginUsername").value;
+            fetch("/api/login", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded"
+                },
+                body: "username=" + encodeURIComponent(user)
+            })
+            .then(async response => {
+                alert("Login Status: " + response.status + "\nSession Cookie created successfully!");
+            });
+        }
+        </script>
+    </div>
+
+    <div class="card">
+        <h2 style="font-size: 2.2rem; margin-bottom: -10px;">🍪</h2>
+        <h2>SESSION</h2>
+        <hr>
+        <p>Test Profile or Destroy Cookie.</p>
+        <div style="display: flex; gap: 10px; margin-top: auto;">
+            <button onclick="location.href='/api/profile'" style="background: #1b1b1b;">PROFILE</button>
+            <button onclick="logout()" style="background: #e63946;">LOGOUT</button>
+        </div>
+        <script>
+        function logout() {
+            fetch("/api/logout", {
+                method: "POST"
+            })
+            .then(async response => {
+                alert("Logout Status: " + response.status + "\nSession Cookie destroyed!");
+            });
+        }
+        </script>
+    </div>
   </div>
 </body>
 </html>
