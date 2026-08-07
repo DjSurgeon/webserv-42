@@ -41,6 +41,7 @@ SRCS		= $(SRC_DIR)/main.cpp \
 			  $(SRC_DIR)/handlers/StaticRouter.cpp \
 			  $(SRC_DIR)/handlers/FileHandler.cpp \
 			  $(SRC_DIR)/handlers/CgiHandler.cpp \
+			  $(SRC_DIR)/handlers/AuthHandler.cpp \
 			  $(SRC_DIR)/http/HttpRequest.cpp \
 			  $(SRC_DIR)/http/HttpRequest_headers.cpp \
 			  $(SRC_DIR)/http/HttpResponse.cpp \
@@ -67,6 +68,7 @@ HDRS		= $(INC_DIR)/config/Context.hpp \
 			  $(INC_DIR)/handlers/StaticRouter.hpp \
 			  $(INC_DIR)/handlers/FileHandler.hpp \
 			  $(INC_DIR)/handlers/CgiHandler.hpp \
+			  $(INC_DIR)/handlers/AuthHandler.hpp \
 			  $(INC_DIR)/http/HttpRequest.hpp \
 			  $(INC_DIR)/http/HttpResponse.hpp \
 			  $(INC_DIR)/http/RequestParser.hpp \

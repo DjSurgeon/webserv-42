@@ -11,6 +11,7 @@
 #include "handlers/CgiHandler.hpp"
 #include "handlers/FileHandler.hpp"
 #include "handlers/StaticRouter.hpp"
+#include "handlers/AuthHandler.hpp"
 #include "network/EventLoop.hpp"
 
 const ServerConfig* EventLoop::_resolveServerConfig(
@@ -137,6 +138,11 @@ void EventLoop::_dispatchRequest(const HttpRequest& req,
 
   std::string physical_path;
   StaticRouter router;
+
+  AuthHandler auth;
+  if (auth.handle_auth_request(req.get_uri(), req, &res)) {
+    return;
+  }
 
   if (!router.process_route(req, matched_server, matched_loc, &res,
                             &physical_path, active_ctx)) {
