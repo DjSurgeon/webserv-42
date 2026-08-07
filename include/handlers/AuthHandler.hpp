@@ -4,9 +4,9 @@
 
 #include <string>
 
+#include "config/LocationConfig.hpp"
 #include "http/HttpRequest.hpp"
 #include "http/HttpResponse.hpp"
-#include "config/LocationConfig.hpp"
 
 class AuthHandler {
  public:
@@ -15,7 +15,7 @@ class AuthHandler {
 
   /**
    * @brief Handles authentication-related API requests.
-   * 
+   *
    * Returns true if the request was an auth API route and was handled.
    * Returns false if the request should be processed by standard handlers.
    */

@@ -1,8 +1,9 @@
 // Copyright 2026 raperez- serjimen
 #include "handlers/AuthHandler.hpp"
 
-#include <sstream>
 #include <map>
+#include <sstream>
+#include <string>
 
 #include "http/SessionManager.hpp"
 
@@ -39,7 +40,7 @@ void AuthHandler::_handle_login(const HttpRequest& req,
   // Very simple parsing for "username=xyz" in the body
   std::string body = req.get_body();
   std::string username = "Guest";
-  
+
   size_t pos = body.find("username=");
   if (pos != std::string::npos) {
     size_t end = body.find('&', pos);
@@ -58,9 +59,9 @@ void AuthHandler::_handle_login(const HttpRequest& req,
   std::string html =
       "<html><body><h1>Logged in successfully as " + username +
       "</h1><a href=\"/api/profile\">View Profile</a></body></html>";
-  
+
   res->set_body(html);
-  
+
   std::stringstream ss;
   ss << html.length();
   res->add_header("Content-Length", ss.str());
@@ -72,7 +73,7 @@ void AuthHandler::_handle_logout(const HttpRequest& req,
   const std::map<std::string, std::string>& cookies = req.get_cookies();
   std::map<std::string, std::string>::const_iterator it =
       cookies.find("session_id");
-  
+
   if (it != cookies.end()) {
     SessionManager::get_instance().destroy_session(it->second);
   }
@@ -86,9 +87,9 @@ void AuthHandler::_handle_logout(const HttpRequest& req,
   std::string html =
       "<html><body><h1>Logged out successfully.</h1>"
       "<a href=\"/\">Return Home</a></body></html>";
-  
+
   res->set_body(html);
-  
+
   std::stringstream ss;
   ss << html.length();
   res->add_header("Content-Length", ss.str());
@@ -99,21 +100,21 @@ void AuthHandler::_handle_profile(const HttpRequest& req,
   const std::map<std::string, std::string>& cookies = req.get_cookies();
   std::map<std::string, std::string>::const_iterator it =
       cookies.find("session_id");
-  
+
   if (it != cookies.end()) {
     SessionData* session =
         SessionManager::get_instance().get_session(it->second);
     if (session) {
       res->set_status(200, "OK");
       res->add_header("Content-Type", "text/html");
-      
+
       std::string html =
           "<html><body><h1>Welcome back to your profile, " +
           session->username +
           "!</h1><form method=\"POST\" action=\"/api/logout\"><button "
           "type=\"submit\">Logout</button></form></body></html>";
       res->set_body(html);
-      
+
       std::stringstream ss;
       ss << html.length();
       res->add_header("Content-Length", ss.str());
@@ -124,12 +125,12 @@ void AuthHandler::_handle_profile(const HttpRequest& req,
   // Unauthorized
   res->set_status(401, "Unauthorized");
   res->add_header("Content-Type", "text/html");
-  
+
   std::string html =
       "<html><body><h1>401 Unauthorized</h1><p>You must log in to view this "
       "page.</p></body></html>";
   res->set_body(html);
-  
+
   std::stringstream ss;
   ss << html.length();
   res->add_header("Content-Length", ss.str());

@@ -1,4 +1,6 @@
 // Copyright 2026 raperez- serjimen
+#include <string>
+
 #include "http/RequestParser.hpp"
 
 /**

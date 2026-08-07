@@ -8,10 +8,10 @@
 #include <string>
 #include <vector>
 
+#include "handlers/AuthHandler.hpp"
 #include "handlers/CgiHandler.hpp"
 #include "handlers/FileHandler.hpp"
 #include "handlers/StaticRouter.hpp"
-#include "handlers/AuthHandler.hpp"
 #include "network/EventLoop.hpp"
 
 const ServerConfig* EventLoop::_resolveServerConfig(

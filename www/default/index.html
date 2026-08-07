@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <title>Webserv 42 - Evaluation</title>
   <meta charset="UTF-8">
@@ -29,7 +29,7 @@
         <h2>UPLOAD</h2>
         <hr>
         <p>Upload a new file.</p>
-        <input type="file" id="file">
+        <input type="file" id="file" aria-label="Upload file">
         <button onclick="upload()">UPLOAD</button>
         <script>
         async function upload() {
@@ -58,7 +58,7 @@
         <h2>DELETE</h2>
         <hr>
         <p>Delete an uploaded file.</p>
-        <input type="text" id="filename" placeholder="Ex: file.txt" required>
+        <input type="text" id="filename" placeholder="Ex: file.txt" aria-label="File to delete" required>
         <button onclick="deleteFile()">DELETE</button>
         <script>
         function deleteFile() {
@@ -81,7 +81,7 @@
         <hr>
         <p>Run Python example.</p>
         <form action="/cgi/python/hello.py" method="GET">
-            <input type="text" name="name" placeholder="Enter your name">
+            <input type="text" name="name" placeholder="Enter your name" aria-label="Your Name">
             <button type="submit">RUN</button>
         </form>
     </div>
@@ -114,7 +114,7 @@
         <h2>LOGIN</h2>
         <hr>
         <p>Create a Session Cookie.</p>
-        <input type="text" id="loginUsername" placeholder="Ex: Evaluador42" required>
+        <input type="text" id="loginUsername" placeholder="Ex: Evaluador42" aria-label="Username" required>
         <button onclick="login()">LOGIN</button>
         <script>
         function login() {
