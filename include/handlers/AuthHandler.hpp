@@ -19,7 +19,8 @@ class AuthHandler {
    * Returns true if the request was an auth API route and was handled.
    * Returns false if the request should be processed by standard handlers.
    */
-  bool handle_auth_request(const std::string& path, const HttpRequest& req, HttpResponse* res) const;
+  bool handle_auth_request(const std::string& path, const HttpRequest& req,
+                           HttpResponse* res) const;
 
  private:
   void _handle_login(const HttpRequest& req, HttpResponse* res) const;
