@@ -152,7 +152,7 @@ void EventLoop::_handleClientData(int fd) {
     return;
   }
 
-  char buffer[8192];
+  char buffer[65536];
   int bytes = recv(fd, buffer, sizeof(buffer), 0);
 
   if (bytes > 0) {
@@ -308,7 +308,7 @@ void EventLoop::_handleCgiWrite(int fd) {
 
 void EventLoop::_handleCgiRead(int fd) {
   CgiTask* task = _cgiOutMap[fd];
-  char buffer[8192];
+  char buffer[65536];
   ssize_t bytes = read(fd, buffer, sizeof(buffer));
 
   if (bytes > 0) {
