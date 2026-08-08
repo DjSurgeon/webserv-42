@@ -90,61 +90,52 @@ void EventLoop::run() {
       _lastSessionCleanup = now;
     }
 
-    if (_pollfds.empty()) {
-      continue;
-    }
+    if (_pollfds.empty()) continue;
 
     int ret = poll(&_pollfds[0], _pollfds.size(), POLL_TIMEOUT);
+    if (!g_running) break;
+    if (ret <= 0) continue;
 
-    //Dont show error message when failed due to a signal
-    if (!g_running)
-      break;
-
-    if (ret < 0) {
-      std::cerr << "EventLoop: poll() failed" << std::endl;
-      continue;
-    }
-
-    if (ret == 0) {
-      continue;
-    }
-
-    // Iterate backwards to allow safe removal of sockets during iteration
     for (int i = static_cast<int>(_pollfds.size()) - 1; i >= 0; --i) {
       int current_fd = _pollfds[i].fd;
       int16_t revents = _pollfds[i].revents;
 
-      if (revents == 0) {
-        continue;
-      }
+      if (revents == 0) continue;
 
-      // Check for errors or disconnection
       if (revents & (POLLERR | POLLHUP | POLLNVAL)) {
-        removeSocket(current_fd);
+        if (_cgiOutMap.count(current_fd)) {
+          _handleCgiRead(current_fd); // Forzar lectura final
+        } else {
+          removeSocket(current_fd);
+        }
         continue;
       }
 
-      // Check for incoming data (or new connection)
+      // LECTURA (POLLIN)
       if (revents & POLLIN) {
         if (_isServerSocket(current_fd)) {
           _handleNewConnection(current_fd);
+        } else if (_cgiOutMap.count(current_fd)) {
+          _handleCgiRead(current_fd);
         } else {
           _handleClientData(current_fd);
         }
       }
 
-      // Prevent processing POLLOUT if the socket was closed during POLLIN
-      if (!_isServerSocket(current_fd) &&
-          _clients.find(current_fd) == _clients.end()) {
+      if (!_isServerSocket(current_fd) && _clients.find(current_fd) == _clients.end() && !_cgiInMap.count(current_fd)) {
         continue;
       }
 
-      // Check for readiness to write
+      // ESCRITURA (POLLOUT)
       if (revents & POLLOUT) {
-        if (!_isServerSocket(current_fd)) {
+        if (_cgiInMap.count(current_fd)) {
+          _handleCgiWrite(current_fd);
+        } else if (_clients.count(current_fd)) {
           _handleClientWrite(current_fd);
         }
       }
     }
+    
+    //_checkCgiTimeouts(); // Verificar scripts en bucle infinito
   }
 }

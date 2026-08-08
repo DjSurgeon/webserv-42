@@ -136,3 +136,33 @@ void EventLoop::_handleNewConnection(int server_fd) {
     }
   }
 }
+
+/**
+ * @brief Añade un FD de pipe CGI al vector _pollfds.
+ *
+ * @param fd File descriptor del pipe (lectura o escritura).
+ * @param events Máscara de eventos (POLLIN o POLLOUT).
+ */
+void EventLoop::_addCgiFd(int fd, short events) {
+  pollfd pfd;
+  pfd.fd = fd;
+  pfd.events = events;
+  pfd.revents = 0;
+  _pollfds.push_back(pfd);
+}
+
+/**
+ * @brief Elimina un FD de pipe CGI del vector _pollfds.
+ * No llama a close(fd) directamente para dar flexibilidad al caller.
+ *
+ * @param fd File descriptor del pipe a remover.
+ */
+void EventLoop::_removeCgiFd(int fd) {
+  for (std::vector<pollfd>::iterator it = _pollfds.begin();
+       it != _pollfds.end(); ++it) {
+    if (it->fd == fd) {
+      _pollfds.erase(it);
+      return;
+    }
+  }
+}

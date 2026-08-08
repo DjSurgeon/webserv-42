@@ -6,10 +6,17 @@
 #include <map>
 #include <string>
 #include <vector>
+#include <sys/wait.h>
 
 #include "config/LocationConfig.hpp"
 #include "http/HttpRequest.hpp"
 #include "http/HttpResponse.hpp"
+
+struct CgiProcess {
+  pid_t pid;
+  int pipe_in;   // Para enviar el body al CGI (si aplica)
+  int pipe_out;  // Para leer la salida del CGI
+};
 
 class CgiHandler {
  public:
@@ -19,10 +26,13 @@ class CgiHandler {
   CgiHandler& operator=(const CgiHandler& other);
   ~CgiHandler();
 
+  // Modificamos execute_script para que devuelva CgiProcess en lugar de ejecutar la espera síncrona
+  bool start_script(const std::string& script_path, const HttpRequest& req,
+                    const LocationConfig* loc, CgiProcess& cgi_proc);
+  bool parse_cgi_output(const std::string& raw_output, HttpResponse* res) const;
+
   bool execute_script(const std::string& script_path, const HttpRequest& req,
                       const LocationConfig* loc, HttpResponse* res);
-
-  bool parse_cgi_output(const std::string& raw_output, HttpResponse* res) const;
 
  private:
   friend void test_cgi_env_generation();

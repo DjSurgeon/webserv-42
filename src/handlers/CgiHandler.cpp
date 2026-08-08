@@ -447,7 +447,6 @@ char** CgiHandler::_allocate_env_array(
       envp[i][j] = env_vec[i][j];
     }
     envp[i][env_vec[i].length()] = '\0';
-    std::cerr << envp[i] << std::endl;
   }
   envp[size] = NULL;
 
@@ -463,4 +462,77 @@ void CgiHandler::_free_env_array(char** envp) const {
     delete[] envp[i];
   }
   delete[] envp;
+}
+
+bool CgiHandler::start_script(const std::string& script_path,
+                             const HttpRequest& req,
+                             const LocationConfig* loc, CgiProcess& cgi_proc) {
+  int stdout_pipe[2];
+  int stdin_pipe[2] = {-1, -1};
+
+  // 1. Pipe para leer salida del CGI
+  if (pipe(stdout_pipe) == -1) return false;
+  fcntl(stdout_pipe[0], F_SETFL, O_NONBLOCK);
+
+  // 2. Si hay body, crear Pipe para enviar body al CGI de forma asíncrona
+  if (!req.get_body().empty()) {
+    if (pipe(stdin_pipe) == -1) {
+      close(stdout_pipe[0]);
+      close(stdout_pipe[1]);
+      return false;
+    }
+    fcntl(stdin_pipe[1], F_SETFL, O_NONBLOCK);
+  }
+
+  pid_t pid = fork();
+  if (pid < 0) {
+    close(stdout_pipe[0]); close(stdout_pipe[1]);
+    if (stdin_pipe[0] != -1) { close(stdin_pipe[0]); close(stdin_pipe[1]); }
+    return false;
+  } 
+  else if (pid == 0) { // Proceso Hijo
+    close(stdout_pipe[0]);
+    dup2(stdout_pipe[1], STDOUT_FILENO);
+    close(stdout_pipe[1]);
+
+    if (stdin_pipe[0] != -1) {
+      close(stdin_pipe[1]);
+      dup2(stdin_pipe[0], STDIN_FILENO);
+      close(stdin_pipe[0]);
+    } else {
+      int dev_null = open("/dev/null", O_RDONLY);
+      if (dev_null != -1) {
+        dup2(dev_null, STDIN_FILENO);
+        close(dev_null);
+      }
+    }
+
+    std::vector<std::string> env_vec = _build_env_vector(req, loc);
+    char** envp = _allocate_env_array(env_vec);
+    std::string interpreter = _get_interpreter(script_path, loc);
+
+    char* argv[3];
+    if (!interpreter.empty()) {
+      argv[0] = const_cast<char*>(interpreter.c_str());
+      argv[1] = const_cast<char*>(script_path.c_str());
+      argv[2] = NULL;
+    } else {
+      argv[0] = const_cast<char*>(script_path.c_str());
+      argv[1] = NULL;
+    }
+
+    execve(argv[0], argv, envp);
+    _free_env_array(envp);
+    std::exit(EXIT_FAILURE);
+  }
+
+  // Proceso Padre
+  close(stdout_pipe[1]); // Cierra extremo de escritura
+  if (stdin_pipe[0] != -1) close(stdin_pipe[0]); // Cierra extremo de lectura
+
+  cgi_proc.pid = pid;
+  cgi_proc.pipe_out = stdout_pipe[0];
+  cgi_proc.pipe_in = stdin_pipe[1];
+
+  return true;
 }
