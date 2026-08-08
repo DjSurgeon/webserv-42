@@ -20,6 +20,8 @@ static std::string get_reason_phrase(int code) {
   switch (code) {
     case 400:
       return "Bad Request";
+    case 401:
+      return "Unauthorized";
     case 403:
       return "Forbidden";
     case 404:
