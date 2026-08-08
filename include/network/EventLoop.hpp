@@ -52,7 +52,7 @@ class EventLoop {
   std::map<int, CgiTask*> _cgiInMap;      // pipe_in_fd -> CgiTask
   std::map<int, CgiTask*> _clientCgiMap;  // client_fd -> CgiTask
 
-  void _addCgiFd(int fd, short events);
+  void _addCgiFd(int fd, int16_t events);
   void _removeCgiFd(int fd);
   void _handleCgiRead(int fd);
   void _handleCgiWrite(int fd);
@@ -89,7 +89,7 @@ class EventLoop {
                            HttpResponse& res) const;
 };
 
-#endif  // SRC_NETWORK_EVENTLOOP_HPP_
+#endif  // INCLUDE_NETWORK_EVENTLOOP_HPP_
 
 struct CgiState {
   int client_fd;    // FD del cliente que espera respuesta

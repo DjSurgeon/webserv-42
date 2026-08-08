@@ -143,7 +143,7 @@ void EventLoop::_handleNewConnection(int server_fd) {
  * @param fd File descriptor del pipe (lectura o escritura).
  * @param events Máscara de eventos (POLLIN o POLLOUT).
  */
-void EventLoop::_addCgiFd(int fd, short events) {
+void EventLoop::_addCgiFd(int fd, int16_t events) {
   pollfd pfd;
   pfd.fd = fd;
   pfd.events = events;

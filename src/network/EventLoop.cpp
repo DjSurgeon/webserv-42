@@ -149,6 +149,6 @@ void EventLoop::run() {
       }
     }
 
-    //_checkCgiTimeouts(); // Verificar scripts en bucle infinito
+    // _checkCgiTimeouts(); // Verificar scripts en bucle infinito
   }
 }
