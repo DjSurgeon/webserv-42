@@ -98,7 +98,7 @@ void EventLoop::_executeFileHandler(const HttpRequest& req,
   FileHandler file_handler;
   const std::string& method = req.get_method();
 
-  if (method == "GET") {
+  if (method == "GET" || method == "HEAD") {
     struct stat st;
     if (stat(physical_path.c_str(), &st) == 0 && S_ISDIR(st.st_mode)) {
       if (active_ctx->getAutoindex()) {
@@ -116,47 +116,6 @@ void EventLoop::_executeFileHandler(const HttpRequest& req,
     file_handler.delete_file(physical_path, &res, active_ctx, &req);
   } else {
     res.generate_error_response(405, active_ctx, &req);
-  }
-}
-
-void EventLoop::_dispatchRequest(const HttpRequest& req,
-                                 const ServerConfig* matched_server,
-                                 HttpResponse& res) {
-  if (!matched_server) {
-    return;
-  }
-
-  const LocationConfig* matched_loc =
-      matched_server->findLocation(req.get_uri());
-  const Context* active_ctx = matched_loc
-                                  ? static_cast<const Context*>(matched_loc)
-                                  : static_cast<const Context*>(matched_server);
-
-  if (_handleRedirect(matched_loc, res)) {
-    return;
-  }
-
-  std::string physical_path;
-  StaticRouter router;
-
-  AuthHandler auth;
-  if (auth.handle_auth_request(req.get_uri(), req, &res)) {
-    return;
-  }
-
-  if (!router.process_route(req, matched_server, matched_loc, &res,
-                            &physical_path, active_ctx)) {
-    return;
-  }
-
-  std::cout << "EventLoop: Resolved physical path: " << physical_path
-            << std::endl;
-
-  if (_isCgiRequest(physical_path, matched_loc)) {
-    CgiHandler cgi;
-    cgi.execute_script(physical_path, req, matched_loc, &res);
-  } else {
-    _executeFileHandler(req, active_ctx, physical_path, res);
   }
 }
 
@@ -195,13 +154,9 @@ void EventLoop::_handleClientData(int fd) {
 
   char buffer[8192];
   int bytes = recv(fd, buffer, sizeof(buffer), 0);
-  // std::cout << "Received " << bytes << " bytes:\n";
-  // std::cout.write(buffer, bytes);
-  // std::cout << "\n----------------------\n";
 
   if (bytes > 0) {
     client_it->second->appendToReadBuffer(std::string(buffer, bytes));
-    // Process the buffer with the parser
     const std::string& read_buf = client_it->second->getReadBuffer();
     size_t i = 0;
     while (i < read_buf.length()) {
@@ -211,7 +166,6 @@ void EventLoop::_handleClientData(int fd) {
         std::cout << "EventLoop: Request completed from client " << fd << "\n";
 
         const HttpRequest& req = parser_it->second->get_request();
-        HttpResponse res;
 
         std::string host_header = "";
         std::map<std::string, std::string>::const_iterator host_it =
@@ -223,17 +177,11 @@ void EventLoop::_handleClientData(int fd) {
         const ServerConfig* matched_server =
             _resolveServerConfig(fd, host_header);
 
-        _dispatchRequest(req, matched_server, res);
+        _dispatchRequest(fd, req, matched_server);
 
         bool should_close = _shouldCloseConnection(req);
         client_it->second->setShouldClose(should_close);
 
-        if (req.get_method() == "HEAD") {
-          res.set_body("");
-        }
-
-        std::string raw_response = res.to_string();
-        client_it->second->appendToWriteBuffer(raw_response);
         parser_it->second->reset();
         break;
       } else if (state == STATE_ERROR) {
@@ -249,5 +197,151 @@ void EventLoop::_handleClientData(int fd) {
     client_it->second->consumeReadBuffer(i);
   } else if (bytes == 0) {
     removeSocket(fd);
+  }
+}
+
+void EventLoop::_dispatchRequest(int client_fd, const HttpRequest& req,
+                                 const ServerConfig* matched_server) {
+  if (!matched_server) return;
+
+  const LocationConfig* matched_loc = matched_server->findLocation(req.get_uri());
+  const Context* active_ctx = matched_loc ? static_cast<const Context*>(matched_loc)
+                                          : static_cast<const Context*>(matched_server);
+
+  HttpResponse res;
+
+  // Manejo de Redirección
+  if (_handleRedirect(matched_loc, res)) {
+    if (req.get_method() == "HEAD") res.set_body("");
+    _clients[client_fd]->appendToWriteBuffer(res.to_string());
+    return;
+  }
+
+  // Manejo de Autenticación
+  AuthHandler auth;
+  if (auth.handle_auth_request(req.get_uri(), req, &res)) {
+    if (req.get_method() == "HEAD") res.set_body("");
+    _clients[client_fd]->appendToWriteBuffer(res.to_string());
+    return;
+  }
+
+  std::string physical_path;
+  StaticRouter router;
+  if (!router.process_route(req, matched_server, matched_loc, &res, &physical_path, active_ctx)) {
+    if (req.get_method() == "HEAD") res.set_body("");
+    _clients[client_fd]->appendToWriteBuffer(res.to_string());
+    return;
+  }
+
+  if (_isCgiRequest(physical_path, matched_loc)) {
+    CgiHandler cgi;
+    CgiProcess proc;
+    if (cgi.start_script(physical_path, req, matched_loc, proc)) {
+      CgiTask* task = new CgiTask();
+      task->client_fd = client_fd;
+      task->pipe_in_fd = proc.pipe_in;
+      task->pipe_out_fd = proc.pipe_out;
+      task->pid = proc.pid;
+      task->start_time = std::time(NULL);
+      task->body_to_write = req.get_body();
+      task->bytes_written = 0;
+      task->loc = matched_loc;
+
+      _clientCgiMap[client_fd] = task;
+      _cgiOutMap[proc.pipe_out] = task;
+      _addCgiFd(proc.pipe_out, POLLIN);
+
+      if (proc.pipe_in != -1) {
+        _cgiInMap[proc.pipe_in] = task;
+        _addCgiFd(proc.pipe_in, POLLOUT);
+      }
+    } else {
+      res.generate_error_response(500, active_ctx, &req);
+      if (req.get_method() == "HEAD") res.set_body("");
+      _clients[client_fd]->appendToWriteBuffer(res.to_string());
+    }
+  } else {
+    _executeFileHandler(req, active_ctx, physical_path, res);
+    if (req.get_method() == "HEAD") res.set_body("");
+    _clients[client_fd]->appendToWriteBuffer(res.to_string());
+  }
+}
+
+void EventLoop::_handleCgiWrite(int fd) {
+  CgiTask* task = _cgiInMap[fd];
+  std::string chunk = task->body_to_write.substr(task->bytes_written);
+  ssize_t bytes = write(fd, chunk.c_str(), chunk.size());
+
+  if (bytes > 0) {
+    task->bytes_written += bytes;
+    if (task->bytes_written >= task->body_to_write.size()) {
+      _removeCgiFd(fd);
+      close(fd);
+      _cgiInMap.erase(fd);
+      task->pipe_in_fd = -1;
+    }
+  } else {
+    _removeCgiFd(fd);
+    close(fd);
+    _cgiInMap.erase(fd);
+    task->pipe_in_fd = -1;
+  }
+}
+
+void EventLoop::_handleCgiRead(int fd) {
+  CgiTask* task = _cgiOutMap[fd];
+  char buffer[8192];
+  ssize_t bytes = read(fd, buffer, sizeof(buffer));
+
+  if (bytes > 0) {
+    task->cgi_output.append(buffer, bytes);
+  } else { // EOF detectado
+    _finishCgiTask(task, false);
+  }
+}
+
+void EventLoop::_finishCgiTask(CgiTask* task, bool timed_out) {
+  if (task->pipe_in_fd != -1) {
+    _removeCgiFd(task->pipe_in_fd);
+    close(task->pipe_in_fd);
+    _cgiInMap.erase(task->pipe_in_fd);
+  }
+  if (task->pipe_out_fd != -1) {
+    _removeCgiFd(task->pipe_out_fd);
+    close(task->pipe_out_fd);
+    _cgiOutMap.erase(task->pipe_out_fd);
+  }
+
+  if (timed_out) {
+    kill(task->pid, SIGKILL);
+  }
+  waitpid(task->pid, NULL, WNOHANG);
+
+  if (_clients.count(task->client_fd)) {
+    HttpResponse res;
+    if (timed_out) {
+      res.generate_error_response(504, task->loc);
+    } else {
+      CgiHandler cgi;
+      if (!cgi.parse_cgi_output(task->cgi_output, &res)) {
+        res.generate_error_response(502, task->loc);
+      }
+    }
+    _clients[task->client_fd]->appendToWriteBuffer(res.to_string());
+  }
+
+  _clientCgiMap.erase(task->client_fd);
+  delete task;
+}
+
+void EventLoop::_checkCgiTimeouts() {
+  time_t now = std::time(NULL);
+  std::map<int, CgiTask*>::iterator it = _clientCgiMap.begin();
+  while (it != _clientCgiMap.end()) {
+    CgiTask* task = it->second;
+    ++it;
+    if (now - task->start_time > 10) { // Timeout de 10 segs
+      _finishCgiTask(task, true);
+    }
   }
 }

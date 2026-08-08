@@ -32,6 +32,8 @@ static std::string get_reason_phrase(int code) {
       return "Internal Server Error";
     case 502:
       return "Bad Gateway";
+    case 504:
+      return "Gateway Timeout";
     default:
       return "Internal Server Error";
   }
