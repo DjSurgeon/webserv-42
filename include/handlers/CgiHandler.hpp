@@ -2,11 +2,12 @@
 #ifndef INCLUDE_HANDLERS_CGIHANDLER_HPP_
 #define INCLUDE_HANDLERS_CGIHANDLER_HPP_
 
+#include <sys/wait.h>
+
 #include <cstdio>
 #include <map>
 #include <string>
 #include <vector>
-#include <sys/wait.h>
 
 #include "config/LocationConfig.hpp"
 #include "http/HttpRequest.hpp"
@@ -26,7 +27,8 @@ class CgiHandler {
   CgiHandler& operator=(const CgiHandler& other);
   ~CgiHandler();
 
-  // Modificamos execute_script para que devuelva CgiProcess en lugar de ejecutar la espera síncrona
+  // Modificamos execute_script para que devuelva CgiProcess en lugar de
+  // ejecutar la espera síncrona
   bool start_script(const std::string& script_path, const HttpRequest& req,
                     const LocationConfig* loc, CgiProcess& cgi_proc);
   bool parse_cgi_output(const std::string& raw_output, HttpResponse* res) const;

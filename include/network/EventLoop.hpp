@@ -3,6 +3,7 @@
 #define INCLUDE_NETWORK_EVENTLOOP_HPP_
 
 #include <sys/poll.h>
+#include <sys/wait.h>
 
 #include <csignal>
 #include <ctime>
@@ -11,11 +12,9 @@
 #include <vector>
 
 #include "config/ServerConfig.hpp"
+#include "handlers/CgiHandler.hpp"
 #include "http/RequestParser.hpp"
 #include "network/ClientSocket.hpp"
-
-#include <sys/wait.h>
-#include "handlers/CgiHandler.hpp"
 
 struct CgiTask {
   int client_fd;
@@ -49,9 +48,9 @@ class EventLoop {
 
  private:
   // Mapas de FDs a CgiTask
-  std::map<int, CgiTask*> _cgiOutMap;    // pipe_out_fd -> CgiTask
-  std::map<int, CgiTask*> _cgiInMap;     // pipe_in_fd -> CgiTask
-  std::map<int, CgiTask*> _clientCgiMap; // client_fd -> CgiTask
+  std::map<int, CgiTask*> _cgiOutMap;     // pipe_out_fd -> CgiTask
+  std::map<int, CgiTask*> _cgiInMap;      // pipe_in_fd -> CgiTask
+  std::map<int, CgiTask*> _clientCgiMap;  // client_fd -> CgiTask
 
   void _addCgiFd(int fd, short events);
   void _removeCgiFd(int fd);
@@ -93,13 +92,15 @@ class EventLoop {
 #endif  // SRC_NETWORK_EVENTLOOP_HPP_
 
 struct CgiState {
-    int client_fd;       // FD del cliente que espera respuesta
-    int pipe_in_fd;      // FD para ESCRIBIR el body hacia el CGI (STDOUT del server -> STDIN del CGI)
-    int pipe_out_fd;     // FD para LEER la salida del CGI (STDOUT del CGI -> STDIN del server)
-    pid_t cgi_pid;       // PID del proceso hijo
-    time_t start_time;   // Para gestionar timeouts
-    
-    std::string body_to_write; // Body de la request a enviar al CGI (ej. POST)
-    size_t bytes_written;
-    std::string cgi_output;   // Salida leída del CGI acumulada
+  int client_fd;    // FD del cliente que espera respuesta
+  int pipe_in_fd;   // FD para ESCRIBIR el body hacia el CGI (STDOUT del server
+                    // -> STDIN del CGI)
+  int pipe_out_fd;  // FD para LEER la salida del CGI (STDOUT del CGI -> STDIN
+                    // del server)
+  pid_t cgi_pid;    // PID del proceso hijo
+  time_t start_time;  // Para gestionar timeouts
+
+  std::string body_to_write;  // Body de la request a enviar al CGI (ej. POST)
+  size_t bytes_written;
+  std::string cgi_output;  // Salida leída del CGI acumulada
 };

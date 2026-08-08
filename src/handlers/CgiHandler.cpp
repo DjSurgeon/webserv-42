@@ -460,8 +460,8 @@ void CgiHandler::_free_env_array(char** envp) const {
 }
 
 bool CgiHandler::start_script(const std::string& script_path,
-                             const HttpRequest& req,
-                             const LocationConfig* loc, CgiProcess& cgi_proc) {
+                              const HttpRequest& req, const LocationConfig* loc,
+                              CgiProcess& cgi_proc) {
   int stdout_pipe[2];
   int stdin_pipe[2] = {-1, -1};
 
@@ -481,11 +481,14 @@ bool CgiHandler::start_script(const std::string& script_path,
 
   pid_t pid = fork();
   if (pid < 0) {
-    close(stdout_pipe[0]); close(stdout_pipe[1]);
-    if (stdin_pipe[0] != -1) { close(stdin_pipe[0]); close(stdin_pipe[1]); }
+    close(stdout_pipe[0]);
+    close(stdout_pipe[1]);
+    if (stdin_pipe[0] != -1) {
+      close(stdin_pipe[0]);
+      close(stdin_pipe[1]);
+    }
     return false;
-  } 
-  else if (pid == 0) { // Proceso Hijo
+  } else if (pid == 0) {  // Proceso Hijo
     close(stdout_pipe[0]);
     dup2(stdout_pipe[1], STDOUT_FILENO);
     close(stdout_pipe[1]);
@@ -522,8 +525,8 @@ bool CgiHandler::start_script(const std::string& script_path,
   }
 
   // Proceso Padre
-  close(stdout_pipe[1]); // Cierra extremo de escritura
-  if (stdin_pipe[0] != -1) close(stdin_pipe[0]); // Cierra extremo de lectura
+  close(stdout_pipe[1]);                          // Cierra extremo de escritura
+  if (stdin_pipe[0] != -1) close(stdin_pipe[0]);  // Cierra extremo de lectura
 
   cgi_proc.pid = pid;
   cgi_proc.pipe_out = stdout_pipe[0];

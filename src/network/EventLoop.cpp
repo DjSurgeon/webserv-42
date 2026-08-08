@@ -115,7 +115,7 @@ void EventLoop::run() {
 
       if (revents & (POLLERR | POLLHUP | POLLNVAL)) {
         if (_cgiOutMap.count(current_fd)) {
-          _handleCgiRead(current_fd); // Forzar lectura final
+          _handleCgiRead(current_fd);  // Forzar lectura final
         } else {
           removeSocket(current_fd);
         }
@@ -133,7 +133,9 @@ void EventLoop::run() {
         }
       }
 
-      if (!_isServerSocket(current_fd) && _clients.find(current_fd) == _clients.end() && !_cgiInMap.count(current_fd)) {
+      if (!_isServerSocket(current_fd) &&
+          _clients.find(current_fd) == _clients.end() &&
+          !_cgiInMap.count(current_fd)) {
         continue;
       }
 
@@ -146,7 +148,7 @@ void EventLoop::run() {
         }
       }
     }
-    
+
     //_checkCgiTimeouts(); // Verificar scripts en bucle infinito
   }
 }

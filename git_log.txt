@@ -1,0 +1,6 @@
+commit 1606030b63f7e50c2ccf35ec2591a96e78e1aa12
+Merge: 1a0b415 76ef0c2
+Author: raperez- <raperez-@student.42madrid.com>
+Date:   Sat Aug 8 10:27:48 2026 +0200
+
+    Merge branch 'raul' into develop

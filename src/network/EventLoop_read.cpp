@@ -204,9 +204,11 @@ void EventLoop::_dispatchRequest(int client_fd, const HttpRequest& req,
                                  const ServerConfig* matched_server) {
   if (!matched_server) return;
 
-  const LocationConfig* matched_loc = matched_server->findLocation(req.get_uri());
-  const Context* active_ctx = matched_loc ? static_cast<const Context*>(matched_loc)
-                                          : static_cast<const Context*>(matched_server);
+  const LocationConfig* matched_loc =
+      matched_server->findLocation(req.get_uri());
+  const Context* active_ctx = matched_loc
+                                  ? static_cast<const Context*>(matched_loc)
+                                  : static_cast<const Context*>(matched_server);
 
   HttpResponse res;
 
@@ -227,7 +229,8 @@ void EventLoop::_dispatchRequest(int client_fd, const HttpRequest& req,
 
   std::string physical_path;
   StaticRouter router;
-  if (!router.process_route(req, matched_server, matched_loc, &res, &physical_path, active_ctx)) {
+  if (!router.process_route(req, matched_server, matched_loc, &res,
+                            &physical_path, active_ctx)) {
     if (req.get_method() == "HEAD") res.set_body("");
     _clients[client_fd]->appendToWriteBuffer(res.to_string());
     return;
@@ -295,7 +298,7 @@ void EventLoop::_handleCgiRead(int fd) {
 
   if (bytes > 0) {
     task->cgi_output.append(buffer, bytes);
-  } else { // EOF detectado
+  } else {  // EOF detectado
     _finishCgiTask(task, false);
   }
 }
@@ -340,7 +343,7 @@ void EventLoop::_checkCgiTimeouts() {
   while (it != _clientCgiMap.end()) {
     CgiTask* task = it->second;
     ++it;
-    if (now - task->start_time > 10) { // Timeout de 10 segs
+    if (now - task->start_time > 10) {  // Timeout de 10 segs
       _finishCgiTask(task, true);
     }
   }
