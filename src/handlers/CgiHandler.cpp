@@ -21,6 +21,7 @@
 
 #include "http/HttpResponse.hpp"
 #include "http/SessionManager.hpp"
+#include "network/EventLoop.hpp"
 
 // -----------------------------------------------------------------------------
 // Orthodox Canonical Form
@@ -461,7 +462,9 @@ void CgiHandler::_free_env_array(char** envp) const {
 
 bool CgiHandler::start_script(const std::string& script_path,
                               const HttpRequest& req, const LocationConfig* loc,
-                              CgiProcess& cgi_proc) {
+                              CgiProcess& cgi_proc,
+                              const std::map<int, CgiTask*>& _cgiOutMap,
+                              const std::map<int, CgiTask*>& _cgiInMap) {
   int stdout_pipe[2];
   int stdin_pipe[2] = {-1, -1};
 
@@ -490,6 +493,13 @@ bool CgiHandler::start_script(const std::string& script_path,
     }
     return false;
   } else if (pid == 0) {  // Proceso Hijo
+    for (std::map<int, CgiTask*>::const_iterator it = _cgiOutMap.begin(); it != _cgiOutMap.end(); ++it) {
+      close(it->first);
+    }
+    for (std::map<int, CgiTask*>::const_iterator it = _cgiInMap.begin(); it != _cgiInMap.end(); ++it) {
+      close(it->first);
+    }
+
     close(stdout_pipe[0]);
     dup2(stdout_pipe[1], STDOUT_FILENO);
     close(stdout_pipe[1]);

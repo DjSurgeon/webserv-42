@@ -90,8 +90,6 @@ class EventLoop {
                            HttpResponse& res) const;
 };
 
-#endif  // INCLUDE_NETWORK_EVENTLOOP_HPP_
-
 struct CgiState {
   int client_fd;    // FD del cliente que espera respuesta
   int pipe_in_fd;   // FD para ESCRIBIR el body hacia el CGI (STDOUT del server
@@ -105,3 +103,5 @@ struct CgiState {
   size_t bytes_written;
   std::string cgi_output;  // Salida leída del CGI acumulada
 };
+
+#endif  // INCLUDE_NETWORK_EVENTLOOP_HPP_

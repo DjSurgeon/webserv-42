@@ -239,7 +239,7 @@ void EventLoop::_dispatchRequest(int client_fd, const HttpRequest& req,
   if (_isCgiRequest(physical_path, matched_loc)) {
     CgiHandler cgi;
     CgiProcess proc;
-    if (cgi.start_script(physical_path, req, matched_loc, proc)) {
+    if (cgi.start_script(physical_path, req, matched_loc, proc, _cgiOutMap, _cgiInMap)) {
       CgiTask* task = new CgiTask();
       task->client_fd = client_fd;
       task->pipe_in_fd = proc.pipe_in;
