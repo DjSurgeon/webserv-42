@@ -13,7 +13,7 @@ echo """<!DOCTYPE html>
     <h2>This is a random number between 1 and 100:<h2>
 """
 
-sleep 10
+sleep 20
 
 echo $((RANDOM % 100 + 1))
 echo "</body></html>"

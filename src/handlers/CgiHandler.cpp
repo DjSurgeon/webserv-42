@@ -466,7 +466,8 @@ bool CgiHandler::start_script(const std::string& script_path,
   int stdin_pipe[2] = {-1, -1};
 
   // 1. Pipe para leer salida del CGI
-  if (pipe(stdout_pipe) == -1) return false;
+  if (pipe(stdout_pipe) == -1)
+    return false;
   fcntl(stdout_pipe[0], F_SETFL, O_NONBLOCK);
 
   // 2. Si hay body, crear Pipe para enviar body al CGI de forma asíncrona
@@ -526,7 +527,8 @@ bool CgiHandler::start_script(const std::string& script_path,
 
   // Proceso Padre
   close(stdout_pipe[1]);                          // Cierra extremo de escritura
-  if (stdin_pipe[0] != -1) close(stdin_pipe[0]);  // Cierra extremo de lectura
+  if (stdin_pipe[0] != -1)
+    close(stdin_pipe[0]);  // Cierra extremo de lectura
 
   cgi_proc.pid = pid;
   cgi_proc.pipe_out = stdout_pipe[0];
