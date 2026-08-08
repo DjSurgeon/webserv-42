@@ -2,6 +2,7 @@
 #ifndef INCLUDE_NETWORK_EVENTLOOP_HPP_
 #define INCLUDE_NETWORK_EVENTLOOP_HPP_
 
+#include <stdint.h>
 #include <sys/poll.h>
 #include <sys/wait.h>
 
