@@ -59,6 +59,8 @@ void RequestParser::_determine_body_transition() {
   } else {
     _content_length = len;
     _storage_buffer.clear();
+    _storage_buffer.reserve(_content_length);
+    _request.reserve_body(_content_length);
     _state = STATE_BODY;
   }
 }

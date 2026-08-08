@@ -140,6 +140,17 @@ DIM			= $(ESC)[2m
 
 all: $(NAME)
 
+intra_test:
+	@echo "$(CYAN)$(BOLD)🛠  Setting up intra_test environment...$(RESET)"
+	@mkdir -p YoupiBanane/nop YoupiBanane/Yeah
+	@touch YoupiBanane/youpi.bad_extension
+	@touch YoupiBanane/youpi.bla
+	@touch YoupiBanane/nop/youpi.bad_extension
+	@touch YoupiBanane/nop/other.pouic
+	@touch YoupiBanane/Yeah/not_happy.bad_extension
+	@echo "$(GREEN)$(BOLD)✅  Tester environment 'YoupiBanane' created successfully.$(RESET)"
+
+
 $(NAME): $(OBJS)
 	@$(CXX) $(CXXFLAGS) $(INCLUDES) $(OBJS) -o $(NAME)
 	@echo "$(BOLD)$(GREEN)"

@@ -94,7 +94,6 @@ bool CgiHandler::parse_cgi_output(const std::string& raw_output,
   res->set_status(200, "OK");
 
   std::string headers_str = raw_output.substr(0, boundary_pos);
-  std::string body_str = raw_output.substr(boundary_pos + boundary_len);
 
   // Parse headers
   size_t start = 0;
@@ -156,11 +155,11 @@ bool CgiHandler::parse_cgi_output(const std::string& raw_output,
     start = end + 1;
   }
 
-  res->set_body(body_str);
+  res->set_body_from_substr(raw_output, boundary_pos + boundary_len);
 
   // Calculate and set exact Content-Length
   std::stringstream ss;
-  ss << body_str.length();
+  ss << (raw_output.length() - (boundary_pos + boundary_len));
   res->add_header("Content-Length", ss.str());
 
   return true;
@@ -469,8 +468,7 @@ bool CgiHandler::start_script(const std::string& script_path,
   int stdin_pipe[2] = {-1, -1};
 
   // 1. Pipe para leer salida del CGI
-  if (pipe(stdout_pipe) == -1)
-    return false;
+  if (pipe(stdout_pipe) == -1) return false;
   fcntl(stdout_pipe[0], F_SETFL, O_NONBLOCK);
 
   // 2. Si hay body, crear Pipe para enviar body al CGI de forma asíncrona
@@ -493,10 +491,12 @@ bool CgiHandler::start_script(const std::string& script_path,
     }
     return false;
   } else if (pid == 0) {  // Proceso Hijo
-    for (std::map<int, CgiTask*>::const_iterator it = _cgiOutMap.begin(); it != _cgiOutMap.end(); ++it) {
+    for (std::map<int, CgiTask*>::const_iterator it = _cgiOutMap.begin();
+         it != _cgiOutMap.end(); ++it) {
       close(it->first);
     }
-    for (std::map<int, CgiTask*>::const_iterator it = _cgiInMap.begin(); it != _cgiInMap.end(); ++it) {
+    for (std::map<int, CgiTask*>::const_iterator it = _cgiInMap.begin();
+         it != _cgiInMap.end(); ++it) {
       close(it->first);
     }
 
@@ -537,8 +537,7 @@ bool CgiHandler::start_script(const std::string& script_path,
 
   // Proceso Padre
   close(stdout_pipe[1]);                          // Cierra extremo de escritura
-  if (stdin_pipe[0] != -1)
-    close(stdin_pipe[0]);  // Cierra extremo de lectura
+  if (stdin_pipe[0] != -1) close(stdin_pipe[0]);  // Cierra extremo de lectura
 
   cgi_proc.pid = pid;
   cgi_proc.pipe_out = stdout_pipe[0];

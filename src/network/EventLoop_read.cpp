@@ -156,12 +156,18 @@ void EventLoop::_handleClientData(int fd) {
   int bytes = recv(fd, buffer, sizeof(buffer), 0);
 
   if (bytes > 0) {
-    client_it->second->appendToReadBuffer(std::string(buffer, bytes));
-    const std::string& read_buf = client_it->second->getReadBuffer();
-    size_t i = 0;
-    while (i < read_buf.length()) {
-      e_parser_state state = parser_it->second->feed(read_buf[i]);
-      i++;
+    client_it->second->appendToReadBuffer(buffer, bytes);
+
+    while (true) {
+      const std::string& read_buf = client_it->second->getReadBuffer();
+      if (read_buf.empty()) break;
+
+      size_t consumed = 0;
+      e_parser_state state = parser_it->second->feed_buffer(
+          read_buf.c_str(), read_buf.length(), consumed);
+
+      client_it->second->consumeReadBuffer(consumed);
+
       if (state == STATE_COMPLETE) {
         std::cout << "EventLoop: Request completed from client " << fd << "\n";
 
@@ -183,7 +189,7 @@ void EventLoop::_handleClientData(int fd) {
         client_it->second->setShouldClose(should_close);
 
         parser_it->second->reset();
-        break;
+        // Continue loop to parse next request in buffer
       } else if (state == STATE_ERROR) {
         std::cerr << "EventLoop: Parser error from client " << fd << "\n";
         client_it->second->appendToWriteBuffer(
@@ -192,9 +198,11 @@ void EventLoop::_handleClientData(int fd) {
             "\r\n");
         client_it->second->setShouldClose(true);
         break;
+      } else {
+        // Need more data (STATE_BODY, STATE_HEADER, etc.)
+        break;
       }
     }
-    client_it->second->consumeReadBuffer(i);
   } else if (bytes == 0) {
     removeSocket(fd);
   }
@@ -215,7 +223,8 @@ void EventLoop::_dispatchRequest(int client_fd, const HttpRequest& req,
   // Manejo de Redirección
   if (_handleRedirect(matched_loc, res)) {
     if (req.get_method() == "HEAD") res.set_body("");
-    _clients[client_fd]->appendToWriteBuffer(res.to_string());
+    std::string res_str = res.to_string();
+    _clients[client_fd]->swapWriteBuffer(res_str);
     return;
   }
 
@@ -223,7 +232,8 @@ void EventLoop::_dispatchRequest(int client_fd, const HttpRequest& req,
   AuthHandler auth;
   if (auth.handle_auth_request(req.get_uri(), req, &res)) {
     if (req.get_method() == "HEAD") res.set_body("");
-    _clients[client_fd]->appendToWriteBuffer(res.to_string());
+    std::string res_str = res.to_string();
+    _clients[client_fd]->swapWriteBuffer(res_str);
     return;
   }
 
@@ -232,14 +242,16 @@ void EventLoop::_dispatchRequest(int client_fd, const HttpRequest& req,
   if (!router.process_route(req, matched_server, matched_loc, &res,
                             &physical_path, active_ctx)) {
     if (req.get_method() == "HEAD") res.set_body("");
-    _clients[client_fd]->appendToWriteBuffer(res.to_string());
+    std::string res_str = res.to_string();
+    _clients[client_fd]->swapWriteBuffer(res_str);
     return;
   }
 
   if (_isCgiRequest(physical_path, matched_loc)) {
     CgiHandler cgi;
     CgiProcess proc;
-    if (cgi.start_script(physical_path, req, matched_loc, proc, _cgiOutMap, _cgiInMap)) {
+    if (cgi.start_script(physical_path, req, matched_loc, proc, _cgiOutMap,
+                         _cgiInMap)) {
       CgiTask* task = new CgiTask();
       task->client_fd = client_fd;
       task->pipe_in_fd = proc.pipe_in;
@@ -261,19 +273,22 @@ void EventLoop::_dispatchRequest(int client_fd, const HttpRequest& req,
     } else {
       res.generate_error_response(500, active_ctx, &req);
       if (req.get_method() == "HEAD") res.set_body("");
-      _clients[client_fd]->appendToWriteBuffer(res.to_string());
+      std::string res_str = res.to_string();
+      _clients[client_fd]->swapWriteBuffer(res_str);
     }
   } else {
     _executeFileHandler(req, active_ctx, physical_path, res);
     if (req.get_method() == "HEAD") res.set_body("");
-    _clients[client_fd]->appendToWriteBuffer(res.to_string());
+    std::string res_str = res.to_string();
+    _clients[client_fd]->swapWriteBuffer(res_str);
   }
 }
 
 void EventLoop::_handleCgiWrite(int fd) {
   CgiTask* task = _cgiInMap[fd];
-  std::string chunk = task->body_to_write.substr(task->bytes_written);
-  ssize_t bytes = write(fd, chunk.c_str(), chunk.size());
+  size_t remaining = task->body_to_write.size() - task->bytes_written;
+  ssize_t bytes =
+      write(fd, task->body_to_write.data() + task->bytes_written, remaining);
 
   if (bytes > 0) {
     task->bytes_written += bytes;
@@ -330,7 +345,8 @@ void EventLoop::_finishCgiTask(CgiTask* task, bool timed_out) {
         res.generate_error_response(502, task->loc);
       }
     }
-    _clients[task->client_fd]->appendToWriteBuffer(res.to_string());
+    std::string res_str = res.to_string();
+    _clients[task->client_fd]->swapWriteBuffer(res_str);
   }
 
   _clientCgiMap.erase(task->client_fd);

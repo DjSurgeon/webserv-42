@@ -1,53 +1,49 @@
-# Auditoría y Plan a 7 Días: Camino a la Matrícula de Honor (Webserv)
+# Análisis de Rendimiento y Memoria (Test de Estrés)
 
-He analizado a fondo la arquitectura actual de `webserv-42`, centrándome en los aspectos más críticos de la evaluación y los bonus (CGI y Sesiones). Además, tras ver los resultados del tester oficial, he añadido las correcciones para pasar el test al 100%.
+## 🚨 1. Diagnóstico del Problema: ¿Por qué explota la RAM?
 
-## 🚨 Auditoría (Crítico vs Bonus)
+El test del cluster de 42 lanza 20 workers simultáneos enviando un *Body* de 100 MB cada uno (Total: 2 GB de datos en red). Nuestro servidor Webserv, tal como está diseñado ahora mismo, multiplica este tamaño por 3 o por 4 debido a cómo gestionamos los `std::string`. 
 
-### 1. El Error Fatal del CGI (Bloqueo del Servidor)
-Al revisar `src/handlers/CgiHandler.cpp` (líneas 261-272), me he dado cuenta de que el servidor hace una lectura y un `waitpid` bloqueantes.
-> [!WARNING]
-> **El Problema:** Si el evaluador crea un script PHP con un `while(1);` (bucle infinito), **tu servidor entero se congelará**. Ninguno de los otros clientes será atendido. Esto incumple la regla principal de 42: *"Your server must be non-blocking"*.
+El ciclo de vida de un solo *Chunk* de datos provoca este infierno en la RAM:
 
-**La Solución:** Hay que hacer el CGI **Asíncrono**. El `EventLoop` debe meter el pipe del CGI en el array de `poll()`, y leerlo poco a poco sin bloquearse.
+1. **Recepción en EventLoop**: En `EventLoop_read.cpp`, hacemos `client_it->second->appendToReadBuffer(std::string(buffer, bytes));`. Esto crea una copia temporal en RAM y luego otra copia dentro del `_readBuffer` del socket.
+2. **Alimentación del Parser byte a byte**: Pasamos el string inmenso al `RequestParser` carácter a carácter, el cual va acumulando otro monstruo de 100 MB en su propio estado.
+3. **Guardado en HttpRequest**: Finalmente, esos 100 MB se copian al `_body` del `HttpRequest`.
+4. **La Trampa Mortal del `std::string::append`**: Cuando un `std::string` se llena, el estándar de C++ duplica su capacidad subyacente para reasignar memoria. Al crecer poco a poco hasta 100 MB, el string de 50 MB se copia a uno de 100 MB, ocupando 150 MB momentáneamente.
 
-### 2. Cookies y Sesiones (Bonus)
-- **Estado Actual:** El `SessionManager` está perfectamente implementado.
-- **La Solución:** Faltan los endpoints (rutas HTTP). Necesitamos una ruta `/login` que llame a `SessionManager::create_session()` y devuelva la cabecera `Set-Cookie`.
-
-### 3. Errores del Tester Oficial (NUEVO)
-Tras ver el reporte del tester que me has pasado, hay dos bugs menores en el parseo HTTP que hacen que suspenda de inmediato:
-- **Fallo del HEAD:** El tester lanza un `HEAD` a `/`. Tu servidor devuelve correctamente un 405 (Method Not Allowed), pero **incluye un body** con HTML. Según el RFC, el método HEAD jamás debe llevar body, ni siquiera en las páginas de error. 
-- **Fallo de //directory:** El tester pide `//directory` (con doble barra). Tu servidor no limpia las dobles barras (`//` -> `/`), por lo que no encuentra el alias y devuelve 404 en vez del index esperado.
+**Resultado:** 1 Cliente de 100 MB = picos de ~400 MB en RAM. 
+20 Clientes = **~8 a 10 GB de RAM.** El SO o el evaluador matan el proceso (OOM Killer).
 
 ---
 
-## 📅 Plan de Acción (7 Días)
+## 🛠️ 2. Propuestas de Solución (Adaptadas a nuestro código)
 
-### Día 1: Fixes del Tester Oficial (Tu Misión - INMEDIATA)
-- [ ] Modificar `HttpRequest` o `StaticRouter` para normalizar las URIs (reducir `//` a `/`).
-- [ ] Modificar la generación de respuestas de error para vaciar el contenido del `_body` si el método de la petición original era `HEAD`.
+A continuación, planteo 3 enfoques para arreglar esto, ordenados de más fácil a más arquitectónico.
 
-### Día 2-4: Refactorización del CGI a Asíncrono (Tu Misión)
-- [ ] Modificar `CgiHandler::_execute_fork` para que devuelva el `pid` y el `fd` sin bloquear.
-- [ ] Añadir estado `STATE_WAITING_CGI` a los clientes.
-- [ ] Actualizar el `EventLoop` para integrar los pipes de los CGI en el `poll()`.
-- [ ] Usar `waitpid(pid, &status, WNOHANG)` en el EventLoop para recoger a los procesos zombies sin bloquear el servidor.
+### Solución A: Pre-Reserva de Memoria (Parche Rápido)
+**Dificultad:** Muy Baja | **Reducción de RAM:** Moderada (~50%)
+Consiste en evitar las reasignaciones dinámicas destructivas. 
+- En cuanto el `RequestParser_headers.cpp` detecte y lea la cabecera `Content-Length`, llamamos a `_request.get_body().reserve(content_length)` (necesitaremos un setter/método para esto) y lo mismo para el `_storage_buffer`.
+- Esto evita que la RAM se dispare por las multiplicaciones de capacidad del `std::string`, aunque seguiremos guardando los 100 MB completos en la memoria.
 
-### Día 5: Integración del Bonus de Cookies (Tu Misión)
-- [ ] Crear un `SessionHandler` para interceptar peticiones a `/api/login` (generar `Set-Cookie`).
-- [ ] Procesar `Cookie: session_id=...` para autenticar a los clientes en rutas privadas.
+### Solución B: Bypass del Parser para el Body (Media)
+**Dificultad:** Media | **Reducción de RAM:** Alta (~75%)
+Actualmente pasamos un archivo de 100 MB *byte a byte* (`feed(read_buf[i])`). Es ineficiente.
+- Modificar `_handleClientData` para que, si el parser ya está en estado `STATE_BODY`, no llame a `feed()` byte a byte, sino que extraiga el bloque crudo de `read_buf` y lo inyecte de golpe (o use `append`) en el Body.
+- Tras procesarlo, limpiamos inmediatamente esa porción del `_readBuffer` con `consumeReadBuffer()` para no tener el Body duplicado en el ClientSocket y en el HttpRequest.
 
-### Día 1-5: Desarrollo de la Web Completa (Misión de Raúl)
-- [ ] **Pestaña 1:** Formulario de subida de fotos (POST) a `/uploads` y botón DELETE.
-- [ ] **Pestaña 2:** CGI interactivo visual (`/cgi-bin/test.php`).
-- [ ] **Pestaña 3:** Pantalla de login ficticia para demostrar las Cookies.
-- [ ] **Diseño "Wow":** Modo oscuro, animaciones, diseño premium.
+### Solución C: Streaming a Disco (La Solución Definitiva)
+**Dificultad:** Alta | **Reducción de RAM:** Extrema (Consumo plano ~10 MB)
+Es la forma en la que los servidores reales (Nginx/Apache) manejan cargas masivas.
+- Si el `Content-Length` supera un límite (ej. 1 MB), el `HttpRequest` no guarda el body en un `std::string`.
+- En su lugar, abre un `std::ofstream` apuntando a `/tmp/webserv_body_X` y va escribiendo los *chunks* directamente al disco duro (SSD) según llegan en el `recv`.
+- El `HttpRequest` solo almacenaría un `std::string _body_file_path = "/tmp/..."`. Cuando el `CgiHandler` necesite el body, simplemente le pasa ese archivo temporal al CGI.
 
-### Día 6-7: Pruebas de Integración y Evaluación
-- [ ] Poner a prueba el CGI asíncrono con el "Test del Bucle Infinito".
-- [ ] Correr el tester oficial entero para ver todo en verde.
-- [ ] Correr Siege y Valgrind finales.
+---
 
 ## 🗣️ User Review Required
-¿Apruebas este plan definitivo? En cuanto me des el OK, abro el código y empiezo a arreglar primero los bugs del tester (Doble barra y HEAD) y justo después me meto con la cirugía del CGI Asíncrono.
+¿Qué camino preferimos tomar para pasar la evaluación?
+1. **Solución A + B combinadas**: Modificamos el parser para pre-reservar memoria y procesar bloques en vez de bytes, borrando buffers temporales. Seguiremos gastando unos 2 GB (100MB por cliente) pero ya no 10 GB. Es rápido de implementar.
+2. **Solución C (Streaming)**: Requiere tocar la base de `HttpRequest` y `CgiHandler` para que admitan leer de archivo en vez de RAM. Es la solución más "Pro" pero más compleja de encajar con tu `RequestParser` actual.
+
+¡Dime qué opción te gusta más y preparo el código!

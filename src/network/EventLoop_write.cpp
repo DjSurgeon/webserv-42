@@ -21,9 +21,9 @@ void EventLoop::_handleClientWrite(int fd) {
     return;
   }
 
-  const std::string& data = it->second->getWriteBuffer();
-  if (!data.empty()) {
-    int sent = send(fd, data.c_str(), data.length(), 0);
+  size_t len = it->second->getWriteLength();
+  if (len > 0) {
+    int sent = send(fd, it->second->getWriteData(), len, 0);
     if (sent > 0) {
       it->second->consumeWriteBuffer(sent);
     }

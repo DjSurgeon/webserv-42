@@ -29,6 +29,7 @@ class HttpResponse {
                   const std::string& options = "");
   void add_cookie(const std::string& raw_cookie);
   void set_body(const std::string& body);
+  void set_body_from_substr(const std::string& source, size_t pos);
 
   std::string to_string() const;
 

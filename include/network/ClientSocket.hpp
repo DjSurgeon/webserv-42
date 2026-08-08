@@ -22,10 +22,14 @@ class ClientSocket {
   int getFd() const;
   const std::string& getReadBuffer() const;
   const std::string& getWriteBuffer() const;
+  const char* getWriteData() const;
+  size_t getWriteLength() const;
 
   // --- Mutators (Controlled state modification gates) ---
   void appendToReadBuffer(const std::string& data);
+  void appendToReadBuffer(const char* data, size_t len);
   void appendToWriteBuffer(const std::string& data);
+  void swapWriteBuffer(std::string& data);
   void consumeReadBuffer(size_t bytes);
   void consumeWriteBuffer(size_t bytes);
   void clearWriteBuffer();
@@ -38,6 +42,7 @@ class ClientSocket {
   int _fd;
   std::string _readBuffer;
   std::string _writeBuffer;
+  size_t _writeOffset;
   bool _shouldClose;
 
   // Prevent copying (Strict C++98 compliance rule against double-close bugs)

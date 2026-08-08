@@ -17,7 +17,7 @@
  * @throw std::runtime_error If the file descriptor is invalid or fcntl() fails.
  */
 ClientSocket::ClientSocket(int client_fd)
-    : _fd(client_fd), _shouldClose(false) {
+    : _fd(client_fd), _writeOffset(0), _shouldClose(false) {
   if (_fd < 0) {
     throw std::runtime_error("ClientSocket: Invalid file descriptor");
   }
@@ -68,6 +68,25 @@ const std::string& ClientSocket::getWriteBuffer() const {
 }
 
 /**
+ * @brief Gets a pointer to the unwritten portion of the write buffer.
+ *
+ * @return const char* Pointer to the data.
+ */
+const char* ClientSocket::getWriteData() const {
+  return _writeBuffer.c_str() + _writeOffset;
+}
+
+/**
+ * @brief Gets the length of the unwritten portion of the write buffer.
+ *
+ * @return size_t Length of remaining data.
+ */
+size_t ClientSocket::getWriteLength() const {
+  if (_writeOffset >= _writeBuffer.size()) return 0;
+  return _writeBuffer.size() - _writeOffset;
+}
+
+/**
  * @brief Appends new raw data received from the network to the read buffer.
  *
  * @param data The data string to append.
@@ -77,12 +96,38 @@ void ClientSocket::appendToReadBuffer(const std::string& data) {
 }
 
 /**
+ * @brief Appends new raw data received from the network to the read buffer.
+ *
+ * @param data The raw data buffer.
+ * @param len The length of the raw data.
+ */
+void ClientSocket::appendToReadBuffer(const char* data, size_t len) {
+  _readBuffer.append(data, len);
+}
+
+/**
  * @brief Appends response data to the write buffer to be sent later.
  *
  * @param data The data string to append.
  */
 void ClientSocket::appendToWriteBuffer(const std::string& data) {
   _writeBuffer.append(data);
+}
+
+/**
+ * @brief Swaps data into the write buffer to avoid memory copies.
+ *
+ * If the write buffer is completely empty, it swaps the internal strings.
+ * Otherwise, it appends as usual.
+ *
+ * @param data The data string to swap from.
+ */
+void ClientSocket::swapWriteBuffer(std::string& data) {
+  if (_writeBuffer.empty() && _writeOffset == 0) {
+    _writeBuffer.swap(data);
+  } else {
+    _writeBuffer.append(data);
+  }
 }
 
 /**
@@ -107,20 +152,22 @@ void ClientSocket::consumeReadBuffer(size_t bytes) {
  */
 void ClientSocket::clearWriteBuffer() {
   _writeBuffer.clear();
+  _writeOffset = 0;
 }
 
 /**
  * @brief Consumes a specified number of bytes from the write buffer.
  *
- * Removes processed bytes from the buffer after they have been sent.
+ * Removes processed bytes from the buffer after they have been sent
+ * using zero-copy offset tracking.
  *
  * @param bytes Number of bytes to consume.
  */
 void ClientSocket::consumeWriteBuffer(size_t bytes) {
-  if (bytes >= _writeBuffer.size()) {
+  _writeOffset += bytes;
+  if (_writeOffset >= _writeBuffer.size()) {
     _writeBuffer.clear();
-  } else {
-    _writeBuffer.erase(0, bytes);
+    _writeOffset = 0;
   }
 }
 

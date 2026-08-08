@@ -103,6 +103,16 @@ void HttpResponse::set_body(const std::string& body) {
 }
 
 /**
+ * @brief Sets the body directly from a substring to avoid extra memory copies.
+ *
+ * @param source The original string containing the body.
+ * @param pos The starting position of the body in the source.
+ */
+void HttpResponse::set_body_from_substr(const std::string& source, size_t pos) {
+  _body.assign(source, pos, std::string::npos);
+}
+
+/**
  * @brief Serializes the response into a raw HTTP string.
  *
  * @return The complete HTTP response as a string.
@@ -122,7 +132,10 @@ std::string HttpResponse::to_string() const {
   }
 
   ss << "\r\n";
-  ss << _body;
 
-  return ss.str();
+  std::string result = ss.str();
+  result.reserve(result.size() + _body.size());
+  result.append(_body);
+
+  return result;
 }

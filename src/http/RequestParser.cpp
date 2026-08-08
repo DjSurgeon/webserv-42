@@ -1,6 +1,7 @@
 // Copyright 2026 raperez- serjimen
 #include "http/RequestParser.hpp"
 
+#include <algorithm>
 #include <map>
 #include <sstream>
 #include <string>
@@ -69,6 +70,40 @@ e_parser_state RequestParser::feed(char c) {
       break;
   }
 
+  return _state;
+}
+
+/**
+ * @brief Feeds a block of data to the parser, optimizing for STATE_BODY.
+ *
+ * @param data The raw data buffer.
+ * @param length The length of the raw data.
+ * @param consumed Reference to store the number of bytes consumed.
+ * @return The updated state of the parser.
+ */
+e_parser_state RequestParser::feed_buffer(const char* data, size_t length,
+                                          size_t& consumed) {
+  consumed = 0;
+  while (consumed < length) {
+    if (_state == STATE_BODY) {
+      size_t remaining = _content_length - _storage_buffer.size();
+      size_t chunk = std::min(remaining, length - consumed);
+      _storage_buffer.append(data + consumed, chunk);
+      consumed += chunk;
+
+      if (_storage_buffer.size() == _content_length) {
+        _request.swap_body(_storage_buffer);
+        _state = STATE_COMPLETE;
+        return _state;
+      }
+    } else {
+      feed(data[consumed]);
+      consumed++;
+      if (_state == STATE_COMPLETE || _state == STATE_ERROR) {
+        return _state;
+      }
+    }
+  }
   return _state;
 }
 

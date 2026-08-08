@@ -95,6 +95,24 @@ void HttpRequest::set_body(const std::string& body) {
 }
 
 /**
+ * @brief Swaps the body string to avoid memory copies.
+ *
+ * @param body The body string to swap in.
+ */
+void HttpRequest::swap_body(std::string& body) {
+  _body.swap(body);
+}
+
+/**
+ * @brief Reserves memory for the body to prevent reallocations.
+ *
+ * @param size The expected size in bytes.
+ */
+void HttpRequest::reserve_body(size_t size) {
+  _body.reserve(size);
+}
+
+/**
  * @brief Clears all request data, resetting the object to an empty state.
  */
 void HttpRequest::clear() {
