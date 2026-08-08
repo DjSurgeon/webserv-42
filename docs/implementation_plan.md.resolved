@@ -1,0 +1,53 @@
+# Auditoría y Plan a 7 Días: Camino a la Matrícula de Honor (Webserv)
+
+He analizado a fondo la arquitectura actual de `webserv-42`, centrándome en los aspectos más críticos de la evaluación y los bonus (CGI y Sesiones). Además, tras ver los resultados del tester oficial, he añadido las correcciones para pasar el test al 100%.
+
+## 🚨 Auditoría (Crítico vs Bonus)
+
+### 1. El Error Fatal del CGI (Bloqueo del Servidor)
+Al revisar `src/handlers/CgiHandler.cpp` (líneas 261-272), me he dado cuenta de que el servidor hace una lectura y un `waitpid` bloqueantes.
+> [!WARNING]
+> **El Problema:** Si el evaluador crea un script PHP con un `while(1);` (bucle infinito), **tu servidor entero se congelará**. Ninguno de los otros clientes será atendido. Esto incumple la regla principal de 42: *"Your server must be non-blocking"*.
+
+**La Solución:** Hay que hacer el CGI **Asíncrono**. El `EventLoop` debe meter el pipe del CGI en el array de `poll()`, y leerlo poco a poco sin bloquearse.
+
+### 2. Cookies y Sesiones (Bonus)
+- **Estado Actual:** El `SessionManager` está perfectamente implementado.
+- **La Solución:** Faltan los endpoints (rutas HTTP). Necesitamos una ruta `/login` que llame a `SessionManager::create_session()` y devuelva la cabecera `Set-Cookie`.
+
+### 3. Errores del Tester Oficial (NUEVO)
+Tras ver el reporte del tester que me has pasado, hay dos bugs menores en el parseo HTTP que hacen que suspenda de inmediato:
+- **Fallo del HEAD:** El tester lanza un `HEAD` a `/`. Tu servidor devuelve correctamente un 405 (Method Not Allowed), pero **incluye un body** con HTML. Según el RFC, el método HEAD jamás debe llevar body, ni siquiera en las páginas de error. 
+- **Fallo de //directory:** El tester pide `//directory` (con doble barra). Tu servidor no limpia las dobles barras (`//` -> `/`), por lo que no encuentra el alias y devuelve 404 en vez del index esperado.
+
+---
+
+## 📅 Plan de Acción (7 Días)
+
+### Día 1: Fixes del Tester Oficial (Tu Misión - INMEDIATA)
+- [ ] Modificar `HttpRequest` o `StaticRouter` para normalizar las URIs (reducir `//` a `/`).
+- [ ] Modificar la generación de respuestas de error para vaciar el contenido del `_body` si el método de la petición original era `HEAD`.
+
+### Día 2-4: Refactorización del CGI a Asíncrono (Tu Misión)
+- [ ] Modificar `CgiHandler::_execute_fork` para que devuelva el `pid` y el `fd` sin bloquear.
+- [ ] Añadir estado `STATE_WAITING_CGI` a los clientes.
+- [ ] Actualizar el `EventLoop` para integrar los pipes de los CGI en el `poll()`.
+- [ ] Usar `waitpid(pid, &status, WNOHANG)` en el EventLoop para recoger a los procesos zombies sin bloquear el servidor.
+
+### Día 5: Integración del Bonus de Cookies (Tu Misión)
+- [ ] Crear un `SessionHandler` para interceptar peticiones a `/api/login` (generar `Set-Cookie`).
+- [ ] Procesar `Cookie: session_id=...` para autenticar a los clientes en rutas privadas.
+
+### Día 1-5: Desarrollo de la Web Completa (Misión de Raúl)
+- [ ] **Pestaña 1:** Formulario de subida de fotos (POST) a `/uploads` y botón DELETE.
+- [ ] **Pestaña 2:** CGI interactivo visual (`/cgi-bin/test.php`).
+- [ ] **Pestaña 3:** Pantalla de login ficticia para demostrar las Cookies.
+- [ ] **Diseño "Wow":** Modo oscuro, animaciones, diseño premium.
+
+### Día 6-7: Pruebas de Integración y Evaluación
+- [ ] Poner a prueba el CGI asíncrono con el "Test del Bucle Infinito".
+- [ ] Correr el tester oficial entero para ver todo en verde.
+- [ ] Correr Siege y Valgrind finales.
+
+## 🗣️ User Review Required
+¿Apruebas este plan definitivo? En cuanto me des el OK, abro el código y empiezo a arreglar primero los bugs del tester (Doble barra y HEAD) y justo después me meto con la cirugía del CGI Asíncrono.
