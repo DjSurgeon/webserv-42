@@ -1,11 +1,11 @@
 // Copyright 2026 raperez- serjimen
+#include <fcntl.h>
 #include <sys/socket.h>
 #include <unistd.h>
 
 #include <iostream>
 #include <map>
 #include <vector>
-#include <fcntl.h>
 
 #include "network/EventLoop.hpp"
 
@@ -125,7 +125,7 @@ void EventLoop::_handleNewConnection(int server_fd) {
     try {
       int flags = fcntl(client_fd, F_GETFD);
       if (flags != -1) {
-          fcntl(client_fd, F_SETFD, flags | FD_CLOEXEC);
+        fcntl(client_fd, F_SETFD, flags | FD_CLOEXEC);
       }
       ClientSocket* new_client = new ClientSocket(client_fd);
       _clients[client_fd] = new_client;

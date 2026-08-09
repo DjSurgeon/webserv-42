@@ -9,10 +9,10 @@
 #include <string>
 #include <vector>
 
-#include "network/EventLoop.hpp"
 #include "config/LocationConfig.hpp"
 #include "http/HttpRequest.hpp"
 #include "http/HttpResponse.hpp"
+#include "network/EventLoop.hpp"
 
 struct CgiTask;
 
@@ -32,11 +32,10 @@ class CgiHandler {
 
   // Modificamos execute_script para que devuelva CgiProcess en lugar de
   // ejecutar la espera síncrona
-  bool start_script(const std::string& script_path,
-                              const HttpRequest& req, const LocationConfig* loc,
-                              CgiProcess& cgi_proc,
-                              const std::map<int, CgiTask*>& _cgiOutMap,
-                              const std::map<int, CgiTask*>& _cgiInMap);
+  bool start_script(const std::string& script_path, const HttpRequest& req,
+                    const LocationConfig* loc, CgiProcess& cgi_proc,
+                    const std::map<int, CgiTask*>& _cgiOutMap,
+                    const std::map<int, CgiTask*>& _cgiInMap);
   bool parse_cgi_output(const std::string& raw_output, HttpResponse* res) const;
 
   bool execute_script(const std::string& script_path, const HttpRequest& req,

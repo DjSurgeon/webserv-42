@@ -8,7 +8,8 @@
 #include <vector>
 
 /**
- * @brief Base class for shared configuration directives (root, error_page, etc.).
+ * @brief Base class for shared configuration directives (root, error_page,
+ * etc.).
  *
  * Provides inheritance-based reuse for parsing directives that can appear
  * at both the server block level and the location block level.

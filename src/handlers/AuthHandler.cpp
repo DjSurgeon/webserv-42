@@ -44,13 +44,11 @@ void AuthHandler::_handle_login(const HttpRequest& req,
   size_t pos = body.find("username=");
   if (pos != std::string::npos) {
     size_t end = body.find('&', pos);
-    if (end == std::string::npos)
-      end = body.length();
+    if (end == std::string::npos) end = body.length();
     username = body.substr(pos + 9, end - (pos + 9));
-    if (username.empty())
-    {
+    if (username.empty()) {
       res->generate_error_response(403);
-      return ;
+      return;
     }
   }
 
@@ -98,8 +96,9 @@ void AuthHandler::_handle_logout(const HttpRequest& req,
     std::stringstream ss;
     ss << html.length();
     res->add_header("Content-Length", ss.str());
-  } else
+  } else {
     res->generate_error_response(401);
+  }
 }
 
 void AuthHandler::_handle_profile(const HttpRequest& req,
