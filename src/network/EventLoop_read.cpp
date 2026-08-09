@@ -205,7 +205,10 @@ void EventLoop::_handleClientData(int fd) {
           }
         }
         parser_it->second->resume_body_parsing();
-        continue;
+        state = parser_it->second->get_state();
+        if (state != STATE_COMPLETE) {
+          continue;
+        }
       }
 
       if (state == STATE_COMPLETE) {
