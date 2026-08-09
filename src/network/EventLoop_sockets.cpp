@@ -61,9 +61,6 @@ void EventLoop::removeSocket(int fd) {
   for (std::vector<pollfd>::iterator it = _pollfds.begin();
        it != _pollfds.end(); ++it) {
     if (it->fd == fd) {
-      if (close(fd) == -1) {
-        std::cerr << "EventLoop: Error closing socket FD " << fd << std::endl;
-      }
       _pollfds.erase(it);
 
       // Remove from server list if present

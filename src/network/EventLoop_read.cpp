@@ -168,6 +168,46 @@ void EventLoop::_handleClientData(int fd) {
 
       client_it->second->consumeReadBuffer(consumed);
 
+      if (state == STATE_HEADERS_COMPLETE) {
+        const HttpRequest& req = parser_it->second->get_request();
+        std::string host_header = "";
+        std::map<std::string, std::string>::const_iterator host_it =
+            req.get_headers().find("host");
+        if (host_it != req.get_headers().end()) {
+          host_header = host_it->second;
+        }
+
+        const ServerConfig* matched_server =
+            _resolveServerConfig(fd, host_header);
+
+        if (matched_server) {
+          const LocationConfig* matched_loc =
+              matched_server->findLocation(req.get_uri());
+          const Context* active_ctx =
+              matched_loc ? static_cast<const Context*>(matched_loc)
+                          : static_cast<const Context*>(matched_server);
+
+          std::map<std::string, std::string>::const_iterator cl_it =
+              req.get_headers().find("content-length");
+          if (cl_it != req.get_headers().end()) {
+            size_t cl = 0;
+            std::stringstream ss(cl_it->second);
+            if (ss >> cl && cl > active_ctx->getClientMaxBodySize()) {
+              std::cerr << "EventLoop: Payload too large from client " << fd
+                        << "\n";
+              client_it->second->appendToWriteBuffer(
+                  "HTTP/1.1 413 Payload Too Large\r\n"
+                  "Connection: close\r\n"
+                  "\r\n");
+              client_it->second->setShouldClose(true);
+              break;
+            }
+          }
+        }
+        parser_it->second->resume_body_parsing();
+        continue;
+      }
+
       if (state == STATE_COMPLETE) {
         std::cout << "EventLoop: Request completed from client " << fd << "\n";
 

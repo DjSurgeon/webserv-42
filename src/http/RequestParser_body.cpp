@@ -23,20 +23,23 @@ void RequestParser::_determine_body_transition() {
     _chunk_read = 0;
     _chunk_size_buffer.clear();
     _storage_buffer.clear();
-    _state = STATE_CHUNK_SIZE;
+    _next_state = STATE_CHUNK_SIZE;
+    _state = STATE_HEADERS_COMPLETE;
     return;
   }
 
   std::map<std::string, std::string>::const_iterator it =
       headers.find("content-length");
   if (it == headers.end()) {
-    _state = STATE_COMPLETE;
+    _next_state = STATE_COMPLETE;
+    _state = STATE_HEADERS_COMPLETE;
     return;
   }
 
   std::string val = it->second;
   if (val.empty()) {
-    _state = STATE_COMPLETE;
+    _next_state = STATE_COMPLETE;
+    _state = STATE_HEADERS_COMPLETE;
     return;
   }
 
@@ -55,13 +58,15 @@ void RequestParser::_determine_body_transition() {
   }
 
   if (len == 0) {
-    _state = STATE_COMPLETE;
+    _next_state = STATE_COMPLETE;
+    _state = STATE_HEADERS_COMPLETE;
   } else {
     _content_length = len;
     _storage_buffer.clear();
     _storage_buffer.reserve(_content_length);
     _request.reserve_body(_content_length);
-    _state = STATE_BODY;
+    _next_state = STATE_BODY;
+    _state = STATE_HEADERS_COMPLETE;
   }
 }
 

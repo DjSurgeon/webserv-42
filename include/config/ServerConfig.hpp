@@ -8,6 +8,12 @@
 #include "config/Context.hpp"
 #include "config/LocationConfig.hpp"
 
+/**
+ * @brief Represents a 'server' block (virtual host) in the configuration.
+ *
+ * Inherits from Context for generic directives. Contains server-specific
+ * properties like listen port, server names, and nested location blocks.
+ */
 class ServerConfig : public Context {
  public:
   // Orthodox Canonical Form

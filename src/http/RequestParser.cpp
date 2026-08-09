@@ -11,7 +11,11 @@
  * initializing FSM state and flag.
  */
 RequestParser::RequestParser()
-    : _state(STATE_START), _expect_newline(false), _content_length(0) {}
+    : _state(STATE_START),
+      _expect_newline(false),
+      _content_length(0),
+      _header_bytes_read(0),
+      _next_state(STATE_START) {}
 
 /**
  * @brief Destroy the RequestParser object.
@@ -64,6 +68,8 @@ e_parser_state RequestParser::feed(char c) {
     case STATE_CHUNK_END:
       _handle_state_chunk_end(c);
       break;
+    case STATE_HEADERS_COMPLETE:
+      break;
     case STATE_COMPLETE:
       break;
     case STATE_ERROR:
@@ -98,8 +104,13 @@ e_parser_state RequestParser::feed_buffer(const char* data, size_t length,
       }
     } else {
       feed(data[consumed]);
+      _header_bytes_read++;
+      if (_state < STATE_HEADERS_COMPLETE && _header_bytes_read > 8192) {
+        _state = STATE_ERROR;
+      }
       consumed++;
-      if (_state == STATE_COMPLETE || _state == STATE_ERROR) {
+      if (_state == STATE_COMPLETE || _state == STATE_ERROR ||
+          _state == STATE_HEADERS_COMPLETE) {
         return _state;
       }
     }
@@ -201,4 +212,12 @@ void RequestParser::reset() {
   _storage_buffer.clear();
   _current_header_key.clear();
   _content_length = 0;
+  _header_bytes_read = 0;
+  _next_state = STATE_START;
+}
+
+void RequestParser::resume_body_parsing() {
+  if (_state == STATE_HEADERS_COMPLETE) {
+    _state = _next_state;
+  }
 }

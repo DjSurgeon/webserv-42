@@ -17,6 +17,7 @@ enum e_parser_state {
   STATE_VERSION,
   STATE_HEADER_KEY,
   STATE_HEADER_VALUE,
+  STATE_HEADERS_COMPLETE,
   STATE_BODY,
   STATE_COMPLETE,
   STATE_ERROR,
@@ -41,6 +42,7 @@ class RequestParser {
   e_parser_state get_state() const;
   const HttpRequest& get_request() const;
   void reset();
+  void resume_body_parsing();
 
  private:
   e_parser_state _state;
@@ -52,6 +54,8 @@ class RequestParser {
   size_t _chunk_size;
   size_t _chunk_read;
   std::string _chunk_size_buffer;
+  size_t _header_bytes_read;
+  e_parser_state _next_state;
 
   // --- Private State Handlers (The Refactored Switch Delegation) ---
   void _handle_state_start(char c);

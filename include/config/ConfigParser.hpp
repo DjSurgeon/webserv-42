@@ -7,9 +7,23 @@
 
 #include "config/ServerConfig.hpp"
 
+/**
+ * @brief Parses an NGINX-style configuration file and generates virtual server configurations.
+ *
+ * This class reads the specified configuration file, tokenizes the content,
+ * validates the syntax, and builds a list of ServerConfig objects representing
+ * the virtual hosts defined in the file.
+ */
 class ConfigParser {
  public:
   ConfigParser();
+
+  /**
+   * @brief Constructs the parser and processes the given configuration file.
+   *
+   * @param filename The path to the configuration file (e.g., "conf/default.conf").
+   * @throw std::runtime_error If the file cannot be opened or contains syntax errors.
+   */
   explicit ConfigParser(const std::string& filename);
   ConfigParser(const ConfigParser& other);
   ConfigParser& operator=(const ConfigParser& other);

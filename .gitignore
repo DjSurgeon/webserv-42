@@ -69,3 +69,7 @@ Testing/
 bin/
 .vscode/
 webserv
+docs/
+tests/
+www(old)/
+*.py

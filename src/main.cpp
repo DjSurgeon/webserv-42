@@ -64,9 +64,9 @@ int main(int argc, char** argv) {
          it != servers_by_port.end(); ++it) {
       int port = it->first;
       ListeningSocket* socket = new ListeningSocket();
+      listening_sockets.push_back(socket);
       socket->init(port);
       loop.addServerSocket(socket->getFd(), it->second);
-      listening_sockets.push_back(socket);
       std::cout << "Server listening on port " << port << " ("
                 << it->second.size() << " virtual hosts)" << std::endl;
     }

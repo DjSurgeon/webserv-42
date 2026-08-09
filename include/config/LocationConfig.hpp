@@ -7,6 +7,12 @@
 
 #include "config/Context.hpp"
 
+/**
+ * @brief Represents a 'location' block inside an NGINX-style configuration.
+ *
+ * Inherits from Context to support generic directives, while adding
+ * specific routing and CGI rules for a URI path.
+ */
 class LocationConfig : public Context {
  public:
   // Orthodox Canonical Form
