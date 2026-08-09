@@ -103,6 +103,10 @@ void HttpRequest::swap_body(std::string& body) {
   _body.swap(body);
 }
 
+void HttpRequest::take_body(std::string& dest) {
+  dest.swap(_body);
+}
+
 /**
  * @brief Reserves memory for the body to prevent reallocations.
  *

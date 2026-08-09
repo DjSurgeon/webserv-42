@@ -78,7 +78,7 @@ class EventLoop {
 
   const ServerConfig* _resolveServerConfig(int clientFd,
                                            const std::string& hostHeader) const;
-  void _dispatchRequest(int client_fd, const HttpRequest& req,
+  void _dispatchRequest(int client_fd, HttpRequest& req,
                         const ServerConfig* matched_server);
   bool _shouldCloseConnection(const HttpRequest& req) const;
 

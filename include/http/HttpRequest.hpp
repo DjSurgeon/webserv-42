@@ -38,6 +38,7 @@ class HttpRequest {
   void set_version(const std::string& version);
   void set_body(const std::string& body);
   void swap_body(std::string& body);
+  void take_body(std::string& dest);
   void add_header(const std::string& key, const std::string& value);
   void add_cookie(const std::string& key, const std::string& value);
 

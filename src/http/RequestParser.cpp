@@ -201,6 +201,10 @@ const HttpRequest& RequestParser::get_request() const {
   return _request;
 }
 
+HttpRequest& RequestParser::get_request_mut() {
+  return _request;
+}
+
 /**
  * @brief Resets the parser state machine and
  * clears all associated storage buffers.

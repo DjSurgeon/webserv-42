@@ -41,6 +41,7 @@ class RequestParser {
   e_parser_state feed_buffer(const char* data, size_t length, size_t& consumed);
   e_parser_state get_state() const;
   const HttpRequest& get_request() const;
+  HttpRequest& get_request_mut();
   void reset();
   void resume_body_parsing();
 

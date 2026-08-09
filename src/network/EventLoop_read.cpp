@@ -211,7 +211,7 @@ void EventLoop::_handleClientData(int fd) {
       if (state == STATE_COMPLETE) {
         std::cout << "EventLoop: Request completed from client " << fd << "\n";
 
-        const HttpRequest& req = parser_it->second->get_request();
+        HttpRequest& req = parser_it->second->get_request_mut();
 
         std::string host_header = "";
         std::map<std::string, std::string>::const_iterator host_it =
@@ -248,7 +248,7 @@ void EventLoop::_handleClientData(int fd) {
   }
 }
 
-void EventLoop::_dispatchRequest(int client_fd, const HttpRequest& req,
+void EventLoop::_dispatchRequest(int client_fd, HttpRequest& req,
                                  const ServerConfig* matched_server) {
   if (!matched_server) return;
 
@@ -298,7 +298,7 @@ void EventLoop::_dispatchRequest(int client_fd, const HttpRequest& req,
       task->pipe_out_fd = proc.pipe_out;
       task->pid = proc.pid;
       task->start_time = std::time(NULL);
-      task->body_to_write = req.get_body();
+      req.take_body(task->body_to_write);
       task->bytes_written = 0;
       task->loc = matched_loc;
 
