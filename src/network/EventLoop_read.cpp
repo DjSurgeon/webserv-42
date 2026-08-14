@@ -181,7 +181,7 @@ void EventLoop::_handleClientData(int fd) {
             _resolveServerConfig(fd, host_header);
 
         if (matched_server) {
-          const LocationConfig* matched_loc =
+          /*const LocationConfig* matched_loc =
               matched_server->findLocation(req.get_uri());
           const Context* active_ctx =
               matched_loc ? static_cast<const Context*>(matched_loc)
@@ -202,7 +202,7 @@ void EventLoop::_handleClientData(int fd) {
               client_it->second->setShouldClose(true);
               break;
             }
-          }
+          }*/
         }
         parser_it->second->resume_body_parsing();
         state = parser_it->second->get_state();
