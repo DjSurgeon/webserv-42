@@ -23,10 +23,10 @@ void EventLoop::_handleClientWrite(int fd) {
 
   ClientSocket* client = it->second;
   size_t len = client->getWriteLength();
-  
+
   if (len > 0) {
     ssize_t sent = send(fd, client->getWriteData(), len, 0);
-    
+
     if (sent > 0) {
       client->consumeWriteBuffer(static_cast<size_t>(sent));
     }

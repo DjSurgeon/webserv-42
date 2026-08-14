@@ -47,75 +47,76 @@ CgiHandler::~CgiHandler() {}
 // -----------------------------------------------------------------------------
 
 bool CgiHandler::parse_cgi_output(const std::string& raw_output,
-                                  HttpResponse* res, size_t boundary_pos) const {
-    if (!res) return false;
+                                  HttpResponse* res,
+                                  size_t boundary_pos) const {
+  if (!res) return false;
 
-    // Default status 200 OK
-    res->set_status(200, "OK");
+  // Default status 200 OK
+  res->set_status(200, "OK");
 
-    std::string headers_str = raw_output.substr(0, boundary_pos);
+  std::string headers_str = raw_output.substr(0, boundary_pos);
 
-    // Parse headers
-    size_t start = 0;
-    while (start < headers_str.length()) {
-        size_t end = headers_str.find('\n', start);
-        if (end == std::string::npos) {
-            end = headers_str.length();
-        }
-
-        std::string line = headers_str.substr(start, end - start);
-        if (!line.empty() && line[line.length() - 1] == '\r') {
-            line.erase(line.length() - 1);
-        }
-
-        size_t colon_pos = line.find(':');
-        if (colon_pos != std::string::npos) {
-            std::string key = line.substr(0, colon_pos);
-            std::string value = line.substr(colon_pos + 1);
-
-            // Trim leading spaces from value
-            size_t value_start = 0;
-            while (value_start < value.length() &&
-                   (value[value_start] == ' ' || value[value_start] == '\t')) {
-                value_start++;
-            }
-            value = value.substr(value_start);
-
-            // Check for Status pseudo-header (case-insensitive)
-            std::string lower_key = key;
-            for (size_t i = 0; i < lower_key.length(); ++i) {
-                lower_key[i] = std::tolower(lower_key[i]);
-            }
-
-            if (lower_key == "status") {
-                size_t space_pos = value.find(' ');
-                int code = 200;
-                std::string phrase = "OK";
-                if (space_pos != std::string::npos) {
-                    std::stringstream code_ss(value.substr(0, space_pos));
-                    code_ss >> code;
-                    phrase = value.substr(space_pos + 1);
-                } else {
-                    std::stringstream code_ss(value);
-                    code_ss >> code;
-                    phrase = "";
-                }
-                res->set_status(code, phrase);
-            } else if (lower_key == "set-cookie") {
-                res->add_cookie(value);
-            } else if (lower_key == "x-create-session") {
-                std::string new_session =
-                    SessionManager::get_instance().create_session(value);
-                res->add_cookie("session_id", new_session, "Path=/");
-            } else {
-                res->add_header(key, value);
-            }
-        }
-
-        start = end + 1;
+  // Parse headers
+  size_t start = 0;
+  while (start < headers_str.length()) {
+    size_t end = headers_str.find('\n', start);
+    if (end == std::string::npos) {
+      end = headers_str.length();
     }
-    
-    return true;
+
+    std::string line = headers_str.substr(start, end - start);
+    if (!line.empty() && line[line.length() - 1] == '\r') {
+      line.erase(line.length() - 1);
+    }
+
+    size_t colon_pos = line.find(':');
+    if (colon_pos != std::string::npos) {
+      std::string key = line.substr(0, colon_pos);
+      std::string value = line.substr(colon_pos + 1);
+
+      // Trim leading spaces from value
+      size_t value_start = 0;
+      while (value_start < value.length() &&
+             (value[value_start] == ' ' || value[value_start] == '\t')) {
+        value_start++;
+      }
+      value = value.substr(value_start);
+
+      // Check for Status pseudo-header (case-insensitive)
+      std::string lower_key = key;
+      for (size_t i = 0; i < lower_key.length(); ++i) {
+        lower_key[i] = std::tolower(lower_key[i]);
+      }
+
+      if (lower_key == "status") {
+        size_t space_pos = value.find(' ');
+        int code = 200;
+        std::string phrase = "OK";
+        if (space_pos != std::string::npos) {
+          std::stringstream code_ss(value.substr(0, space_pos));
+          code_ss >> code;
+          phrase = value.substr(space_pos + 1);
+        } else {
+          std::stringstream code_ss(value);
+          code_ss >> code;
+          phrase = "";
+        }
+        res->set_status(code, phrase);
+      } else if (lower_key == "set-cookie") {
+        res->add_cookie(value);
+      } else if (lower_key == "x-create-session") {
+        std::string new_session =
+            SessionManager::get_instance().create_session(value);
+        res->add_cookie("session_id", new_session, "Path=/");
+      } else {
+        res->add_header(key, value);
+      }
+    }
+
+    start = end + 1;
+  }
+
+  return true;
 }
 
 std::string CgiHandler::_get_interpreter(const std::string& script_path,

@@ -165,12 +165,11 @@ void ClientSocket::clearWriteBuffer() {
  */
 void ClientSocket::consumeWriteBuffer(size_t bytes) {
   _writeOffset += bytes;
-  
+
   if (_writeOffset >= _writeBuffer.size()) {
     _writeBuffer.clear();
     _writeOffset = 0;
-  } 
-  else if (_writeOffset > 65536) { 
+  } else if (_writeOffset > 65536) {
     _writeBuffer.erase(0, _writeOffset);
     _writeOffset = 0;
   }
@@ -195,5 +194,5 @@ bool ClientSocket::getShouldClose() const {
 }
 
 bool ClientSocket::isWriteBufferFull() const {
-  return _writeBuffer.size() >= 131072; // 128 KB
+  return _writeBuffer.size() >= 131072;  // 128 KB
 }

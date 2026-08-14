@@ -7,11 +7,11 @@
 
 #include <iostream>
 #include <map>
+#include <set>
 #include <sstream>
 #include <stdexcept>
 #include <string>
 #include <vector>
-#include <set>
 
 #include "handlers/CgiHandler.hpp"
 #include "handlers/FileHandler.hpp"
@@ -72,7 +72,7 @@ EventLoop::~EventLoop() {
   }
   _parsers.clear();
   std::set<CgiTask*> uniqueCgiTasks;
-  
+
   for (std::map<int, CgiTask*>::iterator it = _cgiOutMap.begin();
        it != _cgiOutMap.end(); ++it) {
     uniqueCgiTasks.insert(it->second);
@@ -88,7 +88,7 @@ EventLoop::~EventLoop() {
 
   for (std::set<CgiTask*>::iterator it = uniqueCgiTasks.begin();
        it != uniqueCgiTasks.end(); ++it) {
-    delete *it; 
+    delete *it;
   }
 
   _cgiOutMap.clear();
@@ -118,13 +118,13 @@ void EventLoop::run() {
 
     for (size_t i = 0; i < _pollfds.size(); ++i) {
       int current_fd = _pollfds[i].fd;
-      
+
       if (_cgiOutMap.count(current_fd)) {
         CgiTask* task = _cgiOutMap[current_fd];
-        
+
         if (_clients.count(task->client_fd)) {
           ClientSocket* client = _clients[task->client_fd];
-          
+
           if (client->isWriteBufferFull()) {
             _pollfds[i].events &= ~POLLIN;
           } else {

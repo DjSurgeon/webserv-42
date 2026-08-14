@@ -122,42 +122,46 @@ void HttpResponse::set_body_from_substr(const std::string& source, size_t pos) {
  * @return The complete HTTP response as a string.
  */
 void HttpResponse::to_string(std::string& raw_response) const {
-    // 2. Estimación previa del tamaño para una única asignación de memoria
-    size_t estimated_size = 30 + _reason_phrase.capacity() + _body.size();
-    
-    for (std::map<std::string, std::string>::const_iterator it = _headers.begin(); it != _headers.end(); ++it) {
-        estimated_size += it->first.size() + it->second.size() + 4; // key + ": " + value + "\r\n"
-    }
-    for (size_t i = 0; i < _cookies.size(); ++i) {
-        estimated_size += 14 + _cookies[i].size(); // "Set-Cookie: " + cookie + "\r\n"
-    }
-    
-    raw_response.reserve(estimated_size);
+  // 2. Estimación previa del tamaño para una única asignación de memoria
+  size_t estimated_size = 30 + _reason_phrase.capacity() + _body.size();
 
-    std::stringstream ss;
-    ss << _status_code;
+  for (std::map<std::string, std::string>::const_iterator it = _headers.begin();
+       it != _headers.end(); ++it) {
+    estimated_size += it->first.size() + it->second.size() +
+                      4;  // key + ": " + value + "\r\n"
+  }
+  for (size_t i = 0; i < _cookies.size(); ++i) {
+    estimated_size +=
+        14 + _cookies[i].size();  // "Set-Cookie: " + cookie + "\r\n"
+  }
 
-    raw_response.append("HTTP/1.1 ");
-    raw_response.append(ss.str());
-    ss.clear();
-    raw_response.append(" ");
-    raw_response.append(_reason_phrase);
+  raw_response.reserve(estimated_size);
+
+  std::stringstream ss;
+  ss << _status_code;
+
+  raw_response.append("HTTP/1.1 ");
+  raw_response.append(ss.str());
+  ss.clear();
+  raw_response.append(" ");
+  raw_response.append(_reason_phrase);
+  raw_response.append("\r\n");
+
+  for (std::map<std::string, std::string>::const_iterator it = _headers.begin();
+       it != _headers.end(); ++it) {
+    raw_response.append(it->first);
+    raw_response.append(": ");
+    raw_response.append(it->second);
     raw_response.append("\r\n");
+  }
 
-    for (std::map<std::string, std::string>::const_iterator it = _headers.begin(); it != _headers.end(); ++it) {
-        raw_response.append(it->first);
-        raw_response.append(": ");
-        raw_response.append(it->second);
-        raw_response.append("\r\n");
-    }
-
-    // Copia de cookies
-    for (size_t i = 0; i < _cookies.size(); ++i) {
-        raw_response.append("Set-Cookie: ");
-        raw_response.append(_cookies[i]);
-        raw_response.append("\r\n");
-    }
-
+  // Copia de cookies
+  for (size_t i = 0; i < _cookies.size(); ++i) {
+    raw_response.append("Set-Cookie: ");
+    raw_response.append(_cookies[i]);
     raw_response.append("\r\n");
-    raw_response.append(_body);    
+  }
+
+  raw_response.append("\r\n");
+  raw_response.append(_body);
 }

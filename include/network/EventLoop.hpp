@@ -28,12 +28,14 @@ struct CgiTask {
   std::string cgi_output;
   const LocationConfig* loc;
   bool headers_sent;
-  CgiTask() {headers_sent = false; pipe_in_fd = -1; pipe_out_fd = -1;}
+  CgiTask() {
+    headers_sent = false;
+    pipe_in_fd = -1;
+    pipe_out_fd = -1;
+  }
   ~CgiTask() {
-    if (pipe_in_fd != -1)
-      close(pipe_in_fd);
-    if (pipe_out_fd != -1)
-      close(pipe_out_fd);
+    if (pipe_in_fd != -1) close(pipe_in_fd);
+    if (pipe_out_fd != -1) close(pipe_out_fd);
   }
 };
 
