@@ -25,13 +25,14 @@ class HttpResponse {
 
   void set_status(int code, const std::string& phrase);
   void add_header(const std::string& key, const std::string& value);
+  bool has_header(const std::string& key) const;
   void add_cookie(const std::string& name, const std::string& value,
                   const std::string& options = "");
   void add_cookie(const std::string& raw_cookie);
   void set_body(const std::string& body);
   void set_body_from_substr(const std::string& source, size_t pos);
 
-  std::string to_string() const;
+  void to_string(std::string& raw_response) const;
 
   void generate_error_response(int code, const Context* ctx = NULL,
                                const HttpRequest* req = NULL);

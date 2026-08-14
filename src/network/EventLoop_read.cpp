@@ -266,7 +266,8 @@ void EventLoop::_dispatchRequest(int client_fd, HttpRequest& req,
   // Manejo de Redirección
   if (_handleRedirect(matched_loc, res)) {
     if (req.get_method() == "HEAD") res.set_body("");
-    std::string res_str = res.to_string();
+    std::string res_str;
+    res.to_string(res_str);
     _clients[client_fd]->swapWriteBuffer(res_str);
     return;
   }
@@ -275,7 +276,8 @@ void EventLoop::_dispatchRequest(int client_fd, HttpRequest& req,
   AuthHandler auth;
   if (auth.handle_auth_request(req.get_uri(), req, &res)) {
     if (req.get_method() == "HEAD") res.set_body("");
-    std::string res_str = res.to_string();
+    std::string res_str;
+    res.to_string(res_str);
     _clients[client_fd]->swapWriteBuffer(res_str);
     return;
   }
@@ -285,7 +287,8 @@ void EventLoop::_dispatchRequest(int client_fd, HttpRequest& req,
   if (!router.process_route(req, matched_server, matched_loc, &res,
                             &physical_path, active_ctx)) {
     if (req.get_method() == "HEAD") res.set_body("");
-    std::string res_str = res.to_string();
+    std::string res_str;
+    res.to_string(res_str);
     _clients[client_fd]->swapWriteBuffer(res_str);
     return;
   }
@@ -316,13 +319,15 @@ void EventLoop::_dispatchRequest(int client_fd, HttpRequest& req,
     } else {
       res.generate_error_response(500, active_ctx, &req);
       if (req.get_method() == "HEAD") res.set_body("");
-      std::string res_str = res.to_string();
+      std::string res_str;
+      res.to_string(res_str);
       _clients[client_fd]->swapWriteBuffer(res_str);
     }
   } else {
     _executeFileHandler(req, active_ctx, physical_path, res);
     if (req.get_method() == "HEAD") res.set_body("");
-    std::string res_str = res.to_string();
+    std::string res_str;
+    res.to_string(res_str);
     _clients[client_fd]->swapWriteBuffer(res_str);
   }
 }
@@ -336,12 +341,14 @@ void EventLoop::_handleCgiWrite(int fd) {
   if (bytes > 0) {
     task->bytes_written += bytes;
     if (task->bytes_written >= task->body_to_write.size()) {
+      std::string().swap(task->body_to_write);
       _removeCgiFd(fd);
       close(fd);
       _cgiInMap.erase(fd);
       task->pipe_in_fd = -1;
     }
   } else {
+    std::string().swap(task->body_to_write);
     _removeCgiFd(fd);
     close(fd);
     _cgiInMap.erase(fd);
@@ -350,50 +357,105 @@ void EventLoop::_handleCgiWrite(int fd) {
 }
 
 void EventLoop::_handleCgiRead(int fd) {
-  CgiTask* task = _cgiOutMap[fd];
-  char buffer[65536];
-  ssize_t bytes = read(fd, buffer, sizeof(buffer));
+    CgiTask* task = _cgiOutMap[fd];
+    char buffer[8192];
+    ssize_t bytes = read(fd, buffer, sizeof(buffer));
 
-  if (bytes > 0) {
-    task->cgi_output.append(buffer, bytes);
-  } else {  // EOF detectado
-    _finishCgiTask(task, false);
-  }
+    if (bytes > 0) {
+        if (!task->headers_sent) {
+            task->cgi_output.append(buffer, bytes);
+
+            size_t boundary_pos = task->cgi_output.find("\r\n\r\n");
+            size_t boundary_len = 4;
+            
+            if (boundary_pos == std::string::npos) {
+                boundary_pos = task->cgi_output.find("\n\n");
+                boundary_len = 2;
+            }
+
+            if (boundary_pos != std::string::npos) {
+                HttpResponse res;
+                CgiHandler cgi;
+                
+                if (!cgi.parse_cgi_output(task->cgi_output, &res, boundary_pos)) {
+                     res.generate_error_response(502, task->loc);
+                } else {
+                     if (!res.has_header("Content-Length")) {
+                         res.add_header("Transfer-Encoding", "chunked");
+                     }
+                }
+                
+                std::string res_str;
+                res.to_string(res_str);
+                
+                if (_clients.count(task->client_fd)) {
+                    _clients[task->client_fd]->appendToWriteBuffer(res_str);
+                }
+
+                std::string body_leftover = task->cgi_output.substr(boundary_pos + boundary_len);
+                
+                if (!body_leftover.empty() && _clients.count(task->client_fd)) {
+                     std::stringstream chunk_ss;
+                     chunk_ss << std::hex << body_leftover.length() << "\r\n" << body_leftover << "\r\n";
+                     _clients[task->client_fd]->appendToWriteBuffer(chunk_ss.str());
+                }
+                task->headers_sent = true;
+                task->cgi_output.clear(); 
+            }
+        } else {
+            if (_clients.count(task->client_fd)) {
+                std::string chunk_data(buffer, bytes);
+                std::stringstream chunk_ss;
+                chunk_ss << std::hex << bytes << "\r\n" << chunk_data << "\r\n";
+                _clients[task->client_fd]->appendToWriteBuffer(chunk_ss.str());
+            }
+        }
+    } else {
+        _finishCgiTask(task, false);
+    }
 }
 
 void EventLoop::_finishCgiTask(CgiTask* task, bool timed_out) {
-  if (task->pipe_in_fd != -1) {
-    _removeCgiFd(task->pipe_in_fd);
-    close(task->pipe_in_fd);
-    _cgiInMap.erase(task->pipe_in_fd);
-  }
-  if (task->pipe_out_fd != -1) {
-    _removeCgiFd(task->pipe_out_fd);
-    close(task->pipe_out_fd);
-    _cgiOutMap.erase(task->pipe_out_fd);
-  }
-
-  if (timed_out) {
-    kill(task->pid, SIGKILL);
-  }
-  waitpid(task->pid, NULL, WNOHANG);
-
-  if (_clients.count(task->client_fd)) {
-    HttpResponse res;
-    if (timed_out) {
-      res.generate_error_response(504, task->loc);
-    } else {
-      CgiHandler cgi;
-      if (!cgi.parse_cgi_output(task->cgi_output, &res)) {
-        res.generate_error_response(502, task->loc);
-      }
+    if (task->pipe_in_fd != -1) {
+        _removeCgiFd(task->pipe_in_fd);
+        _cgiInMap.erase(task->pipe_in_fd);
     }
-    std::string res_str = res.to_string();
-    _clients[task->client_fd]->swapWriteBuffer(res_str);
-  }
+    if (task->pipe_out_fd != -1) {
+        _removeCgiFd(task->pipe_out_fd);
+        _cgiOutMap.erase(task->pipe_out_fd);
+    }
 
-  _clientCgiMap.erase(task->client_fd);
-  delete task;
+    if (timed_out) {
+        kill(task->pid, SIGKILL);
+    }
+    
+    int status;
+    waitpid(task->pid, &status, WNOHANG);
+
+    if (_clients.count(task->client_fd)) {
+        if (timed_out) {
+             if (!task->headers_sent) {
+                 HttpResponse res;
+                 res.generate_error_response(504, task->loc);
+                 std::string res_str;
+                 res.to_string(res_str);
+                 _clients[task->client_fd]->appendToWriteBuffer(res_str);
+             }
+        } else {
+             if (!task->headers_sent) {
+                 HttpResponse res;
+                 res.generate_error_response(502, task->loc);
+                 std::string res_str;
+                 res.to_string(res_str);
+                 _clients[task->client_fd]->appendToWriteBuffer(res_str);
+             } else {
+                 _clients[task->client_fd]->appendToWriteBuffer("0\r\n\r\n");
+             }
+        }
+    }
+
+    _clientCgiMap.erase(task->client_fd);
+    delete task;
 }
 
 void EventLoop::_checkCgiTimeouts() {

@@ -11,6 +11,7 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
+#include <set>
 
 #include "handlers/CgiHandler.hpp"
 #include "handlers/FileHandler.hpp"
@@ -70,6 +71,29 @@ EventLoop::~EventLoop() {
     delete it->second;
   }
   _parsers.clear();
+  std::set<CgiTask*> uniqueCgiTasks;
+  
+  for (std::map<int, CgiTask*>::iterator it = _cgiOutMap.begin();
+       it != _cgiOutMap.end(); ++it) {
+    uniqueCgiTasks.insert(it->second);
+  }
+  for (std::map<int, CgiTask*>::iterator it = _cgiInMap.begin();
+       it != _cgiInMap.end(); ++it) {
+    uniqueCgiTasks.insert(it->second);
+  }
+  for (std::map<int, CgiTask*>::iterator it = _clientCgiMap.begin();
+       it != _clientCgiMap.end(); ++it) {
+    uniqueCgiTasks.insert(it->second);
+  }
+
+  for (std::set<CgiTask*>::iterator it = uniqueCgiTasks.begin();
+       it != uniqueCgiTasks.end(); ++it) {
+    delete *it; 
+  }
+
+  _cgiOutMap.clear();
+  _cgiInMap.clear();
+  _clientCgiMap.clear();
 }
 
 void EventLoop::setSessionCleanupInterval(time_t interval) {
@@ -91,6 +115,24 @@ void EventLoop::run() {
     }
 
     if (_pollfds.empty()) continue;
+
+    for (size_t i = 0; i < _pollfds.size(); ++i) {
+      int current_fd = _pollfds[i].fd;
+      
+      if (_cgiOutMap.count(current_fd)) {
+        CgiTask* task = _cgiOutMap[current_fd];
+        
+        if (_clients.count(task->client_fd)) {
+          ClientSocket* client = _clients[task->client_fd];
+          
+          if (client->isWriteBufferFull()) {
+            _pollfds[i].events &= ~POLLIN;
+          } else {
+            _pollfds[i].events |= POLLIN;
+          }
+        }
+      }
+    }
 
     int ret = poll(&_pollfds[0], _pollfds.size(), POLL_TIMEOUT);
 

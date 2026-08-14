@@ -21,6 +21,7 @@ void sigHandler(int signum) {
 int main(int argc, char** argv) {
   signal(SIGINT, sigHandler);
   signal(SIGTERM, sigHandler);
+  signal(SIGPIPE, SIG_IGN);
 
   if (argc > 2) {
     std::cerr << "Usage: " << argv[0] << " [configuration_file]" << std::endl;

@@ -21,16 +21,18 @@ void EventLoop::_handleClientWrite(int fd) {
     return;
   }
 
-  size_t len = it->second->getWriteLength();
+  ClientSocket* client = it->second;
+  size_t len = client->getWriteLength();
+  
   if (len > 0) {
-    int sent = send(fd, it->second->getWriteData(), len, 0);
+    ssize_t sent = send(fd, client->getWriteData(), len, 0);
+    
     if (sent > 0) {
-      it->second->consumeWriteBuffer(sent);
+      client->consumeWriteBuffer(static_cast<size_t>(sent));
     }
   }
 
-  // Check if we should close the connection after sending all data
-  if (it->second->getWriteBuffer().empty() && it->second->getShouldClose()) {
+  if (client->getWriteBuffer().empty() && client->getShouldClose()) {
     removeSocket(fd);
   }
 }

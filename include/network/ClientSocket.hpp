@@ -37,6 +37,7 @@ class ClientSocket {
   // --- Connection Lifecycle ---
   void setShouldClose(bool close);
   bool getShouldClose() const;
+  bool isWriteBufferFull() const;
 
  private:
   int _fd;
