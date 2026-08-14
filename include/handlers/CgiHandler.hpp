@@ -36,7 +36,8 @@ class CgiHandler {
                     const LocationConfig* loc, CgiProcess& cgi_proc,
                     const std::map<int, CgiTask*>& _cgiOutMap,
                     const std::map<int, CgiTask*>& _cgiInMap);
-  bool parse_cgi_output(const std::string& raw_output, HttpResponse* res, size_t boundary_pos) const;
+  bool parse_cgi_output(const std::string& raw_output, HttpResponse* res,
+                        size_t boundary_pos) const;
 
   bool execute_script(const std::string& script_path, const HttpRequest& req,
                       const LocationConfig* loc, HttpResponse* res);

@@ -31,9 +31,9 @@ struct CgiTask {
   CgiTask() {headers_sent = false; pipe_in_fd = -1; pipe_out_fd = -1;}
   ~CgiTask() {
     if (pipe_in_fd != -1)
-      close (pipe_in_fd);
+      close(pipe_in_fd);
     if (pipe_out_fd != -1)
-      close (pipe_out_fd);
+      close(pipe_out_fd);
   }
 };
 
