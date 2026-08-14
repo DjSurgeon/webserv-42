@@ -1,4 +1,4 @@
-*This project has been created as part of the 42 curriculum by <login1>[, <login2>].*
+*This project has been created as part of the 42 curriculum by raperez-, serjimen.*
 
 ## 📝 Description
 This project is a fully functional, asynchronous, and non-blocking HTTP/1.1 Web Server implemented from scratch in strict C++98. The server is capable of monitoring multiple client connections simultaneously using a single I/O multiplexing kernel call (`poll` or equivalent). It is designed to be resilient, highly performant under stress, and fully compliant with the core constraints of standard web browsers.
